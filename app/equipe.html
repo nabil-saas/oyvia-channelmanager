@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Équipe</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Équipe</h1>
+            <p>Vos prestataires et leur charge de travail.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <a class="btn btn--ghost" href="../prestataire.html">Espace prestataire ↗</a>
+            <a class="btn btn--secondary" href="menage.html">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Voir la gestion des tâches
+            </a>
+            <button class="btn btn--primary" id="eq-add-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Ajouter un prestataire
+            </button>
+          </div>
+        </div>
+
+        <!-- Liste des prestataires : édition en place, suppression -->
+        <div class="card card--pad">
+          <p class="eyebrow mb-4">Tous les prestataires</p>
+          <div id="eq-team-list"><!-- injecté --></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : ajouter un prestataire -->
+  <div class="modal" id="eq-add-modal" role="dialog" aria-modal="true" aria-labelledby="eq-add-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="eq-add-title">Ajouter un prestataire</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="eq-t-nom">Nom</label><input class="input" id="eq-t-nom" placeholder="Prénom Nom" /></div>
+        <div class="field"><label class="field__label" for="eq-t-role">Rôle</label><select class="select" id="eq-t-role"><option>Ménage</option><option>Polyvalent</option><option>Maintenance</option></select></div>
+      </div>
+      <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
+        <div class="field"><label class="field__label" for="eq-t-zone">Zone</label><input class="input" id="eq-t-zone" placeholder="Lyon" /></div>
+        <div class="field"><label class="field__label" for="eq-t-tarif">Tarif ménage (€)</label><input class="input" type="number" min="0" id="eq-t-tarif" value="35" /></div>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="eq-add-confirm">Ajouter le prestataire</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/equipe.js"></script>
+</body>
+</html>

@@ -41,7 +41,7 @@
 .pr-day { font-size: var(--fs-sm); font-weight: var(--fw-semibold); text-transform: capitalize; margin: var(--sp-5) 0 var(--sp-2); color: var(--c-text-soft); }
 .pr-day--today { color: var(--blue-600); }
 .pr-task { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: var(--sp-4); margin-bottom: var(--sp-3); }
-.pr-task.is-done { opacity: 0.6; }
+.pr-task.is-done { border-color: var(--c-positive-soft); }
 .pr-task__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); }
 .pr-task__time { font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
 .pr-task b { font-size: var(--fs-md); }
@@ -56,3 +56,15 @@
 .pr-status--a_faire { background: var(--c-warning-soft); color: var(--c-warning-ink); }
 .pr-status--en_cours { background: var(--blue-600); color: #fff; }
 .pr-status--termine { background: var(--c-positive-soft); color: var(--c-positive-ink); }
+
+/* Photos ajoutées après la fin de l'intervention */
+.pr-photos { margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--c-border); }
+.pr-photos__label { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); margin-bottom: var(--sp-2); }
+.pr-photos__grid { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.pr-photos__item { position: relative; width: 64px; height: 64px; border-radius: var(--r-md); overflow: hidden; flex-shrink: 0; }
+.pr-photos__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pr-photos__del { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: var(--r-full); background: rgba(0,0,0,0.6); color: #fff; display: grid; place-items: center; border: 0; }
+.pr-photos__del svg { width: 11px; height: 11px; }
+.pr-photos__add { width: 64px; height: 64px; border: 1.5px dashed var(--c-border-strong); border-radius: var(--r-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--c-text-soft); font-size: 10px; font-weight: var(--fw-medium); cursor: pointer; flex-shrink: 0; transition: border-color var(--t-fast), color var(--t-fast); }
+.pr-photos__add:hover { border-color: var(--blue-600); color: var(--blue-600); }
+.pr-photos__add svg { width: 18px; height: 18px; }

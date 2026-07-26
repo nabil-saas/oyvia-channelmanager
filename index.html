@@ -32,8 +32,30 @@
         <a href="#tarifs">Tarifs</a>
         <a href="blog.html">Blog</a>
         <a href="login.html" class="lp-navlinks__mobile-only">Connexion</a>
+        <div class="lp-navlinks__langs" id="lp-navlinks-langs">
+          <span class="lp-navlinks__langs-label">Langue</span>
+          <div class="lp-navlinks__langs-row">
+            <button type="button" class="is-active" data-lang="fr">🇫🇷 FR</button>
+            <button type="button" data-lang="en">🇬🇧 EN</button>
+            <button type="button" data-lang="es">🇪🇸 ES</button>
+            <button type="button" data-lang="de">🇩🇪 DE</button>
+            <button type="button" data-lang="ar">🇲🇦 AR</button>
+          </div>
+        </div>
       </div>
       <div class="lp-nav__cta">
+        <div class="lp-lang" id="lp-lang">
+          <button type="button" class="btn btn--secondary btn--icon btn--sm lp-lang__btn" id="lp-lang-btn" aria-haspopup="true" aria-expanded="false" aria-label="Changer de langue">
+            <span id="lp-lang-flag">🇫🇷</span>
+          </button>
+          <div class="lp-lang__menu" id="lp-lang-menu" role="menu" aria-label="Choisir la langue">
+            <button type="button" class="lp-lang__item is-active" data-lang="fr" role="menuitem"><span>🇫🇷</span> Français</button>
+            <button type="button" class="lp-lang__item" data-lang="en" role="menuitem"><span>🇬🇧</span> English</button>
+            <button type="button" class="lp-lang__item" data-lang="es" role="menuitem"><span>🇪🇸</span> Español</button>
+            <button type="button" class="lp-lang__item" data-lang="de" role="menuitem"><span>🇩🇪</span> Deutsch</button>
+            <button type="button" class="lp-lang__item" data-lang="ar" role="menuitem"><span>🇲🇦</span> العربية</button>
+          </div>
+        </div>
         <a class="btn btn--ghost btn--sm" href="login.html">Connexion</a>
         <a class="btn btn--primary btn--sm" href="app/dashboard.html">Essayer gratuitement</a>
         <button class="btn btn--secondary btn--icon btn--sm lp-burger" id="lp-burger-btn" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="lp-navlinks">

@@ -466,6 +466,38 @@ const COMPTE = {
 };
 
 /* ============================================================
+   PLATEFORMES — connexions aux OTA, moteurs de visibilité & outils
+   (page Paramètres > Plateformes)
+   ============================================================ */
+const PLATEFORME_SECTION_LABEL = { ota:'OTA', connexions:'Connexions', applications:'Applications' };
+
+const PLATEFORMES = [
+  { id:'airbnb',     section:'ota',          nom:'Airbnb',       lettre:'A', connecte:true,  desc:"Synchronisez vos annonces et réservations Airbnb en temps réel." },
+  { id:'booking',    section:'ota',          nom:'Booking.com',  lettre:'B', connecte:true,  desc:"Synchronisez vos annonces et réservations Booking.com en temps réel." },
+  { id:'expedia',    section:'ota',          nom:'Expedia',      lettre:'E', connecte:false, desc:"Diffusez vos logements sur Expedia et Hotels.com." },
+  { id:'agoda',      section:'ota',          nom:'Agoda',        lettre:'A', connecte:false, desc:"Diffusez vos logements sur Agoda, très utilisé en Asie." },
+  { id:'vrbo',       section:'ota',          nom:'Vrbo',         lettre:'V', connecte:false, desc:"Synchronisez vos annonces Vrbo et gérez vos réservations depuis Oyvia." },
+  { id:'google',     section:'connexions',   nom:'Google',       lettre:'G', connecte:false, desc:"Affichez vos disponibilités sur Google (Recherche et Maps)." },
+  { id:'pricelabs',  section:'applications', nom:'PriceLabs',    lettre:'P', connecte:false, desc:"Synchronisez une tarification dynamique, logement par logement." },
+  { id:'ical',       section:'applications', nom:'iCal',         lettre:'I', connecte:true,  desc:"Importez un calendrier externe (Airbnb, Vrbo, Google…) pour bloquer les dates." },
+];
+
+/* ============================================================
+   PARAMÈTRES GÉNÉRAUX — localisation & séjour
+   (page Paramètres > Général)
+   ============================================================ */
+const PARAMETRES_GENERAUX = {
+  devise:'MAD',
+  fuseauHoraire:'Europe/Paris',
+  formatDate:'dd/MM/yyyy',
+  premierJourSemaine:'lundi',
+  heureArriveeDefaut:'15:00',
+  heureDepartDefaut:'11:00',
+  langueVoyageurs:'fr',
+  gestionAnnulations:'manuel',
+};
+
+/* ============================================================
    Petites fonctions d'accès (lecture seule)
    ============================================================ */
 function getLogement(id)   { return LOGEMENTS.find(l => l.id === id); }

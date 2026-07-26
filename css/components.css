@@ -161,6 +161,10 @@
 .tabs button:hover { color: var(--c-text); }
 .tabs button.is-active { color: var(--c-accent); border-bottom-color: var(--c-accent); }
 
+/* Panneau d'onglet générique (affiché/masqué via .is-active) */
+.tabpane { display: none; padding-top: var(--sp-5); }
+.tabpane.is-active { display: block; }
+
 /* ------------------------------------------------------------
    Avatar & vignette
    ------------------------------------------------------------ */

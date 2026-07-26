@@ -48,6 +48,14 @@
   --ch-direct:      #00A550;   --ch-direct-soft: #D8F5E5;  --ch-direct-ink:  #067a3e;
   --ch-bloque:      #94A3B8;   --ch-bloque-soft: #EAEDF2;  --ch-bloque-ink:  #55607a;
 
+  /* --- Couleurs des plateformes & intégrations (page Paramètres) --- */
+  --ch-expedia:     #FDB913;   --ch-expedia-soft:#FFF3D6;  --ch-expedia-ink:  #8A5A00;
+  --ch-agoda:       #FF585D;   --ch-agoda-soft:  #FFE3E4;  --ch-agoda-ink:    #B5262B;
+  --ch-vrbo:        #245ABC;   --ch-vrbo-soft:   #E1EAFB;  --ch-vrbo-ink:     #1B3F84;
+  --ch-google:      #4285F4;   --ch-google-soft: #E3EDFE;  --ch-google-ink:   #1A56C4;
+  --ch-pricelabs:   #7C3AED;   --ch-pricelabs-soft:#EFE7FE; --ch-pricelabs-ink:#5B21B6;
+  --ch-ical:        #5170FF;   --ch-ical-soft:   #F2F4FF;  --ch-ical-ink:     #3A54E6;
+
   /* ============================================================
      Tokens sémantiques
      ============================================================ */

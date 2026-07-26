@@ -24,6 +24,28 @@
       .sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
   }
 
+  function photoSection(t) {
+    const photos = t.photos || [];
+    const thumbs = photos.map((src, i) => `
+      <div class="pr-photos__item">
+        <img src="${src}" alt="Photo de l'intervention" />
+        <button type="button" class="pr-photos__del" data-photo-del="${t.id}::${i}" aria-label="Supprimer la photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>`).join('');
+    return `<div class="pr-photos">
+      <p class="pr-photos__label">Photos de l'intervention${photos.length ? ` (${photos.length})` : ''}</p>
+      <div class="pr-photos__grid">
+        ${thumbs}
+        <label class="pr-photos__add">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>Ajouter</span>
+          <input type="file" accept="image/*" multiple data-photo-input="${t.id}" hidden />
+        </label>
+      </div>
+    </div>`;
+  }
+
   function taskCard(t) {
     const l = getLogement(t.logementId);
     return `<div class="pr-task ${t.statut === 'termine' ? 'is-done' : ''}" data-id="${t.id}">
@@ -42,6 +64,7 @@
         <span class="pr-task__pay">${t.montant ? formatEuro(t.montant) : '—'}</span>
         <button class="pr-status pr-status--${t.statut}" data-status="${t.id}">${STA_LABEL[t.statut]}</button>
       </div>
+      ${t.statut === 'termine' ? photoSection(t) : ''}
     </div>`;
   }
 
@@ -95,11 +118,28 @@
     const c = e.target.closest('[data-f]'); if (c) { filterType = c.dataset.f; render(); }
   });
   document.getElementById('pr-tasks').addEventListener('click', e => {
+    const del = e.target.closest('[data-photo-del]');
+    if (del) {
+      const [taskId, idx] = del.dataset.photoDel.split('::');
+      const t = TACHES.find(x => x.id === taskId);
+      if (t && t.photos) t.photos.splice(parseInt(idx, 10), 1);
+      render();
+      return;
+    }
     const b = e.target.closest('[data-status]'); if (!b) return;
     const t = TACHES.find(x => x.id === b.dataset.status);
     t.statut = STA_NEXT[t.statut];
     render();
     if (typeof UI !== 'undefined') UI.toast(t.statut === 'termine' ? 'Intervention terminée' : t.statut === 'en_cours' ? 'Intervention démarrée' : 'Statut mis à jour');
+  });
+  document.getElementById('pr-tasks').addEventListener('change', e => {
+    const input = e.target.closest('[data-photo-input]'); if (!input || !input.files.length) return;
+    const t = TACHES.find(x => x.id === input.dataset.photoInput);
+    if (!t) return;
+    t.photos = t.photos || [];
+    [...input.files].forEach(file => t.photos.push(URL.createObjectURL(file)));
+    render();
+    if (typeof UI !== 'undefined') UI.toast(input.files.length > 1 ? 'Photos ajoutées' : 'Photo ajoutée');
   });
 
   // Connexion directe via ?p=P1

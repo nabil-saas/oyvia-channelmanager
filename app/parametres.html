@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Paramètres</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Paramètres</h1>
+            <p>Gérez votre profil, votre sécurité et vos connexions aux plateformes.</p>
+          </div>
+        </div>
+
+        <div class="tabs" id="pf-tabs">
+          <button type="button" class="is-active" data-tab="profil">Profil</button>
+          <button type="button" data-tab="localisation">Localisation</button>
+          <button type="button" data-tab="sejour">Séjour</button>
+          <button type="button" data-tab="options">Options supplémentaires</button>
+          <button type="button" data-tab="plateformes">Plateformes</button>
+        </div>
+
+        <div class="tabpane is-active" data-pane="profil" id="pf-pane-profil"><!-- injecté --></div>
+        <div class="tabpane" data-pane="localisation" id="pf-pane-localisation"><!-- injecté --></div>
+        <div class="tabpane" data-pane="sejour" id="pf-pane-sejour"><!-- injecté --></div>
+        <div class="tabpane" data-pane="options" id="pf-pane-options"><!-- injecté --></div>
+        <div class="tabpane" data-pane="plateformes" id="pf-pane-plateformes"><!-- injecté --></div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/parametres.js"></script>
+</body>
+</html>

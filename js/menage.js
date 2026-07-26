@@ -1,5 +1,6 @@
 /* ============================================================
-   OYVIA — Ménage & équipe : planning + assignation + dû prestataire
+   OYVIA — Gestion des tâches : planning + assignation
+   (la gestion de l'équipe de prestataires est sur equipe.html)
    ============================================================ */
 Layout.init('menage');
 
@@ -23,23 +24,8 @@ Layout.init('menage');
   F.prest.innerHTML = '<option value="all">Tous les prestataires</option>' +
     PRESTATAIRES.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
 
-  /* ---------- Dû par prestataire ---------- */
-  function renderTeam() {
-    document.getElementById('mn-team').innerHTML = PRESTATAIRES.map((p, i) => {
-      const tasks = TACHES.filter(t => t.prestataireId === p.id && parseDate(t.date) >= parseDate(AUJOURDHUI));
-      const due = tasks.reduce((s, t) => s + t.montant, 0);
-      const av = ['', 'avatar--v2', 'avatar--v3', 'avatar--v4'][i % 4];
-      return `<div class="mn-teamcard">
-        <span class="avatar ${av}">${p.nom.split(' ').map(m => m[0]).join('')}</span>
-        <div class="mn-teamcard__meta"><b>${p.nom}</b><small>${p.role} · ${p.zone}</small></div>
-        <div class="mn-teamcard__due"><b>${formatEuro(due)}</b><small>${tasks.length} tâches</small></div>
-      </div>`;
-    }).join('');
-  }
-
   /* ---------- Planning groupé par jour ---------- */
   function render() {
-    renderTeam();
     const list = TACHES.filter(t => {
       if (parseDate(t.date) < parseDate(AUJOURDHUI)) return false; // on masque le passé
       if (F.prest.value !== 'all' && t.prestataireId !== F.prest.value) return false;
@@ -89,7 +75,7 @@ Layout.init('menage');
   planning.addEventListener('change', e => {
     const s = e.target.closest('[data-assign]'); if (s) {
       const t = TACHES.find(x => x.id === s.dataset.assign);
-      t.prestataireId = s.value; renderTeam(); UI.toast('Prestataire assigné');
+      t.prestataireId = s.value; UI.toast('Prestataire assigné');
     }
   });
   planning.addEventListener('click', e => {
@@ -100,40 +86,53 @@ Layout.init('menage');
   });
   Object.values(F).forEach(el => el.addEventListener('change', render));
 
-  /* ---------- Ajout d'une tâche : assignée à une RÉSERVATION ---------- */
+  /* ---------- Ajout d'une tâche : on part du LOGEMENT, la réservation n'est qu'une info dérivée ---------- */
+  const logementSel = document.getElementById('mn-f-logement');
   const typeSel = document.getElementById('mn-f-type');
-  const resaSel = document.getElementById('mn-f-resa');
+  const dateField = document.getElementById('mn-f-date');
   const newtypeWrap = document.getElementById('mn-f-newtype-wrap');
 
-  function dateDeLaTache(r, type) { return type === 'checkin' ? r.arrivee : r.depart; }
+  // Réservation en cours pour ce logement (aujourd'hui compris dans le séjour) ;
+  // à défaut, la prochaine réservation à venir.
+  function reservationPourLogement(logementId) {
+    const resas = RESERVATIONS.filter(r => r.logementId === logementId && r.canal !== 'bloque');
+    const enCours = resas.find(r => parseDate(r.arrivee) <= parseDate(AUJOURDHUI) && parseDate(r.depart) >= parseDate(AUJOURDHUI));
+    if (enCours) return { r: enCours, enCours: true };
+    const aVenir = resas.filter(r => parseDate(r.arrivee) >= parseDate(AUJOURDHUI))
+      .sort((a, b) => parseDate(a.arrivee) - parseDate(b.arrivee))[0];
+    return aVenir ? { r: aVenir, enCours: false } : null;
+  }
 
   function updateDerived() {
-    const r = getReservation(resaSel.value);
     const box = document.getElementById('mn-f-derived');
-    if (!r) { box.innerHTML = ''; return; }
-    const l = getLogement(r.logementId);
-    const isCheckin = typeSel.value === 'checkin';
-    const date = dateDeLaTache(r, typeSel.value);
-    box.innerHTML = `Liée à <b>${r.voyageur}</b> · Logement <b>${l.nom}</b> · Prévue le <b>${formatDate(date, { jourSemaine: true })}</b> (${isCheckin ? 'jour d\'arrivée' : 'jour du départ'}).`;
-    document.getElementById('mn-f-montant').value = l.menageTarif;
+    const found = reservationPourLogement(logementSel.value);
+    if (!found) {
+      box.innerHTML = `Aucune réservation en cours ou à venir pour ce logement.`;
+      if (!dateField.value) dateField.value = AUJOURDHUI;
+      return;
+    }
+    const { r, enCours } = found;
+    box.innerHTML = `${enCours ? 'Réservation en cours' : 'Prochaine réservation'} : <b>${r.voyageur}</b> · ${formatPlage(r.arrivee, r.depart)}.`;
+    dateField.value = typeSel.value === 'checkin' ? r.arrivee : r.depart;
   }
 
   function fillTaskModal() {
+    logementSel.innerHTML = LOGEMENTS.map(l => `<option value="${l.id}">${l.nom} — ${l.ville}</option>`).join('');
     typeSel.innerHTML = Object.entries(TACHE_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')
       + '<option value="__new">＋ Nouvelle catégorie…</option>';
-    resaSel.innerHTML = RESERVATIONS.filter(r => r.canal !== 'bloque' && parseDate(r.depart) >= parseDate(AUJOURDHUI))
-      .sort((a, b) => parseDate(a.depart) - parseDate(b.depart))
-      .map(r => `<option value="${r.id}">${r.voyageur} — ${getLogement(r.logementId).nom} (${formatPlage(r.arrivee, r.depart)})</option>`).join('');
     document.getElementById('mn-f-prest').innerHTML = PRESTATAIRES.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
     newtypeWrap.classList.add('hidden');
+    dateField.value = '';
+    document.getElementById('mn-f-heure').value = '11:00';
     updateDerived();
   }
+  logementSel.addEventListener('change', updateDerived);
   typeSel.addEventListener('change', () => { newtypeWrap.classList.toggle('hidden', typeSel.value !== '__new'); updateDerived(); });
-  resaSel.addEventListener('change', updateDerived);
   document.getElementById('mn-add').addEventListener('click', () => { fillTaskModal(); UI.openPanel('mn-modal'); });
   document.getElementById('mn-create').addEventListener('click', () => {
-    const r = getReservation(resaSel.value);
-    if (!r) { UI.toast('Sélectionnez une réservation', false); return; }
+    const logementId = logementSel.value;
+    if (!logementId) { UI.toast('Sélectionnez un logement', false); return; }
+    if (!dateField.value) { UI.toast('Choisissez une date', false); return; }
     let type = typeSel.value;
     if (type === '__new') {
       const label = document.getElementById('mn-f-newtype').value.trim();
@@ -141,102 +140,18 @@ Layout.init('menage');
       type = 'c' + Date.now().toString().slice(-6);
       TACHE_LABEL[type] = label;
     }
+    const found = reservationPourLogement(logementId);
     TACHES.push({
       id: 'T' + Date.now(), type,
-      logementId: r.logementId,
-      date: dateDeLaTache(r, type),
+      logementId,
+      date: dateField.value,
       heure: document.getElementById('mn-f-heure').value || '11:00',
       prestataireId: document.getElementById('mn-f-prest').value,
       statut: 'a_faire',
-      montant: parseInt(document.getElementById('mn-f-montant').value, 10) || 0,
-      reservationId: r.id,
+      montant: 0,
+      reservationId: found ? found.r.id : null,
     });
-    UI.closeAll(); render(); UI.toast('Tâche assignée à la réservation');
-  });
-
-  /* ---------- Gérer l'équipe : liste, édition en place, suppression ---------- */
-  const ROLES = ['Ménage', 'Polyvalent', 'Maintenance'];
-  const ICO_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
-  const ICO_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>';
-  let editId = null;
-
-  function refreshTeam() {
-    renderTeamList();
-    F.prest.innerHTML = '<option value="all">Tous les prestataires</option>' +
-      PRESTATAIRES.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
-    render();
-  }
-
-  function teamRow(p) {
-    if (editId === p.id) {
-      return `<div class="mn-teamrow is-editing" data-id="${p.id}">
-        <div class="mn-teamedit">
-          <input class="input" data-f="nom" value="${p.nom}" placeholder="Nom" />
-          <select class="select" data-f="role">${ROLES.map(r => `<option ${r === p.role ? 'selected' : ''}>${r}</option>`).join('')}</select>
-          <input class="input" data-f="zone" value="${p.zone}" placeholder="Zone" />
-          <input class="input" type="number" min="0" data-f="tarif" value="${p.tarifMenage}" placeholder="Tarif €" />
-        </div>
-        <div class="mn-teamedit__actions">
-          <button class="btn btn--secondary btn--sm" data-cancel>Annuler</button>
-          <button class="btn btn--primary btn--sm" data-save="${p.id}">Enregistrer</button>
-        </div>
-      </div>`;
-    }
-    return `<div class="mn-teamrow" data-id="${p.id}">
-      <span class="avatar avatar--sm">${p.nom.split(' ').map(m => m[0]).join('').slice(0, 2)}</span>
-      <div class="mn-teamrow__meta"><b>${p.nom}</b><small>${p.role} · ${p.zone} · ${p.tarifMenage ? formatEuro(p.tarifMenage) + ' / ménage' : 'tarif —'}</small></div>
-      <button class="icon-btn" data-edit="${p.id}" aria-label="Modifier">${ICO_EDIT}</button>
-      <button class="icon-btn icon-btn--danger" data-del="${p.id}" aria-label="Supprimer">${ICO_DEL}</button>
-    </div>`;
-  }
-
-  function renderTeamList() {
-    document.getElementById('mn-team-list').innerHTML = PRESTATAIRES.map(teamRow).join('');
-  }
-
-  document.getElementById('mn-team-list').addEventListener('click', e => {
-    const ed = e.target.closest('[data-edit]');
-    const del = e.target.closest('[data-del]');
-    const save = e.target.closest('[data-save]');
-    const cancel = e.target.closest('[data-cancel]');
-    if (ed) { editId = ed.dataset.edit; renderTeamList(); }
-    else if (cancel) { editId = null; renderTeamList(); }
-    else if (save) {
-      const row = e.target.closest('.mn-teamrow');
-      const p = getPrestataire(save.dataset.save);
-      const nom = row.querySelector('[data-f="nom"]').value.trim();
-      if (!nom) { UI.toast('Le nom est requis', false); return; }
-      p.nom = nom;
-      p.role = row.querySelector('[data-f="role"]').value;
-      p.zone = row.querySelector('[data-f="zone"]').value.trim() || '—';
-      p.tarifMenage = parseInt(row.querySelector('[data-f="tarif"]').value, 10) || 0;
-      editId = null; refreshTeam(); UI.toast('Prestataire modifié');
-    }
-    else if (del) {
-      if (PRESTATAIRES.length <= 1) { UI.toast('Gardez au moins un prestataire', false); return; }
-      const id = del.dataset.del;
-      const fallback = PRESTATAIRES.find(p => p.id !== id).id;
-      let n = 0;
-      TACHES.forEach(t => { if (t.prestataireId === id) { t.prestataireId = fallback; n++; } });
-      PRESTATAIRES.splice(PRESTATAIRES.findIndex(p => p.id === id), 1);
-      editId = null; refreshTeam();
-      UI.toast(n ? `Prestataire supprimé · ${n} tâche(s) réassignée(s)` : 'Prestataire supprimé');
-    }
-  });
-
-  document.getElementById('mn-team-btn').addEventListener('click', () => { editId = null; renderTeamList(); UI.openPanel('mn-team-modal'); });
-  document.getElementById('mn-team-add').addEventListener('click', () => {
-    const nom = document.getElementById('mn-t-nom').value.trim();
-    if (!nom) { UI.toast('Renseignez le nom', false); return; }
-    PRESTATAIRES.push({
-      id: 'P' + Date.now(), nom,
-      role: document.getElementById('mn-t-role').value,
-      zone: document.getElementById('mn-t-zone').value.trim() || '—',
-      tel: '+33 6 00 00 00 00',
-      tarifMenage: parseInt(document.getElementById('mn-t-tarif').value, 10) || 0,
-    });
-    document.getElementById('mn-t-nom').value = '';
-    refreshTeam(); UI.toast('Prestataire ajouté');
+    UI.closeAll(); render(); UI.toast('Tâche créée');
   });
 
   render();

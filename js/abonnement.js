@@ -7,11 +7,6 @@
 Layout.init('abonnement');
 
 (function () {
-  const OPT_IC = {
-    whatsapp: '<path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/>',
-  };
-  const icon = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-
   const nbLog = COMPTE.nbLogements;
   const moisCourant = HISTORIQUE_FACTURATION[HISTORIQUE_FACTURATION.length - 1];
   const trancheCourante = trancheTarifaire(moisCourant.logementsReserves);
@@ -37,20 +32,6 @@ Layout.init('abonnement');
         <div class="ab-hero__stat"><small>Réservés ce mois-ci</small><b>${moisCourant.logementsReserves}</b></div>
         <div class="ab-hero__stat"><small>Tarif appliqué</small><b>${trancheCourante.prix === null ? 'Sur devis' : formatMAD(trancheCourante.prix) + ' /logement'}</b></div>
       </div>`;
-  }
-
-  function renderOptions() {
-    document.getElementById('ab-options').innerHTML = OPTIONS_LANDING.map(o => {
-      const active = COMPTE.optionsActives.includes(o.id);
-      const rates = o.tarifs ? `<div class="ab-rates">${o.tarifs.map(t =>
-        `<div class="ab-rate"><span>${t.cat}<small>${t.detail}</small></span><b class="${t.prix === 0 ? 'free' : ''}">${t.prix === 0 ? 'Gratuit' : formatMAD(t.prix, 2) + ' / message'}</b></div>`).join('')}</div>` : '';
-      return `<div class="ab-optionrow">
-        <div class="ab-optionrow__ic">${icon(OPT_IC[o.id])}</div>
-        <div class="ab-optionrow__meta"><b>${o.nom}</b><small>${o.desc}</small></div>
-        <span class="ab-optionrow__price">à l'usage</span>
-        <label class="switch"><input type="checkbox" data-opt="${o.id}" ${active ? 'checked' : ''}><span class="switch__track"></span></label>
-      </div>${rates}`;
-    }).join('');
   }
 
   function renderSummary() {
@@ -85,16 +66,7 @@ Layout.init('abonnement');
       ${rows}`;
   }
 
-  function renderAll() { renderHero(); renderOptions(); renderSummary(); renderHistorique(); }
-
-  document.getElementById('ab-options').addEventListener('change', e => {
-    const t = e.target.closest('[data-opt]'); if (!t) return;
-    const id = t.dataset.opt;
-    if (t.checked) { if (!COMPTE.optionsActives.includes(id)) COMPTE.optionsActives.push(id); }
-    else { COMPTE.optionsActives = COMPTE.optionsActives.filter(x => x !== id); }
-    renderSummary();
-    UI.toast(t.checked ? 'Option activée' : 'Option désactivée');
-  });
+  function renderAll() { renderHero(); renderSummary(); renderHistorique(); }
 
   renderAll();
 })();

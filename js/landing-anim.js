@@ -171,4 +171,61 @@
     // Si on repasse en desktop (rotation, redimensionnement), on referme proprement
     window.addEventListener('resize', () => { if (window.innerWidth > 900) close(); });
   })();
+
+  /* ---------- Sélecteur de langue (visuel — aucune traduction réelle dans cette maquette) ---------- */
+  (function langSwitcher() {
+    const btn = document.getElementById('lp-lang-btn');
+    const menu = document.getElementById('lp-lang-menu');
+    const langsMobile = document.getElementById('lp-navlinks-langs');
+    if (!btn && !menu && !langsMobile) return;
+
+    const LANG_NAMES = { fr: '🇫🇷 Français', en: '🇬🇧 English', es: '🇪🇸 Español', de: '🇩🇪 Deutsch', ar: '🇲🇦 العربية' };
+    const LANG_FLAGS = { fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', de: '🇩🇪', ar: '🇲🇦' };
+    const flagEl = document.getElementById('lp-lang-flag');
+
+    function close() { if (!menu) return; menu.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
+    function open() { if (!menu) return; menu.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); }
+
+    function toast(msg) {
+      let zone = document.querySelector('.toast-zone');
+      if (!zone) { zone = document.createElement('div'); zone.className = 'toast-zone'; document.body.appendChild(zone); }
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> ${msg}`;
+      zone.appendChild(t);
+      setTimeout(() => t.remove(), 2600);
+    }
+
+    // Sélectionner une langue met à jour les DEUX menus (icône desktop + ligne repliée mobile), qu'ils soient visibles ou non
+    function selectLang(lang) {
+      document.querySelectorAll('[data-lang]').forEach(i => i.classList.toggle('is-active', i.dataset.lang === lang));
+      if (flagEl && LANG_FLAGS[lang]) flagEl.textContent = LANG_FLAGS[lang];
+      toast(`Langue changée : ${LANG_NAMES[lang] || lang}`);
+    }
+
+    if (btn && menu) {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        menu.classList.contains('is-open') ? close() : open();
+      });
+      menu.addEventListener('click', e => {
+        const item = e.target.closest('[data-lang]'); if (!item) return;
+        close();
+        selectLang(item.dataset.lang);
+      });
+      document.addEventListener('click', e => {
+        if (!menu.classList.contains('is-open')) return;
+        if (menu.contains(e.target) || btn.contains(e.target)) return;
+        close();
+      });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    }
+
+    if (langsMobile) {
+      langsMobile.addEventListener('click', e => {
+        const item = e.target.closest('[data-lang]'); if (!item) return;
+        selectLang(item.dataset.lang);
+      });
+    }
+  })();
 })();

@@ -23,11 +23,26 @@
 .lp-navlinks a { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-full); font-size: var(--fs-md); font-weight: var(--fw-medium); color: var(--c-text-soft); white-space: nowrap; transition: color var(--t-fast), background var(--t-fast); }
 .lp-navlinks a:hover { color: var(--c-text); background: var(--c-nav-hover-bg); }
 .lp-navlinks__mobile-only { display: none; }
+.lp-navlinks__langs { display: none; }
+.lp-navlinks__langs-label { display: block; font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); padding: var(--sp-2) var(--sp-4) var(--sp-1); }
+.lp-navlinks__langs-row { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: 0 var(--sp-4) var(--sp-2); }
+.lp-navlinks__langs-row button { border: 1px solid var(--c-border); border-radius: var(--r-full); padding: 6px var(--sp-3); font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--c-text-soft); }
+.lp-navlinks__langs-row button.is-active { border-color: var(--c-accent); color: var(--c-accent); background: var(--c-accent-soft); font-weight: var(--fw-semibold); }
 .lp-nav__cta { display: flex; align-items: center; gap: var(--sp-3); }
 .lp-nav__cta .btn--sm { height: 48px; padding: 0 var(--sp-5); font-size: var(--fs-base); }
 .lp-nav__cta .btn--icon.btn--sm { width: 48px; padding: 0; }
 .lp-nav__cta .btn--sm svg { width: 19px; height: 19px; }
 .lp-burger { display: none; }
+
+/* Sélecteur de langue */
+.lp-lang { position: relative; }
+.lp-lang__btn { font-size: 18px; line-height: 1; }
+.lp-lang__menu { position: absolute; top: calc(100% + var(--sp-2)); right: 0; min-width: 190px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); box-shadow: var(--shadow-lg); padding: var(--sp-2); display: none; flex-direction: column; gap: 2px; z-index: var(--z-header); }
+.lp-lang__menu.is-open { display: flex; }
+.lp-lang__item { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md); font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-soft); text-align: left; white-space: nowrap; transition: background var(--t-fast), color var(--t-fast); }
+.lp-lang__item span { font-size: var(--fs-md); line-height: 1; }
+.lp-lang__item:hover { background: var(--c-nav-hover-bg); color: var(--c-text); }
+.lp-lang__item.is-active { color: var(--c-accent); font-weight: var(--fw-semibold); background: var(--c-accent-soft); }
 
 /* ------------------------------------------------------------
    Hero
@@ -274,6 +289,10 @@
   .lp-burger { display: grid; }
   /* Le logo déborde volontairement de la pilule sur desktop : sur mobile, on le remet dans son gabarit pour ne pas déborder à l'écran */
   .lp-brand .brand-logo { height: 64px; }
+  .lp-brand { flex-shrink: 0; }
+  /* Le sélecteur de langue passe de la barre (trop étroite) au menu déroulant */
+  .lp-lang { display: none; }
+  .lp-navlinks__langs { display: block; }
 }
 @media (max-width: 640px) {
   .lp-nav__cta .btn--ghost { display: none; }
