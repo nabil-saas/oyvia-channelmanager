@@ -138,6 +138,9 @@
   .app-topbar__menu { display: grid; }
   .app-topbar__search { display: none; }
   .app-logement-select { min-width: 150px; }
+  /* Sur mobile la sidebar est un tiroir plein écran : le bouton « replier »
+     (pensé pour la version bureau, mini-rail) ferait doublon avec le burger. */
+  #app-collapse { display: none; }
 }
 @media (max-width: 620px) {
   .app-grid--2, .app-grid--3, .app-grid--2-1 { grid-template-columns: 1fr; }
@@ -294,6 +297,14 @@
 .mn-task__prest .select { height: 36px; font-size: var(--fs-sm); }
 .mn-task__amount { width: 64px; text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); font-size: var(--fs-sm); flex-shrink: 0; }
 .mn-task__status { width: 118px; flex-shrink: 0; display: flex; justify-content: flex-end; }
+@media (max-width: 640px) {
+  /* Sans ce wrap, les 5 colonnes à largeur fixe dépassent le viewport et
+     provoquent un scroll horizontal sur toute la page. */
+  .mn-task { flex-wrap: wrap; row-gap: var(--sp-3); }
+  .mn-task__prest { flex: 1 1 100%; width: auto; order: 1; }
+  .mn-task__amount { order: 2; }
+  .mn-task__status { order: 3; margin-left: auto; }
+}
 .mn-statusbtn { cursor: pointer; border: 1px solid transparent; }
 .mn-derived { background: var(--blue-50); border: 1px solid var(--blue-100); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-soft); line-height: var(--lh-snug); }
 .mn-derived b { color: var(--c-text); font-weight: var(--fw-semibold); }
@@ -325,6 +336,12 @@
 .auto-item__meta b { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
 .auto-item__sub { font-size: var(--fs-sm); color: var(--c-text-muted); margin-top: 2px; display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
 .auto-item__actions { display: flex; align-items: center; gap: var(--sp-3); flex-shrink: 0; }
+@media (max-width: 640px) {
+  /* Sans ce wrap, meta et actions se disputent la même ligne et le titre
+     finit écrasé sur une largeur quasi nulle (un mot par ligne). */
+  .auto-item { flex-wrap: wrap; }
+  .auto-item__actions { flex-basis: 100%; padding-left: calc(44px + var(--sp-4)); }
+}
 .auto-vars { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .auto-var { font-family: var(--font-mono); font-size: var(--fs-sm); background: var(--blue-50); color: var(--blue-700); border: 1px solid var(--blue-100); border-radius: var(--r-sm); padding: 4px var(--sp-2); cursor: pointer; transition: background var(--t-fast); }
 .auto-var:hover { background: var(--blue-100); }
@@ -400,6 +417,7 @@
 .msg-col--list { border-right: 1px solid var(--c-border); }
 .msg-col--thread { background: var(--bg-subtle); }
 .msg-col--ctx { border-left: 1px solid var(--c-border); }
+.msg-back { display: none; flex-shrink: 0; }
 
 .msg-listhead { padding: var(--sp-4); border-bottom: 1px solid var(--c-border); flex-shrink: 0; }
 .msg-listhead h2 { font-size: var(--fs-lg); margin-bottom: var(--sp-3); }
@@ -445,7 +463,20 @@
 .msg-ctx__code b { font-family: var(--font-mono); font-size: var(--fs-md); letter-spacing: 0.06em; }
 
 @media (max-width: 1200px) { .msg-layout { grid-template-columns: 320px 1fr; } .msg-col--ctx { display: none; } }
-@media (max-width: 800px) { .msg-layout { grid-template-columns: 1fr; } .msg-col--list { display: none; } }
+@media (max-width: 800px) {
+  /* Une seule colonne visible à la fois : la liste par défaut, le fil une
+     fois une conversation ouverte (bouton retour pour revenir à la liste). */
+  .msg-layout { grid-template-columns: 1fr; }
+  .msg-col--thread { display: none; }
+  .msg-layout.is-thread-open .msg-col--list { display: none; }
+  .msg-layout.is-thread-open .msg-col--thread { display: flex; }
+  .msg-back { display: grid; }
+  .msg-threadhead { flex-wrap: wrap; }
+  .msg-threadhead__meta { flex: 1 1 auto; min-width: 0; }
+  .msg-threadhead__meta small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg-threadhead__actions { margin-left: 0; flex-basis: 100%; order: 3; }
+  .msg-threadhead__actions .btn { flex: 1; }
+}
 
 /* Vue « Tâches » : chips d'interventions dans les cellules */
 .cal-tchips { position: absolute; inset: 4px 3px; display: flex; flex-direction: column; gap: 2px; overflow: hidden; z-index: 3; }

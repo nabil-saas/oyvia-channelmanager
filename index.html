@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Oyvia — Toute votre location courte durée, au même endroit</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <meta name="description" content="Oyvia centralise Airbnb et Booking.com, automatise vos messages voyageurs et vous permet de prendre des réservations directes sans commission. Zéro double réservation." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,16 +27,17 @@
   <div class="lp-navwrap">
     <nav class="lp-nav" aria-label="Navigation principale">
       <a class="lp-brand" href="index.html"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></a>
-      <div class="lp-navlinks">
+      <div class="lp-navlinks" id="lp-navlinks">
         <a href="#fonctionnalites">Fonctionnalités</a>
         <a href="#tarifs">Tarifs</a>
         <a href="#faq">FAQ</a>
         <a href="#blog">Blog</a>
+        <a href="login.html" class="lp-navlinks__mobile-only">Connexion</a>
       </div>
       <div class="lp-nav__cta">
         <a class="btn btn--ghost btn--sm" href="login.html">Connexion</a>
         <a class="btn btn--primary btn--sm" href="app/dashboard.html">Essayer gratuitement</a>
-        <button class="btn btn--secondary btn--icon btn--sm lp-burger" aria-label="Menu" onclick="document.querySelector('.lp-navlinks').classList.toggle('hidden')">
+        <button class="btn btn--secondary btn--icon btn--sm lp-burger" id="lp-burger-btn" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="lp-navlinks">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
       </div>

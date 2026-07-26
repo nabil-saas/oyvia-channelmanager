@@ -14,13 +14,14 @@
    Navbar flottante en pilule  (signature du template)
    ------------------------------------------------------------ */
 .lp-navwrap { position: sticky; top: 0; z-index: var(--z-header); padding: var(--sp-4) var(--sp-4) 0; }
-.lp-nav { max-width: var(--landing-max); margin-inline: auto; height: 62px; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: 0 var(--sp-3) 0 var(--sp-5); background: rgba(255,255,255,0.82); backdrop-filter: saturate(180%) blur(14px); border: 1px solid var(--c-border); border-radius: var(--r-full); box-shadow: var(--shadow-md); }
+.lp-nav { position: relative; max-width: var(--landing-max); margin-inline: auto; height: 62px; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: 0 var(--sp-3) 0 var(--sp-5); background: rgba(255,255,255,0.82); backdrop-filter: saturate(180%) blur(14px); border: 1px solid var(--c-border); border-radius: var(--r-full); box-shadow: var(--shadow-md); }
 .lp-brand { display: flex; align-items: center; gap: var(--sp-2); font-weight: var(--fw-bold); font-size: var(--fs-lg); letter-spacing: var(--tracking-tight); }
 .lp-brand__mark { width: 32px; height: 32px; border-radius: 9px; background: var(--blue-600); color: #fff; display: grid; place-items: center; box-shadow: var(--shadow-blue); }
 .lp-brand__mark svg { width: 19px; height: 19px; }
 .lp-navlinks { display: flex; align-items: center; gap: var(--sp-1); }
 .lp-navlinks a { padding: var(--sp-2) var(--sp-3); border-radius: var(--r-full); font-size: var(--fs-base); font-weight: var(--fw-medium); color: var(--c-text-soft); white-space: nowrap; transition: color var(--t-fast), background var(--t-fast); }
 .lp-navlinks a:hover { color: var(--c-text); background: var(--c-nav-hover-bg); }
+.lp-navlinks__mobile-only { display: none; }
 .lp-nav__cta { display: flex; align-items: center; gap: var(--sp-2); }
 .lp-burger { display: none; }
 
@@ -260,14 +261,16 @@
   .lp-reviews { columns: 2; }
   .lp-footer__grid { grid-template-columns: 1fr 1fr; }
 }
-/* Nav : bascule en menu burger avant que ça se serre */
+/* Nav : bascule en menu déroulant avant que ça se serre */
 @media (max-width: 900px) {
-  .lp-navlinks { display: none; }
+  .lp-navlinks { display: none; position: absolute; top: calc(100% + var(--sp-3)); left: 0; right: 0; z-index: var(--z-header); flex-direction: column; align-items: stretch; gap: 2px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-2xl); box-shadow: var(--shadow-lg); padding: var(--sp-3); }
+  .lp-navlinks.is-open { display: flex; }
+  .lp-navlinks a { border-radius: var(--r-lg); padding: var(--sp-3) var(--sp-4); }
   .lp-burger { display: grid; }
 }
 @media (max-width: 640px) {
-  .lp-navlinks, .lp-nav__cta .btn--ghost { display: none; }
-  .lp-burger { display: grid; }
+  .lp-nav__cta .btn--ghost { display: none; }
+  .lp-navlinks__mobile-only { display: block; border-top: 1px solid var(--c-border); margin-top: 4px; padding-top: 6px; }
   .lp-section { padding: var(--sp-16) var(--sp-4); }
   .lp-problems, .lp-features, .lp-steps, .lp-benefits, .lp-blog { grid-template-columns: 1fr; }
   .lp-reviews { columns: 1; }

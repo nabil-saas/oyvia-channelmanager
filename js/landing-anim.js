@@ -174,4 +174,35 @@
     }, { threshold: 0.35 });
     io.observe(dpo);
   })();
+
+  /* ---------- Nav mobile : menu déroulant (burger) ---------- */
+  (function mobileNav() {
+    const btn = document.getElementById('lp-burger-btn');
+    const menu = document.getElementById('lp-navlinks');
+    if (!btn || !menu) return;
+
+    function close() {
+      menu.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    function open() {
+      menu.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      menu.classList.contains('is-open') ? close() : open();
+    });
+    // Referme au clic sur un lien (ancre ou page) et au clic en dehors
+    menu.addEventListener('click', e => { if (e.target.closest('a')) close(); });
+    document.addEventListener('click', e => {
+      if (!menu.classList.contains('is-open')) return;
+      if (menu.contains(e.target) || btn.contains(e.target)) return;
+      close();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    // Si on repasse en desktop (rotation, redimensionnement), on referme proprement
+    window.addEventListener('resize', () => { if (window.innerWidth > 900) close(); });
+  })();
 })();

@@ -17,6 +17,7 @@ Layout.init('messagerie');
     { nom: 'Rappel de départ', texte: 'Bonjour {prenom}, le départ est prévu avant 11h. Merci de laisser les clés dans la boîte et de fermer les fenêtres. Merci pour votre séjour !' },
   ];
 
+  const elLayout = document.getElementById('msg-layout');
   const elConvs = document.getElementById('msg-convs');
   const elThread = document.getElementById('msg-thread');
   const elHead = document.getElementById('msg-threadhead');
@@ -73,6 +74,9 @@ Layout.init('messagerie');
     c.nonLu = 0;
 
     elHead.innerHTML = `
+      <button type="button" class="icon-btn msg-back" id="msg-back" aria-label="Retour à la liste des conversations">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
       <span class="avatar">${initiales(r.voyageur)}</span>
       <div class="msg-threadhead__meta">
         <b>${r.voyageur}</b>
@@ -81,6 +85,8 @@ Layout.init('messagerie');
       <div class="msg-threadhead__actions">
         <button class="btn btn--secondary btn--sm" onclick="UI.openResa('${r.id}')">Voir la réservation</button>
       </div>`;
+    const backBtn = document.getElementById('msg-back');
+    if (backBtn) backBtn.addEventListener('click', () => elLayout.classList.remove('is-thread-open'));
 
     elThread.innerHTML = `<div class="msg-daysep">Séjour du ${formatPlage(r.arrivee, r.depart)}</div>` +
       c.messages.map(m => `<div class="msg-bubble msg-bubble--${m.de === 'hote' ? 'out' : 'in'}">
@@ -114,7 +120,12 @@ Layout.init('messagerie');
   }
 
   /* ---------- Interactions ---------- */
-  elConvs.addEventListener('click', e => { const el = e.target.closest('.msg-conv'); if (el) { activeId = el.dataset.id; renderThread(); } });
+  elConvs.addEventListener('click', e => {
+    const el = e.target.closest('.msg-conv'); if (!el) return;
+    activeId = el.dataset.id;
+    renderThread();
+    elLayout.classList.add('is-thread-open'); // bascule vers le fil sur mobile (une seule colonne visible à la fois)
+  });
   elSearch.addEventListener('input', renderList);
 
   elTemplate.addEventListener('change', () => {
