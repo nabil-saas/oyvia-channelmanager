@@ -22,8 +22,8 @@
 .app-sidebar__brand .brand-logo { height: 116px; }
 .app-sidebar__mark { width: 32px; height: 32px; border-radius: 9px; background: var(--blue-600); color: #fff; display: grid; place-items: center; flex-shrink: 0; box-shadow: var(--shadow-blue); }
 .app-sidebar__mark svg { width: 19px; height: 19px; }
-.app-sidebar__nav { flex: 1; overflow-y: auto; padding: calc(var(--sp-4) + 36px) var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 2px; }
-.app-navlabel { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); padding: var(--sp-3) var(--sp-3) var(--sp-2); }
+.app-sidebar__nav { flex: 1; overflow-y: auto; padding: 36px var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 2px; }
+.app-navlabel { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); padding: 2px var(--sp-3) var(--sp-2); }
 .app-navitem {
   display: flex; align-items: center; gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-3); border-radius: var(--r-md);
