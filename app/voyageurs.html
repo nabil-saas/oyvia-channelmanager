@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Voyageurs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Voyageurs</h1>
+            <p id="voy-count">— voyageurs dans votre fichier</p>
+          </div>
+        </div>
+
+        <div class="app-filters">
+          <div class="input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input class="input" type="search" id="voy-search" placeholder="Nom, e-mail, pays…" />
+          </div>
+          <select class="select" id="voy-sort">
+            <option value="recent">Séjour le plus récent</option>
+            <option value="depense">Total dépensé</option>
+            <option value="sejours">Nombre de séjours</option>
+            <option value="nom">Nom (A→Z)</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr>
+              <th>Voyageur</th><th>Pays</th><th class="num">Séjours</th><th class="num">Total dépensé</th><th>Dernier séjour</th><th></th>
+            </tr></thead>
+            <tbody id="voy-tbody"><!-- injecté --></tbody>
+          </table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <aside class="panel" id="voy-panel" role="dialog" aria-modal="true"><div id="voy-panel-content"></div></aside>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/voyageurs.js"></script>
+</body>
+</html>

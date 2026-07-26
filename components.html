@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Design system</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <style>
+    /* Styles propres à la page de démo (préfixe .ds-) */
+    .ds-top { border-bottom: 1px solid var(--c-border); background: var(--c-surface); position: sticky; top: 0; z-index: var(--z-header); }
+    .ds-top .container { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .ds-logo { display: flex; align-items: center; gap: var(--sp-2); font-weight: 700; font-size: var(--fs-lg); letter-spacing: var(--tracking-tight); }
+    .ds-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--blue-600); color:#fff; display:grid; place-items:center; }
+    .ds-mark svg { width: 18px; height: 18px; }
+    body { background: var(--bg-subtle); }
+    section.ds-sec { padding: var(--sp-10) 0; border-bottom: 1px solid var(--c-border); }
+    .ds-sec h2 { margin-bottom: var(--sp-6); }
+    .ds-grid { display: grid; gap: var(--sp-4); }
+    .ds-cluster { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+    .ds-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-3); }
+    .ds-swatch { border: 1px solid var(--c-border); border-radius: var(--r-lg); overflow: hidden; background: var(--c-surface); }
+    .ds-swatch .fill { height: 72px; }
+    .ds-swatch .meta { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs); }
+    .ds-swatch .meta b { display:block; font-size: var(--fs-sm); font-weight:600; }
+    .ds-swatch .meta code { color: var(--c-text-muted); font-family: var(--font-mono); }
+    .ds-cols-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .ds-cols-4 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .ds-type-row { display:flex; align-items:baseline; gap: var(--sp-4); padding: var(--sp-2) 0; border-bottom: 1px dashed var(--c-border); }
+    .ds-type-row span { color: var(--c-text-muted); font-size: var(--fs-xs); width: 120px; flex-shrink:0; }
+    .ds-cal { border:1px solid var(--c-border); border-radius: var(--r-lg); overflow:hidden; background: var(--c-surface); }
+    .ds-cal-row { display:grid; grid-template-columns: 150px repeat(10, 1fr); border-bottom:1px solid var(--c-border); height: 44px; }
+    .ds-cal-row:last-child { border-bottom:0; }
+    .ds-cal-head { background: var(--c-surface-alt); font-size: var(--fs-xs); color: var(--c-text-muted); font-weight:600; }
+    .ds-cal-cell { border-right:1px solid var(--c-border); display:flex; align-items:center; padding: 0 8px; position:relative; }
+    .ds-cal-name { font-size: var(--fs-sm); font-weight:500; }
+    .ds-cal-bar { position:absolute; height: 28px; border-radius: var(--r-sm); display:flex; align-items:center; padding: 0 8px; font-size: var(--fs-xs); color:#fff; font-weight:600; white-space:nowrap; overflow:hidden; box-shadow: var(--shadow-xs); }
+    .cal--airbnb  { background: var(--ch-airbnb); }
+    .cal--booking { background: var(--ch-booking); }
+    .cal--direct  { background: var(--ch-direct); }
+    .cal--bloque  { background: repeating-linear-gradient(45deg, var(--ch-bloque), var(--ch-bloque) 5px, #a7b1c0 5px, #a7b1c0 10px); }
+  </style>
+</head>
+<body>
+  <header class="ds-top">
+    <div class="container">
+      <div class="ds-logo"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"> <span class="text-soft" style="font-weight:400;font-size:var(--fs-sm);">· design system</span></div>
+      <a class="btn btn--secondary btn--sm" href="index.html">Voir la landing →</a>
+    </div>
+  </header>
+
+  <!-- COULEURS -->
+  <section class="ds-sec">
+    <div class="container">
+      <p class="eyebrow">Fondations</p>
+      <h2>Palette</h2>
+      <p class="text-soft mb-4" style="max-width:62ch;">Thème clair, bleu électrique et neutres froids. Accent unique <code style="font-family:var(--font-mono)">#5170FF</code>, ombres douces, arrondis généreux.</p>
+      <div class="ds-swatches">
+        <div class="ds-swatch"><div class="fill" style="background:var(--blue-600)"></div><div class="meta"><b>Bleu (accent)</b><code>#5170FF</code></div></div>
+        <div class="ds-swatch"><div class="fill" style="background:var(--ink-950)"></div><div class="meta"><b>Encre</b><code>#0A0A14</code></div></div>
+        <div class="ds-swatch"><div class="fill" style="background:var(--bg-subtle)"></div><div class="meta"><b>Fond</b><code>#F6F8FC</code></div></div>
+        <div class="ds-swatch"><div class="fill" style="background:var(--green-500)"></div><div class="meta"><b>Succès</b><code>#00C758</code></div></div>
+        <div class="ds-swatch"><div class="fill" style="background:var(--amber-500)"></div><div class="meta"><b>Alerte</b><code>#F5A300</code></div></div>
+        <div class="ds-swatch"><div class="fill" style="background:var(--red-600)"></div><div class="meta"><b>Erreur</b><code>#E11D2E</code></div></div>
+      </div>
+      <p class="eyebrow" style="margin:var(--sp-6) 0 var(--sp-2);">Couleurs des canaux</p>
+      <div class="ds-swatches">
+        <div class="ds-swatch"><div class="fill" style="background:var(--ch-airbnb)"></div><div class="meta"><b>Airbnb</b><code>#FF5A5F</code></div></div>
+        <div class="ds-swatch"><div class="fill" style="background:var(--ch-booking)"></div><div class="meta"><b>Booking.com</b><code>#0A3D91</code></div></div>
+        <div class="ds-swatch"><div class="fill" style="background:var(--ch-direct)"></div><div class="meta"><b>Direct</b><code>#00A550</code></div></div>
+        <div class="ds-swatch"><div class="fill" style="background:var(--ch-bloque)"></div><div class="meta"><b>Blocage</b><code>#94A3B8</code></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPO -->
+  <section class="ds-sec">
+    <div class="container">
+      <p class="eyebrow">Fondations</p>
+      <h2>Typographie — Geist</h2>
+      <div class="ds-grid ds-cols-3" style="margin-bottom:var(--sp-6);">
+        <div class="card card--pad">
+          <p class="eyebrow mb-2">Titres — graisse forte</p>
+          <p style="font-size:2.2rem; font-weight:700; line-height:1.05; letter-spacing:-0.03em;">Zéro double réservation</p>
+          <p class="text-soft text-sm mt-2">Geist 700, tracking serré. Titres et chiffres clés.</p>
+        </div>
+        <div class="card card--pad">
+          <p class="eyebrow mb-2">Interface</p>
+          <p style="font-size:1.05rem; line-height:1.55;">Synchronisez Airbnb et Booking.com depuis une interface claire et dense.</p>
+          <p class="text-soft text-sm mt-2">Geist 400/500, très lisible en densité forte.</p>
+        </div>
+        <div class="card card--pad">
+          <p class="eyebrow mb-2">Chiffres tabulaires</p>
+          <p class="tabular" style="font-size:1.9rem;font-weight:700;">34 600 € · 86 %</p>
+          <p class="text-soft text-sm mt-2">Alignement vertical garanti dans les tableaux.</p>
+        </div>
+      </div>
+      <div>
+        <div class="ds-type-row"><span>Titre H1</span><h1>Toute votre location, au même endroit</h1></div>
+        <div class="ds-type-row"><span>Titre H2</span><h2>Calendrier unifié</h2></div>
+        <div class="ds-type-row"><span>Titre H3</span><h3>Prochaines réservations</h3></div>
+        <div class="ds-type-row"><span>Corps</span><p>Texte courant en Geist, 14px, hauteur de ligne confortable pour la lecture des données.</p></div>
+        <div class="ds-type-row"><span>Eyebrow</span><p class="eyebrow">Aperçu du mois</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOUTONS -->
+  <section class="ds-sec">
+    <div class="container">
+      <p class="eyebrow">Composants</p>
+      <h2>Boutons</h2>
+      <div class="ds-cluster" style="margin-bottom:var(--sp-4);">
+        <button class="btn btn--primary">Commencer</button>
+        <button class="btn btn--secondary">Annuler</button>
+        <button class="btn btn--ghost">En savoir plus</button>
+        <button class="btn btn--danger">Supprimer</button>
+        <button class="btn btn--primary" disabled>Désactivé</button>
+      </div>
+      <div class="ds-cluster">
+        <button class="btn btn--primary btn--lg">Grand bouton</button>
+        <button class="btn btn--secondary">Standard</button>
+        <button class="btn btn--secondary btn--sm">Petit</button>
+        <button class="btn btn--secondary btn--icon" aria-label="Ajouter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BADGES -->
+  <section class="ds-sec">
+    <div class="container">
+      <p class="eyebrow">Composants</p>
+      <h2>Badges & statuts</h2>
+      <div class="ds-cluster" style="margin-bottom:var(--sp-4);">
+        <span class="badge badge--neutral">Neutre</span>
+        <span class="badge badge--positive">Payé</span>
+        <span class="badge badge--warning">Acompte</span>
+        <span class="badge badge--danger">Impayé</span>
+        <span class="badge badge--accent">Nouveau</span>
+      </div>
+      <p class="eyebrow" style="margin-bottom:var(--sp-2);">Canaux</p>
+      <div class="ds-cluster">
+        <span class="badge-canal badge-canal--airbnb"><span class="dot"></span> Airbnb</span>
+        <span class="badge-canal badge-canal--booking"><span class="dot"></span> Booking.com</span>
+        <span class="badge-canal badge-canal--direct"><span class="dot"></span> Direct</span>
+        <span class="chip-canal chip-canal--airbnb">Airbnb</span>
+        <span class="chip-canal chip-canal--booking">Booking.com</span>
+        <span class="chip-canal chip-canal--direct">Direct</span>
+        <span class="chip-canal chip-canal--bloque">Blocage</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI + AVATARS -->
+  <section class="ds-sec">
+    <div class="container">
+      <p class="eyebrow">Composants</p>
+      <h2>Cartes KPI & avatars</h2>
+      <div class="ds-grid ds-cols-4" style="margin-bottom:var(--sp-6);">
+        <div class="kpi"><span class="kpi__label">CA du mois</span><span class="kpi__value">34 600 €</span><span class="kpi__foot"><span class="trend trend--up">▲ 11 %</span> vs. mois dernier</span><span class="kpi__icon">€</span></div>
+        <div class="kpi"><span class="kpi__label">Taux d'occupation</span><span class="kpi__value">86 %</span><span class="kpi__foot"><span class="trend trend--up">▲ 3 pts</span> sur 30 jours</span><span class="kpi__icon">%</span></div>
+        <div class="kpi"><span class="kpi__label">Messages non lus</span><span class="kpi__value">5</span><span class="kpi__foot">3 à traiter</span><span class="kpi__icon">✉</span></div>
+        <div class="kpi"><span class="kpi__label">Ménages à venir</span><span class="kpi__value">16</span><span class="kpi__foot">dont 3 aujourd'hui</span><span class="kpi__icon">✦</span></div>
+      </div>
+      <div class="ds-cluster">
+        <span class="avatar">CD</span>
+        <span class="avatar avatar--v2">EL</span>
+        <span class="avatar avatar--v3">JW</span>
+        <span class="avatar avatar--v4">MR</span>
+        <span class="avatar avatar--lg">CD</span>
+        <span class="thumb" style="width:56px;height:56px;background:var(--blue-600)">L1</span>
+        <span class="thumb" style="width:56px;height:56px;background:var(--ch-direct)">L4</span>
+        <span class="thumb" style="width:56px;height:56px;background:var(--amber-500)">L5</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMULAIRES -->
+  <section class="ds-sec">
+    <div class="container">
+      <p class="eyebrow">Composants</p>
+      <h2>Champs & contrôles</h2>
+      <div class="ds-grid ds-cols-3">
+        <div class="field"><label class="field__label" for="f1">Nom du logement</label><input class="input" id="f1" placeholder="T2 Vieux-Lyon avec balcon" /></div>
+        <div class="field"><label class="field__label" for="f2">Canal</label><select class="select" id="f2"><option>Airbnb</option><option>Booking.com</option><option>Direct</option></select></div>
+        <div class="field"><label class="field__label" for="f3">Rechercher</label><div class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input class="input" id="f3" placeholder="Voyageur, logement…" /></div></div>
+      </div>
+      <div class="ds-cluster" style="margin-top:var(--sp-5);">
+        <label class="switch"><input type="checkbox" checked /><span class="switch__track"></span></label>
+        <span class="text-sm">Automatisation active</span>
+        <div class="seg" style="margin-left:var(--sp-4);"><button class="is-active">Mois</button><button>Semaine</button></div>
+      </div>
+      <div class="tabs" style="margin-top:var(--sp-6); max-width:520px;">
+        <button class="is-active">Informations</button><button>Tarifs</button><button>Canaux</button><button>Accès</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABLEAU -->
+  <section class="ds-sec">
+    <div class="container">
+      <p class="eyebrow">Composants</p>
+      <h2>Tableau (densité forte)</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Voyageur</th><th>Logement</th><th>Canal</th><th>Dates</th><th class="num">Nuits</th><th class="num">Montant</th><th>Paiement</th></tr></thead>
+          <tbody id="ds-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIGNATURE : barres calendrier -->
+  <section class="ds-sec">
+    <div class="container">
+      <p class="eyebrow">Élément signature</p>
+      <h2>Barres du calendrier unifié</h2>
+      <p class="text-soft mb-4" style="max-width:62ch;">Chaque réservation est une barre colorée par canal traversant ses nuits. C'est le cœur visuel du produit.</p>
+      <div class="ds-cal">
+        <div class="ds-cal-row ds-cal-head">
+          <div class="ds-cal-cell">Logement</div>
+          <div class="ds-cal-cell">21</div><div class="ds-cal-cell">22</div><div class="ds-cal-cell">23</div><div class="ds-cal-cell">24</div><div class="ds-cal-cell">25</div><div class="ds-cal-cell">26</div><div class="ds-cal-cell">27</div><div class="ds-cal-cell">28</div><div class="ds-cal-cell">29</div><div class="ds-cal-cell">30</div>
+        </div>
+        <div class="ds-cal-row">
+          <div class="ds-cal-cell"><span class="ds-cal-name">T2 Vieux-Lyon</span></div>
+          <div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div>
+          <div class="ds-cal-cell" style="grid-column: span 4;"><div class="ds-cal-bar cal--airbnb" style="left:6px;right:6px;">Sophie Meyer</div></div>
+          <div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div>
+        </div>
+        <div class="ds-cal-row">
+          <div class="ds-cal-cell"><span class="ds-cal-name">Studio Montmartre</span></div>
+          <div class="ds-cal-cell" style="grid-column: span 3;"><div class="ds-cal-bar cal--booking" style="left:6px;right:6px;">Chen Wei</div></div>
+          <div class="ds-cal-cell" style="grid-column: span 3;"><div class="ds-cal-bar cal--airbnb" style="left:6px;right:6px;">Nina Kowalski</div></div>
+          <div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div>
+        </div>
+        <div class="ds-cal-row">
+          <div class="ds-cal-cell"><span class="ds-cal-name">Chalet Annecy</span></div>
+          <div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div>
+          <div class="ds-cal-cell" style="grid-column: span 5;"><div class="ds-cal-bar cal--direct" style="left:6px;right:6px;">Lukas Weber</div></div>
+          <div class="ds-cal-cell"></div>
+        </div>
+        <div class="ds-cal-row">
+          <div class="ds-cal-cell"><span class="ds-cal-name">Loft Marseille</span></div>
+          <div class="ds-cal-cell" style="grid-column: span 3;"><div class="ds-cal-bar cal--bloque" style="left:6px;right:6px;">Bloqué</div></div>
+          <div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div><div class="ds-cal-cell"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OVERLAYS -->
+  <section class="ds-sec">
+    <div class="container">
+      <p class="eyebrow">Composants</p>
+      <h2>Surcouches & retours</h2>
+      <div class="ds-cluster">
+        <button class="btn btn--secondary" onclick="dsOpen('ds-modal')">Ouvrir une modale</button>
+        <button class="btn btn--secondary" onclick="dsOpen('ds-panel')">Ouvrir un panneau</button>
+        <button class="btn btn--secondary" onclick="dsToast()">Afficher un toast</button>
+        <span class="tt"><button class="btn btn--ghost">Survoler pour un tooltip</button><span class="tt__pop">Réservation Airbnb · 24–28 juil. · 425 € · Payé</span></span>
+      </div>
+      <div style="max-width:320px;margin-top:var(--sp-5);">
+        <div class="row-between text-sm mb-2"><span class="text-soft">Objectif du mois</span><span class="fw-semibold">86 %</span></div>
+        <div class="progress"><div class="progress__bar" style="width:86%"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="padding:var(--sp-8) 0; text-align:center;" class="text-muted text-sm">
+    Oyvia · Maquette de démonstration · Design system (style Pulse)
+  </footer>
+
+  <!-- Overlay + Modal -->
+  <div class="overlay" id="ds-overlay" onclick="dsCloseAll()"></div>
+  <div class="modal" id="ds-modal" role="dialog" aria-modal="true" aria-labelledby="ds-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="ds-modal-title">Bloquer des dates</h3>
+      <button class="icon-btn" onclick="dsCloseAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="field mb-4"><label class="field__label">Logement</label><select class="select"><option>T2 Vieux-Lyon avec balcon</option></select></div>
+      <div class="ds-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="field"><label class="field__label">Du</label><input class="input" type="date" value="2026-08-03" /></div>
+        <div class="field"><label class="field__label">Au</label><input class="input" type="date" value="2026-08-06" /></div>
+      </div>
+      <div class="field mt-4"><label class="field__label">Motif</label><input class="input" placeholder="Ex. maintenance, usage personnel…" /></div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="dsCloseAll()">Annuler</button>
+      <button class="btn btn--primary" onclick="dsCloseAll(); dsToast('Dates bloquées');">Confirmer le blocage</button>
+    </div>
+  </div>
+
+  <!-- Panel -->
+  <aside class="panel" id="ds-panel" role="dialog" aria-modal="true">
+    <div class="panel__head">
+      <div><span class="chip-canal chip-canal--airbnb" style="margin-bottom:8px;">Airbnb</span><h3 style="font-size:var(--fs-lg);margin-top:8px;">Sophie Meyer</h3><p class="text-soft text-sm">T2 Vieux-Lyon avec balcon</p></div>
+      <button class="icon-btn" onclick="dsCloseAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="panel__body">
+      <div class="ds-grid" style="gap:var(--sp-4)">
+        <div class="row-between"><span class="text-soft text-sm">Séjour</span><span class="fw-medium">24 → 28 juil. · 4 nuits</span></div>
+        <div class="row-between"><span class="text-soft text-sm">Montant</span><span class="fw-semibold">425 €</span></div>
+        <div class="row-between"><span class="text-soft text-sm">Paiement</span><span class="badge badge--warning">Acompte</span></div>
+      </div>
+    </div>
+    <div class="panel__foot"><button class="btn btn--primary btn--block">Ouvrir la conversation</button></div>
+  </aside>
+
+  <div class="toast-zone" id="ds-toasts"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    (function () {
+      const rows = RESERVATIONS.filter(r => r.canal !== 'bloque').slice(0, 6).map(r => {
+        const badge = { paye:'badge--positive', acompte:'badge--warning', impaye:'badge--danger', rembourse:'badge--neutral' }[r.paiement];
+        return `<tr class="is-clickable">
+          <td class="fw-semibold">${r.voyageur}</td>
+          <td class="text-soft">${getLogement(r.logementId).nom}</td>
+          <td><span class="badge-canal badge-canal--${r.canal}"><span class="dot"></span> ${CANAL_LABEL[r.canal]}</span></td>
+          <td class="text-soft">${formatPlage(r.arrivee, r.depart)}</td>
+          <td class="num">${r.nuits}</td>
+          <td class="num money">${formatEuro(r.montant)}</td>
+          <td><span class="badge ${badge}">${PAIEMENT_LABEL[r.paiement]}</span></td>
+        </tr>`;
+      }).join('');
+      document.getElementById('ds-tbody').innerHTML = rows;
+    })();
+
+    function dsOpen(id) { document.getElementById('ds-overlay').classList.add('is-open'); document.getElementById(id).classList.add('is-open'); }
+    function dsCloseAll() { document.querySelectorAll('.is-open').forEach(el => { if (el.classList.contains('overlay') || el.classList.contains('modal') || el.classList.contains('panel')) el.classList.remove('is-open'); }); }
+    function dsToast(msg = 'Action enregistrée') {
+      const zone = document.getElementById('ds-toasts');
+      const t = document.createElement('div'); t.className = 'toast';
+      t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> ${msg}`;
+      zone.appendChild(t); setTimeout(() => t.remove(), 2600);
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') dsCloseAll(); });
+    document.querySelectorAll('.tabs, .seg').forEach(group => { group.addEventListener('click', e => { const btn = e.target.closest('button'); if (!btn) return; group.querySelectorAll('button').forEach(b => b.classList.remove('is-active')); btn.classList.add('is-active'); }); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+/* ============================================================
+   OYVIA — Design tokens
+   Direction artistique adaptée du template "Pulse" :
+   thème clair, bleu électrique #5170FF, police Geist,
+   boutons pilules, cartes très arrondies, ombres douces.
+   Aucune autre feuille ne doit écrire une couleur en dur.
+   ============================================================ */
+
+:root {
+  /* --- Bleu de marque (accent principal) --- */
+  --blue-700: #3A54E6;
+  --blue-600: #5170FF;   /* couleur de marque Oyvia : boutons, liens, focus */
+  --blue-500: #6B85FF;
+  --blue-400: #8FA2FF;
+  --blue-200: #C4CEFF;
+  --blue-100: #E7EBFF;
+  --blue-50:  #F2F4FF;
+
+  /* --- Neutres (gris Tailwind, teintés froids) --- */
+  --ink-950: #0A0A14;    /* titres */
+  --ink-900: #111827;
+  --ink-800: #1F2937;
+  --ink-700: #374151;
+  --ink-600: #4A5565;    /* texte courant */
+  --ink-500: #6A7282;    /* texte secondaire */
+  --ink-400: #9AA3B2;    /* texte discret */
+  --ink-300: #D1D5DC;    /* filets appuyés */
+  --ink-200: #E5E7EB;    /* filets */
+  --ink-100: #EEF1F5;
+  --ink-50:  #F5F7FA;
+
+  /* --- Fonds --- */
+  --white:     #FFFFFF;
+  --bg:        #FFFFFF;   /* fond général */
+  --bg-subtle: #F6F8FC;   /* sections alternées (bleu très pâle) */
+  --bg-muted:  #F1F4F9;
+  --bg-ink:    #0B1020;   /* footer / sections sombres */
+
+  /* --- Statuts --- */
+  --green-600: #00A550;   --green-500: #00C758;  --green-100: #DCFCE7;  --green-700: #067a3e;
+  --amber-500: #F5A300;   --amber-400: #FAC800;  --amber-100: #FEF3C7;  --amber-700: #9a6b00;
+  --red-600:   #E11D2E;   --red-500:   #FB2C36;  --red-100:   #FEE2E2;  --red-700:   #B01221;
+  --cyan-500:  #34C2E0;
+
+  /* --- Couleurs des canaux de réservation --- */
+  --ch-airbnb:      #FF5A5F;   --ch-airbnb-soft: #FFE7E8;  --ch-airbnb-ink:  #C1363B;
+  --ch-booking:     #0A3D91;   --ch-booking-soft:#DEE7F5;  --ch-booking-ink: #0A3D91;
+  --ch-direct:      #00A550;   --ch-direct-soft: #D8F5E5;  --ch-direct-ink:  #067a3e;
+  --ch-bloque:      #94A3B8;   --ch-bloque-soft: #EAEDF2;  --ch-bloque-ink:  #55607a;
+
+  /* ============================================================
+     Tokens sémantiques
+     ============================================================ */
+  --c-bg:            var(--bg);
+  --c-surface:       var(--white);
+  --c-surface-alt:   var(--bg-subtle);
+  --c-text:          var(--ink-950);
+  --c-text-soft:     var(--ink-600);
+  --c-text-muted:    var(--ink-500);
+  --c-text-invert:   #FFFFFF;
+  --c-border:        var(--ink-200);
+  --c-border-strong: var(--ink-300);
+
+  --c-accent:        var(--blue-600);
+  --c-accent-bg:     var(--blue-600);
+  --c-accent-hover:  var(--blue-700);
+  --c-accent-soft:   var(--blue-100);
+  --c-accent-ink:    var(--blue-700);
+
+  --c-positive:      var(--green-600);
+  --c-positive-soft: var(--green-100);
+  --c-positive-ink:  var(--green-700);
+  --c-warning:       var(--amber-500);
+  --c-warning-soft:  var(--amber-100);
+  --c-warning-ink:   var(--amber-700);
+  --c-danger:        var(--red-600);
+  --c-danger-soft:   var(--red-100);
+  --c-danger-ink:    var(--red-700);
+
+  /* Sidebar app (claire, filet à droite) */
+  --c-nav-bg:        var(--white);
+  --c-nav-text:      var(--ink-600);
+  --c-nav-text-dim:  var(--ink-400);
+  --c-nav-active:    var(--blue-600);
+  --c-nav-active-bg: var(--blue-50);
+  --c-nav-hover-bg:  var(--ink-50);
+
+  /* ============================================================
+     Typographie — Geist (comme le template)
+     ============================================================ */
+  --font-sans:  'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-title: var(--font-sans);   /* même famille, différenciée par la graisse */
+  --font-mono:  'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --fs-xs:   0.75rem;    /* 12 */
+  --fs-sm:   0.8125rem;  /* 13 — tableaux denses */
+  --fs-base: 0.875rem;   /* 14 — base app */
+  --fs-md:   1rem;       /* 16 */
+  --fs-lg:   1.125rem;   /* 18 */
+  --fs-xl:   1.375rem;   /* 22 */
+  --fs-2xl:  1.75rem;    /* 28 */
+  --fs-3xl:  2.25rem;    /* 36 */
+  --fs-4xl:  3rem;       /* 48 */
+  --fs-5xl:  3.75rem;    /* 60 — hero */
+
+  --lh-tight: 1.1;
+  --lh-snug:  1.32;
+  --lh-base:  1.6;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  --tracking-tight:  -0.02em;
+  --tracking-tighter:-0.035em;   /* gros titres */
+  --tracking-wide:   0.02em;
+  --tracking-wider:  0.06em;     /* eyebrow majuscule */
+
+  /* ============================================================
+     Espacements (base 4px)
+     ============================================================ */
+  --sp-1:  0.25rem; --sp-2: 0.5rem;  --sp-3: 0.75rem; --sp-4: 1rem;
+  --sp-5:  1.25rem; --sp-6: 1.5rem;  --sp-8: 2rem;    --sp-10: 2.5rem;
+  --sp-12: 3rem;    --sp-16: 4rem;   --sp-20: 5rem;   --sp-24: 6rem;
+  --sp-32: 8rem;
+
+  /* ============================================================
+     Rayons — arrondis généreux + pilules
+     ============================================================ */
+  --r-sm:   6px;
+  --r-md:   10px;
+  --r-lg:   14px;
+  --r-xl:   20px;
+  --r-2xl:  28px;
+  --r-full: 999px;
+
+  /* ============================================================
+     Ombres douces (style Pulse) + glow bleu pour le CTA
+     ============================================================ */
+  --shadow-xs: 0 1px 2px rgba(13,25,55,0.05);
+  --shadow-sm: 0 1px 3px rgba(13,25,55,0.06), 0 1px 2px rgba(13,25,55,0.04);
+  --shadow-md: 0 6px 20px rgba(13,25,55,0.08);
+  --shadow-lg: 0 18px 44px rgba(13,25,55,0.12);
+  --shadow-blue:    0 8px 22px rgba(81,112,255,0.28);
+  --shadow-blue-lg: 0 14px 34px rgba(81,112,255,0.36);
+
+  /* ============================================================
+     Transitions
+     ============================================================ */
+  --t-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t:      200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ============================================================
+     Layout applicatif
+     ============================================================ */
+  --sidebar-w:       250px;
+  --sidebar-w-mini:  72px;
+  --header-h:        64px;
+  --content-max:     1200px;
+  --landing-max:     1160px;
+  --panel-w:         420px;
+
+  /* ============================================================
+     Z-index
+     ============================================================ */
+  --z-base: 1; --z-sticky: 20; --z-header: 40; --z-nav: 50;
+  --z-overlay: 90; --z-panel: 100; --z-modal: 110; --z-toast: 200;
+}

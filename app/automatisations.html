@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Automatisations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <!-- Liste -->
+        <section id="auto-list-view">
+          <div class="app-pagehead">
+            <div>
+              <h1>Automatisations</h1>
+              <p>Vos messages voyageurs envoyés automatiquement, au bon moment.</p>
+            </div>
+            <div class="app-pagehead__actions">
+              <button class="btn btn--primary" id="auto-new">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Nouvelle automatisation
+              </button>
+            </div>
+          </div>
+          <div class="auto-list" id="auto-list"><!-- injecté --></div>
+        </section>
+
+        <!-- Édition -->
+        <section id="auto-edit-view" class="hidden">
+          <button class="btn btn--ghost btn--sm" id="auto-back" style="margin-bottom:var(--sp-4)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg> Toutes les automatisations
+          </button>
+          <div id="auto-edit-content"><!-- injecté --></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/automatisations.js"></script>
+</body>
+</html>

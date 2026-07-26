@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Espace prestataire</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/prestataire.css" />
+</head>
+<body class="pr-body">
+
+  <!-- Connexion -->
+  <div class="pr-login" id="pr-login">
+    <form class="pr-login__card" id="pr-form" onsubmit="return false;">
+      <div class="pr-brand"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo brand-logo--lg"></div>
+      <h1>Espace prestataire</h1>
+      <p>Connectez-vous pour consulter votre planning d'interventions.</p>
+      <div class="pr-login__form">
+        <div class="field"><label class="field__label" for="pr-who">Votre compte</label><select class="select" id="pr-who"></select></div>
+        <div class="field"><label class="field__label" for="pr-pass">Mot de passe</label><input class="input" id="pr-pass" type="password" value="demodemo" autocomplete="current-password" /></div>
+        <button class="btn btn--primary btn--lg btn--block" id="pr-signin" type="submit">Se connecter</button>
+      </div>
+      <p class="pr-note">Démo — choisissez un compte prestataire, aucun mot de passe requis.</p>
+      <a class="pr-back" href="index.html">← Retour au site</a>
+    </form>
+  </div>
+
+  <!-- Portail -->
+  <div class="pr-app hidden" id="pr-app">
+    <header class="pr-top">
+      <div class="pr-brand"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></div>
+      <div class="pr-user" id="pr-user"></div>
+      <button class="icon-btn" id="pr-logout" aria-label="Se déconnecter" title="Se déconnecter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
+    </header>
+    <main class="pr-main">
+      <div class="pr-hello" id="pr-hello"></div>
+      <div class="pr-stats" id="pr-stats"></div>
+      <div class="pr-filter" id="pr-filter"></div>
+      <div id="pr-tasks"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/prestataire.js"></script>
+</body>
+</html>

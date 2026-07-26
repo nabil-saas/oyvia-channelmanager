@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Espace propriétaire</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/proprietaire.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="op-body">
+
+  <!-- Connexion -->
+  <div class="op-login" id="op-login">
+    <form class="op-login__card" id="op-form" onsubmit="return false;">
+      <div class="op-brand"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo brand-logo--lg"></div>
+      <h1>Espace propriétaire</h1>
+      <p>Suivez la performance de vos biens gérés par votre conciergerie.</p>
+      <div class="op-login__form">
+        <div class="field"><label class="field__label" for="op-who">Votre compte</label><select class="select" id="op-who"></select></div>
+        <div class="field"><label class="field__label" for="op-pass">Mot de passe</label><input class="input" id="op-pass" type="password" value="demodemo" autocomplete="current-password" /></div>
+        <button class="btn btn--primary btn--lg btn--block" id="op-signin" type="submit">Se connecter</button>
+      </div>
+      <p class="op-note">Démo — choisissez un compte propriétaire, aucun mot de passe requis.</p>
+      <a class="op-back" href="index.html">← Retour au site</a>
+    </form>
+  </div>
+
+  <!-- Portail -->
+  <div class="op-app hidden" id="op-app">
+    <header class="op-top">
+      <div class="op-brand"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></div>
+      <div class="op-user" id="op-user"></div>
+      <button class="icon-btn" id="op-logout" aria-label="Se déconnecter" title="Se déconnecter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
+    </header>
+    <main class="op-main">
+      <div class="op-hello">
+        <div id="op-hello"></div>
+        <button class="btn btn--secondary" id="op-releve">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Télécharger le relevé
+        </button>
+      </div>
+
+      <div class="op-kpis" id="op-kpis"></div>
+
+      <div class="op-grid-2">
+        <div class="card">
+          <div class="card__head"><span class="card__title">Revenus (6 derniers mois)</span></div>
+          <div class="card__body"><div class="op-chart"><canvas id="op-chart-rev"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><span class="card__title">Occupation par bien</span></div>
+          <div class="card__body"><div class="op-chart"><canvas id="op-chart-occ"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:var(--sp-4)">
+        <div class="card__head"><span class="card__title">Vos biens</span></div>
+        <div class="table-wrap" style="border:0;border-radius:0;box-shadow:none">
+          <table class="table">
+            <thead><tr><th>Bien</th><th class="num">Occupation</th><th class="num">CA du mois</th><th class="num">Commission</th><th class="num">Net propriétaire</th></tr></thead>
+            <tbody id="op-biens"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:var(--sp-4)">
+        <div class="card__head"><span class="card__title">Prochaines réservations sur vos biens</span></div>
+        <div class="table-wrap" style="border:0;border-radius:0;box-shadow:none">
+          <table class="table">
+            <thead><tr><th>Voyageur</th><th>Bien</th><th>Canal</th><th>Arrivée</th><th class="num">Nuits</th><th class="num">Montant</th></tr></thead>
+            <tbody id="op-resa"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/proprietaire.js"></script>
+</body>
+</html>

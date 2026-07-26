@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Ménage & équipe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Ménage &amp; équipe</h1>
+            <p>Le planning des interventions, généré à partir de vos départs.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <a class="btn btn--ghost" href="../prestataire.html">Espace prestataire ↗</a>
+            <button class="btn btn--secondary" id="mn-team-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Gérer l'équipe
+            </button>
+            <button class="btn btn--primary" id="mn-add">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Ajouter une tâche
+            </button>
+          </div>
+        </div>
+
+        <!-- Montant dû par prestataire -->
+        <p class="eyebrow mb-2">Prestataires — montant dû à venir</p>
+        <div class="mn-team" id="mn-team"><!-- injecté --></div>
+
+        <!-- Filtres -->
+        <div class="app-filters">
+          <select class="select" id="mn-prestataire"><option value="all">Tous les prestataires</option></select>
+          <select class="select" id="mn-type">
+            <option value="all">Tous les types</option>
+            <option value="menage">Ménage</option>
+            <option value="checkin">Check-in</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="linge">Linge</option>
+          </select>
+          <select class="select" id="mn-statut">
+            <option value="all">Tous les statuts</option>
+            <option value="a_faire">À faire</option>
+            <option value="en_cours">En cours</option>
+            <option value="termine">Terminé</option>
+          </select>
+        </div>
+
+        <!-- Planning -->
+        <div id="mn-planning"><!-- injecté --></div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : ajouter une tâche -->
+  <div class="modal" id="mn-modal" role="dialog" aria-modal="true" aria-labelledby="mn-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="mn-modal-title">Ajouter une tâche</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="field"><label class="field__label" for="mn-f-resa">Réservation à traiter</label><select class="select" id="mn-f-resa"></select></div>
+      <div class="field mt-4"><label class="field__label" for="mn-f-type">Catégorie de tâche</label><select class="select" id="mn-f-type"></select></div>
+      <div class="field mt-4 hidden" id="mn-f-newtype-wrap"><label class="field__label" for="mn-f-newtype">Nom de la nouvelle catégorie</label><input class="input" id="mn-f-newtype" placeholder="Ex. Jardinage, Piscine…" /></div>
+      <div class="mn-derived" id="mn-f-derived" style="margin-top:var(--sp-4)"></div>
+      <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
+        <div class="field"><label class="field__label" for="mn-f-heure">Heure</label><input class="input" type="time" id="mn-f-heure" value="11:00" /></div>
+        <div class="field"><label class="field__label" for="mn-f-montant">Montant (€)</label><input class="input" type="number" min="0" id="mn-f-montant" value="40" /></div>
+      </div>
+      <div class="field mt-4"><label class="field__label" for="mn-f-prest">Prestataire assigné</label><select class="select" id="mn-f-prest"></select></div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="mn-create">Créer la tâche</button>
+    </div>
+  </div>
+
+  <!-- Modale : gérer l'équipe -->
+  <div class="modal" id="mn-team-modal" role="dialog" aria-modal="true" aria-labelledby="mn-team-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="mn-team-title">Gérer l'équipe</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <p class="eyebrow mb-2">Prestataires actuels</p>
+      <div id="mn-team-list" style="margin-bottom:var(--sp-5)"></div>
+      <p class="eyebrow mb-2">Ajouter un prestataire</p>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="mn-t-nom">Nom</label><input class="input" id="mn-t-nom" placeholder="Prénom Nom" /></div>
+        <div class="field"><label class="field__label" for="mn-t-role">Rôle</label><select class="select" id="mn-t-role"><option>Ménage</option><option>Polyvalent</option><option>Maintenance</option></select></div>
+      </div>
+      <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
+        <div class="field"><label class="field__label" for="mn-t-zone">Zone</label><input class="input" id="mn-t-zone" placeholder="Lyon" /></div>
+        <div class="field"><label class="field__label" for="mn-t-tarif">Tarif ménage (€)</label><input class="input" type="number" min="0" id="mn-t-tarif" value="35" /></div>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Fermer</button>
+      <button class="btn btn--primary" id="mn-team-add">Ajouter le prestataire</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/menage.js"></script>
+</body>
+</html>

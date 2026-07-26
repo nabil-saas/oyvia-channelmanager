@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Logements</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <!-- Vue liste -->
+        <section id="lg-list">
+          <div class="app-pagehead">
+            <div>
+              <h1>Logements</h1>
+              <p id="lg-count">— logements connectés</p>
+            </div>
+            <div class="app-pagehead__actions">
+              <button class="btn btn--primary" id="lg-add">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Ajouter un logement
+              </button>
+            </div>
+          </div>
+          <div class="lg-grid" id="lg-grid"><!-- injecté --></div>
+        </section>
+
+        <!-- Vue détail -->
+        <section id="lg-detail" class="hidden">
+          <button class="btn btn--ghost btn--sm" id="lg-back" style="margin-bottom:var(--sp-4)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg> Tous les logements
+          </button>
+          <div id="lg-detail-content"><!-- injecté --></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : ajouter un logement -->
+  <div class="modal" id="lg-modal" role="dialog" aria-modal="true" aria-labelledby="lg-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="lg-modal-title">Ajouter un logement</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="field mb-4"><label class="field__label" for="lg-f-nom">Nom du logement</label><input class="input" id="lg-f-nom" placeholder="Ex. T2 Vieux-Lyon avec balcon" /></div>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="lg-f-ville">Ville</label><input class="input" id="lg-f-ville" placeholder="Lyon" /></div>
+        <div class="field"><label class="field__label" for="lg-f-type">Type</label>
+          <select class="select" id="lg-f-type"><option>Studio</option><option>T2</option><option>T3</option><option>Loft</option><option>Duplex</option><option>Maison</option><option>Villa</option><option>Chalet</option></select></div>
+      </div>
+      <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
+        <div class="field"><label class="field__label" for="lg-f-cap">Capacité (voyageurs)</label><input class="input" id="lg-f-cap" type="number" min="1" value="2" /></div>
+        <div class="field"><label class="field__label" for="lg-f-tarif">Tarif de base (€ / nuit)</label><input class="input" id="lg-f-tarif" type="number" min="0" value="80" /></div>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="lg-create">Créer le logement</button>
+    </div>
+  </div>
+
+  <!-- Modale : tâche récurrente -->
+  <div class="modal" id="rec-modal" role="dialog" aria-modal="true" aria-labelledby="rec-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="rec-modal-title">Nouvelle tâche récurrente</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <p class="eyebrow mb-2">Informations</p>
+      <div class="field"><label class="field__label" for="rec-f-nom">Nom de la tâche</label><input class="input" id="rec-f-nom" placeholder="Ex. Ménage complet" /></div>
+      <div class="field mt-4"><label class="field__label">Type de tâche</label><div class="rec-typepicker" id="rec-f-typepicker"></div></div>
+      <div class="field mt-4"><label class="field__label" for="rec-f-desc">Description</label><textarea class="textarea" id="rec-f-desc" rows="2" placeholder="Détaillez la tâche à réaliser…"></textarea></div>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <p class="eyebrow mb-2">Déclencheur</p>
+      <div class="field"><label class="field__label" for="rec-f-trigger">Quand exécuter la tâche ?</label>
+        <select class="select" id="rec-f-trigger">
+          <option value="checkin">À chaque check-in</option>
+          <option value="checkout">À chaque check-out</option>
+          <option value="j_avant_checkin">X jours avant le check-in</option>
+          <option value="h_avant_checkin">X heures avant le check-in</option>
+          <option value="j_apres_checkout">X jours après le check-out</option>
+          <option value="quotidien">Tous les jours</option>
+          <option value="hebdo">Toutes les semaines</option>
+          <option value="mensuel">Tous les mois</option>
+        </select>
+      </div>
+      <div class="field mt-4 hidden" id="rec-f-delai-wrap">
+        <label class="field__label" for="rec-f-delai">Délai</label>
+        <div class="rec-delai"><input class="input" type="number" min="1" id="rec-f-delai" value="2" /><span class="text-soft text-sm" id="rec-f-delai-unit"></span></div>
+      </div>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <p class="eyebrow mb-2">Affectation</p>
+      <div class="field"><label class="field__label" for="rec-f-prest">Collaborateur assigné</label><select class="select" id="rec-f-prest"></select></div>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <p class="eyebrow mb-2">Période de validité</p>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="rec-f-start">Date de début</label><input class="input" type="date" id="rec-f-start" value="2026-01-01" /></div>
+        <div class="field"><label class="field__label" for="rec-f-end">Date de fin</label><input class="input" type="date" id="rec-f-end" value="2026-12-31" /></div>
+      </div>
+      <label class="row gap-2 text-sm fw-medium" style="cursor:pointer;margin-top:var(--sp-4)"><input type="checkbox" id="rec-f-nofin" style="width:16px;height:16px;accent-color:var(--blue-600)" /> Sans date de fin</label>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <div class="row-between">
+        <div><p class="fw-semibold text-sm">Statut</p><p class="text-xs text-muted">La tâche est active dès sa création.</p></div>
+        <label class="row gap-2" style="cursor:pointer"><span class="switch"><input type="checkbox" id="rec-f-active" checked /><span class="switch__track"></span></span> <span id="rec-f-active-label" class="text-sm fw-medium">Active</span></label>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="rec-save">Créer la tâche</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/logements.js"></script>
+</body>
+</html>

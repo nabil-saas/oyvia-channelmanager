@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Connexion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-brand"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo brand-logo--lg"></div>
+      <h1>Content de vous revoir</h1>
+      <p>Connectez-vous à votre espace de gestion.</p>
+
+      <form class="auth-form" onsubmit="event.preventDefault(); window.location.href='app/dashboard.html';">
+        <div class="field">
+          <label class="field__label" for="email">Adresse e-mail</label>
+          <input class="input" id="email" type="email" value="camille@conciergerie-lumia.fr" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="password">Mot de passe</label>
+          <input class="input" id="password" type="password" value="demodemo" autocomplete="current-password" />
+        </div>
+        <div class="row-between">
+          <label class="row gap-2 text-sm text-soft"><input type="checkbox" checked style="width:16px;height:16px;accent-color:var(--blue-600);"> Se souvenir de moi</label>
+          <a href="#" class="text-sm text-accent fw-medium">Mot de passe oublié ?</a>
+        </div>
+        <button class="btn btn--primary btn--lg btn--block" type="submit">Se connecter</button>
+      </form>
+
+      <p class="auth-note">Démo — cliquez sur « Se connecter » pour entrer, aucun compte requis.</p>
+      <p class="auth-foot">Pas encore de compte ? <a href="app/dashboard.html">Essayer gratuitement</a></p>
+      <p class="auth-foot" style="margin-top:var(--sp-2)">Vous êtes prestataire ? <a href="prestataire.html">Accéder à votre espace</a></p>
+      <p class="auth-foot" style="margin-top:var(--sp-2)">Vous êtes propriétaire ? <a href="proprietaire.html">Accéder à votre espace</a></p>
+    </div>
+  </div>
+  <p style="text-align:center;padding:var(--sp-6);"><a href="index.html" class="text-sm text-muted">← Retour au site</a></p>
+</body>
+</html>

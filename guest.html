@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Votre séjour — Oyvia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/guest.css" />
+</head>
+<body class="g-body">
+  <div class="g-shell" id="g-shell"><!-- injecté par guest.js --></div>
+
+  <!-- Modale : fiche de police voyageur -->
+  <div class="modal" id="fp-modal" role="dialog" aria-modal="true" aria-labelledby="fp-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="fp-modal-title">Fiche de police</h3>
+      <button class="icon-btn" id="fp-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="fp-form-grid">
+        <div class="field"><label class="field__label" for="fp-civilite">Civilité</label>
+          <select class="select" id="fp-civilite"><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
+        <div class="field"><label class="field__label" for="fp-nationalite">Nationalité *</label><input class="input" id="fp-nationalite" placeholder="Française" /></div>
+        <div class="field"><label class="field__label" for="fp-nom">Nom *</label><input class="input" id="fp-nom" placeholder="Nom de famille" /></div>
+        <div class="field"><label class="field__label" for="fp-prenom">Prénom *</label><input class="input" id="fp-prenom" placeholder="Prénom" /></div>
+        <div class="field"><label class="field__label" for="fp-naissance">Date de naissance *</label><input class="input" type="date" id="fp-naissance" /></div>
+        <div class="field"><label class="field__label" for="fp-lieu">Lieu de naissance</label><input class="input" id="fp-lieu" placeholder="Ville, pays" /></div>
+        <div class="field"><label class="field__label" for="fp-type-piece">Type de pièce d'identité *</label>
+          <select class="select" id="fp-type-piece">
+            <option value="cni">Carte nationale d'identité</option>
+            <option value="passeport">Passeport</option>
+            <option value="titre_sejour">Titre de séjour</option>
+          </select></div>
+        <div class="field"><label class="field__label" for="fp-numero">Numéro de la pièce *</label><input class="input" id="fp-numero" placeholder="N° du document" /></div>
+        <div class="field field--full"><label class="field__label" for="fp-adresse">Domicile habituel</label><input class="input" id="fp-adresse" placeholder="Adresse complète" /></div>
+      </div>
+      <label class="fp-consent"><input type="checkbox" id="fp-consent" /> Je certifie l'exactitude des informations fournies et j'autorise leur conservation dans le cadre légal de l'accueil touristique.</label>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" id="fp-cancel">Annuler</button>
+      <button class="btn btn--primary" id="fp-save">Enregistrer la fiche</button>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/guest.js"></script>
+</body>
+</html>

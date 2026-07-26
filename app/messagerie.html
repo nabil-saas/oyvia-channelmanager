@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Messagerie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main app-main--flush">
+        <div class="msg-layout">
+
+          <!-- Colonne 1 : conversations -->
+          <section class="msg-col msg-col--list" aria-label="Conversations">
+            <div class="msg-listhead">
+              <h2>Boîte de réception</h2>
+              <div class="input-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input class="input" type="search" id="msg-search" placeholder="Rechercher un voyageur…" />
+              </div>
+            </div>
+            <div class="msg-convs" id="msg-convs"><!-- injecté --></div>
+          </section>
+
+          <!-- Colonne 2 : fil de discussion -->
+          <section class="msg-col msg-col--thread" aria-label="Discussion">
+            <div class="msg-threadhead" id="msg-threadhead"><!-- injecté --></div>
+            <div class="msg-thread" id="msg-thread"><!-- injecté --></div>
+            <div class="msg-composer">
+              <div class="msg-composer__tools">
+                <select class="select" id="msg-template" aria-label="Modèle de message">
+                  <option value="">Insérer un modèle…</option>
+                </select>
+                <span class="text-xs text-muted">Variables : {prenom}, {code_acces}, {wifi}</span>
+              </div>
+              <div class="msg-composer__box">
+                <textarea class="textarea grow" id="msg-input" placeholder="Écrire une réponse…" rows="1"></textarea>
+                <button class="btn btn--primary" id="msg-send" aria-label="Envoyer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>
+                  Envoyer
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Colonne 3 : contexte réservation -->
+          <aside class="msg-col msg-col--ctx msg-ctx" id="msg-ctx" aria-label="Contexte de la réservation"><!-- injecté --></aside>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/messagerie.js"></script>
+</body>
+</html>

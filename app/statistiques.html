@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Statistiques</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Statistiques</h1>
+            <p>Vos performances sur les 6 derniers mois.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <a class="btn btn--ghost" href="../proprietaire.html">Espace propriétaire ↗</a>
+            <select class="select" id="st-logement" style="min-width:200px"><option value="all">Tous les logements</option></select>
+            <select class="select" id="st-periode" style="min-width:160px">
+              <option>6 derniers mois</option><option>12 derniers mois</option><option>Cette année</option>
+            </select>
+            <button class="btn btn--secondary" id="st-export">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Exporter (CSV)
+            </button>
+          </div>
+        </div>
+
+        <div class="app-grid app-grid--kpi" id="st-kpi"><!-- injecté --></div>
+
+        <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
+          <div class="card">
+            <div class="card__head"><span class="card__title">Chiffre d'affaires par mois</span></div>
+            <div class="card__body"><div class="st-chart"><canvas id="st-ca"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><span class="card__title">Répartition par canal</span></div>
+            <div class="card__body">
+              <div class="app-grid" style="grid-template-columns:1fr 180px;align-items:center;gap:var(--sp-6)">
+                <div class="st-chart st-chart--sm"><canvas id="st-canal"></canvas></div>
+                <div class="st-legend" id="st-canal-legend"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
+          <div class="card">
+            <div class="card__head"><span class="card__title">Taux d'occupation par logement</span></div>
+            <div class="card__body"><div class="st-chart" style="height:340px"><canvas id="st-occ"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><span class="card__title">Prix moyen par nuit (ADR)</span></div>
+            <div class="card__body"><div class="st-chart" style="height:340px"><canvas id="st-adr"></canvas></div></div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/statistiques.js"></script>
+</body>
+</html>
