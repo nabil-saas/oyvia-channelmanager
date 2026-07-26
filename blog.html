@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Blog : conseils & actualités pour les hôtes</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <meta name="description" content="Réglementation, organisation, automatisation, expérience voyageur : les guides Oyvia pour gérer votre location courte durée sereinement." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/landing.css" />
+  <link rel="stylesheet" href="css/blog.css" />
+</head>
+<body class="lp">
+
+  <!-- Bandeau d'annonce -->
+  <div class="lp-topbar">
+    <span>✦ <strong>1 logement offert, à vie</strong> — sans carte bancaire.</span>
+    <a href="index.html#tarifs">Voir les offres →</a>
+  </div>
+
+  <!-- Navbar flottante -->
+  <div class="lp-navwrap">
+    <nav class="lp-nav" aria-label="Navigation principale">
+      <a class="lp-brand" href="index.html"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></a>
+      <div class="lp-navlinks" id="lp-navlinks">
+        <a href="index.html#fonctionnalites">Fonctionnalités</a>
+        <a href="index.html#tarifs">Tarifs</a>
+        <a href="blog.html" class="is-current">Blog</a>
+        <a href="login.html" class="lp-navlinks__mobile-only">Connexion</a>
+      </div>
+      <div class="lp-nav__cta">
+        <a class="btn btn--ghost btn--sm" href="login.html">Connexion</a>
+        <a class="btn btn--primary btn--sm" href="app/dashboard.html">Essayer gratuitement</a>
+        <button class="btn btn--secondary btn--icon btn--sm lp-burger" id="lp-burger-btn" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="lp-navlinks">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- HERO BLOG -->
+  <header class="blog-hero">
+    <div class="lp-shell">
+      <span class="eyebrow">Blog Oyvia</span>
+      <h1>Conseils & actualités pour les hôtes et conciergeries</h1>
+      <p>Réglementation, organisation, automatisation, expérience voyageur : nos guides pour gérer votre location courte durée sereinement.</p>
+    </div>
+  </header>
+
+  <!-- FILTRES -->
+  <div class="lp-shell">
+    <div class="blog-filters" id="blog-filters" role="tablist" aria-label="Filtrer les articles par catégorie">
+      <button type="button" class="blog-filter is-active" data-cat="all">Tous</button>
+      <button type="button" class="blog-filter" data-cat="reglementation">Réglementation</button>
+      <button type="button" class="blog-filter" data-cat="organisation">Organisation</button>
+      <button type="button" class="blog-filter" data-cat="productivite">Productivité</button>
+      <button type="button" class="blog-filter" data-cat="voyageurs">Voyageurs</button>
+      <button type="button" class="blog-filter" data-cat="outils">Outils</button>
+    </div>
+  </div>
+
+  <!-- ARTICLE À LA UNE -->
+  <section class="lp-section" style="padding-top:var(--sp-6)">
+    <div class="lp-shell">
+      <a class="blog-featured" href="#" data-cat="reglementation">
+        <div class="blog-featured__media blog-featured__media--reglementation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2 3 6v6c0 5 4 8.5 9 10 5-1.5 9-5 9-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <div class="blog-featured__body">
+          <span class="lp-blog__tag lp-blog__tag--reglementation">Réglementation</span>
+          <h2>Loi 80-14 : ce que tout hébergeur touristique doit savoir sur la fiche de police</h2>
+          <p>Qui doit la remplir, quelles informations sont obligatoires, et comment l'automatiser pour ne plus jamais y penser.</p>
+          <div class="lp-blog__meta"><span>12 juin 2026</span><span>·</span><span>6 min de lecture</span></div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- GRILLE D'ARTICLES -->
+  <section class="lp-section" style="padding-top:0">
+    <div class="lp-shell">
+      <div class="lp-blog" id="blog-grid">
+
+        <a class="lp-blog__post" href="#" data-cat="organisation">
+          <span class="lp-blog__tag lp-blog__tag--organisation">Organisation</span>
+          <h3>Comment éviter les doubles réservations quand on gère plusieurs canaux</h3>
+          <p>Airbnb, Booking.com, réservations directes : la synchronisation manuelle atteint vite ses limites. Voici comment s'en sortir.</p>
+          <div class="lp-blog__meta"><span>28 mai 2026</span><span>·</span><span>5 min de lecture</span></div>
+        </a>
+
+        <a class="lp-blog__post" href="#" data-cat="productivite">
+          <span class="lp-blog__tag lp-blog__tag--productivite">Productivité</span>
+          <h3>5 automatisations qui font gagner des heures aux conciergeries</h3>
+          <p>Du message de bienvenue au rappel de départ, les scénarios à mettre en place dès votre première semaine.</p>
+          <div class="lp-blog__meta"><span>14 mai 2026</span><span>·</span><span>4 min de lecture</span></div>
+        </a>
+
+        <a class="lp-blog__post" href="#" data-cat="voyageurs">
+          <span class="lp-blog__tag lp-blog__tag--voyageurs">Voyageurs</span>
+          <h3>Comment rédiger un message d'arrivée que vos voyageurs liront vraiment</h3>
+          <p>Code d'accès, wifi, recommandations : la structure qui réduit les questions répétitives sans paraître froide.</p>
+          <div class="lp-blog__meta"><span>6 mai 2026</span><span>·</span><span>4 min de lecture</span></div>
+        </a>
+
+        <a class="lp-blog__post" href="#" data-cat="outils">
+          <span class="lp-blog__tag lp-blog__tag--outils">Outils</span>
+          <h3>Airbnb, Booking.com, direct : faut-il vraiment un channel manager ?</h3>
+          <p>Ce qu'un calendrier unifié change concrètement au quotidien, et dans quels cas une simple synchro iCal suffit encore.</p>
+          <div class="lp-blog__meta"><span>27 avril 2026</span><span>·</span><span>5 min de lecture</span></div>
+        </a>
+
+        <a class="lp-blog__post" href="#" data-cat="reglementation">
+          <span class="lp-blog__tag lp-blog__tag--reglementation">Réglementation</span>
+          <h3>Location meublée de tourisme : les changements à surveiller cette année</h3>
+          <p>Numéro d'enregistrement, quotas municipaux, diagnostic de performance énergétique : le point sur les obligations en cours d'évolution.</p>
+          <div class="lp-blog__meta"><span>15 avril 2026</span><span>·</span><span>7 min de lecture</span></div>
+        </a>
+
+        <a class="lp-blog__post" href="#" data-cat="organisation">
+          <span class="lp-blog__tag lp-blog__tag--organisation">Organisation</span>
+          <h3>Ménage, linge, clés : structurer une équipe au-delà de 10 logements</h3>
+          <p>À partir de quel volume il devient nécessaire de formaliser les plannings, et comment répartir les tâches sans surcharger personne.</p>
+          <div class="lp-blog__meta"><span>2 avril 2026</span><span>·</span><span>6 min de lecture</span></div>
+        </a>
+
+        <a class="lp-blog__post" href="#" data-cat="productivite">
+          <span class="lp-blog__tag lp-blog__tag--productivite">Productivité</span>
+          <h3>Réservations directes : reprendre la main sans perdre ses avis Airbnb</h3>
+          <p>Une stratégie progressive pour proposer un moteur de réservation directe tout en gardant la visibilité de vos annonces existantes.</p>
+          <div class="lp-blog__meta"><span>20 mars 2026</span><span>·</span><span>5 min de lecture</span></div>
+        </a>
+
+        <a class="lp-blog__post" href="#" data-cat="voyageurs">
+          <span class="lp-blog__tag lp-blog__tag--voyageurs">Voyageurs</span>
+          <h3>Fiche de police automatisée : fluidifier l'arrivée sans perdre de temps</h3>
+          <p>Comment collecter les informations obligatoires avant le check-in, sans que ça ressemble à une formalité administrative pour le voyageur.</p>
+          <div class="lp-blog__meta"><span>8 mars 2026</span><span>·</span><span>4 min de lecture</span></div>
+        </a>
+
+      </div>
+
+      <p class="blog-empty" id="blog-empty" hidden>Aucun article dans cette catégorie pour le moment.</p>
+
+      <div class="blog-pagination" aria-label="Pagination des articles">
+        <button type="button" class="blog-pagination__btn" disabled aria-label="Page précédente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button type="button" class="blog-pagination__num is-active">1</button>
+        <button type="button" class="blog-pagination__num">2</button>
+        <button type="button" class="blog-pagination__num">3</button>
+        <button type="button" class="blog-pagination__btn" aria-label="Page suivante">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="lp-cta">
+    <div class="lp-cta__glow"></div>
+    <h2>Centralisez, automatisez et développez votre location — en quelques minutes.</h2>
+    <p>Commencez gratuitement avec un logement offert. Sans carte bancaire, sans engagement.</p>
+    <div class="lp-cta__btns">
+      <a class="btn btn--primary btn--lg" href="app/dashboard.html">Commencer gratuitement</a>
+      <a class="btn btn--secondary btn--lg" href="app/calendrier.html">Explorer la démo</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="lp-footer">
+    <div class="lp-footer__grid">
+      <div class="lp-footer__brand">
+        <a class="lp-brand" href="index.html"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></a>
+        <p>Le logiciel de gestion pour les loueurs de courte durée et les conciergeries. Centralisez, automatisez, sans commission.</p>
+      </div>
+      <div>
+        <h4>Produit</h4>
+        <ul>
+          <li><a href="index.html#fonctionnalites">Fonctionnalités</a></li>
+          <li><a href="index.html#tarifs">Tarifs</a></li>
+          <li><a href="app/calendrier.html">Démo du produit</a></li>
+          <li><a href="index.html#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Entreprise</h4>
+        <ul>
+          <li><a href="#">À propos</a></li>
+          <li><a href="blog.html">Blog</a></li>
+          <li><a href="#">Nous contacter</a></li>
+          <li><a href="#">Devenir partenaire</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Légal</h4>
+        <ul>
+          <li><a href="#">Mentions légales</a></li>
+          <li><a href="#">CGU</a></li>
+          <li><a href="#">Confidentialité (RGPD)</a></li>
+          <li><a href="#">Cookies</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="lp-footer__bottom">
+      <span>© 2026 Oyvia. Tous droits réservés.</span>
+      <div class="lp-footer__social">
+        <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.3 8.3L23 22h-6.8l-5-6.7L5 22H2l7.8-8.9L1.6 2h6.9l4.6 6.1L18.9 2z"/></svg></a>
+        <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.1c.5-1 1.8-2 3.7-2 4 0 4.7 2.6 4.7 5.9V21h-4v-5.6c0-1.3 0-3-1.9-3s-2.1 1.4-2.1 2.9V21h-4z"/></svg></a>
+        <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg></a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/landing-anim.js"></script>
+  <script src="js/blog.js"></script>
+</body>
+</html>

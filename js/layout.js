@@ -53,12 +53,12 @@ const Layout = (function () {
         ${items}
       </nav>
       <div class="app-sidebar__foot">
-        <div class="app-userchip">
+        <button type="button" class="app-userchip" id="app-userchip-btn" aria-haspopup="true" aria-expanded="false">
           <span class="avatar avatar--sm">${UTILISATEUR.initiales}</span>
           <div class="app-userchip__meta grow">
             <b>${UTILISATEUR.nom}</b><span>${UTILISATEUR.role}</span>
           </div>
-        </div>
+        </button>
       </div>`;
   }
 
@@ -80,7 +80,7 @@ const Layout = (function () {
         ${svg(I.bell)}<span class="app-bell__count" id="app-bell-count" hidden></span>
       </button>
       <button class="btn btn--secondary btn--icon" id="app-collapse" aria-label="Replier le menu">${svg(I.chevrons)}</button>
-      <span class="avatar">${UTILISATEUR.initiales}</span>`;
+      <button type="button" class="avatar" id="app-avatar-btn" aria-label="Mon compte" aria-haspopup="true" aria-expanded="false">${UTILISATEUR.initiales}</button>`;
   }
 
   function init(active) {
@@ -126,6 +126,12 @@ const Layout = (function () {
       UI.refreshBellBadge();
       UI.maybeShowNotifPush();
     }
+
+    // Menu de compte (avatar de la topbar + fiche utilisateur en bas de la sidebar)
+    const userchipBtn = document.getElementById('app-userchip-btn');
+    if (userchipBtn) userchipBtn.addEventListener('click', e => { e.stopPropagation(); UI.toggleAccountDropdown(userchipBtn, 'top'); });
+    const avatarBtn = document.getElementById('app-avatar-btn');
+    if (avatarBtn) avatarBtn.addEventListener('click', e => { e.stopPropagation(); UI.toggleAccountDropdown(avatarBtn, 'bottom'); });
   }
 
   return { init, currentLogement: 'all', svg, NAV, unreadCount };
@@ -164,6 +170,7 @@ const UI = {
     document.querySelectorAll('.panel.is-open, .modal.is-open').forEach(e => e.classList.remove('is-open'));
     const s = document.getElementById('ui-scrim'); if (s) s.classList.remove('is-open');
     UI.closeNotifDropdown();
+    UI.closeAccountDropdown();
   },
 
   /* ---------- Centre de notifications (cloche de la topbar) ---------- */
@@ -223,6 +230,61 @@ const UI = {
         <span class="notif-item__body"><b>${n.titre}</b><p>${n.message}</p></span>
       </button>`).join('');
     return `<div class="notif-dropdown__head"><b>Notifications</b><span class="text-xs text-muted">${notifs.length}</span></div>${rows}`;
+  },
+
+  /* ---------- Menu de compte (avatar topbar + fiche utilisateur sidebar) ---------- */
+  toggleAccountDropdown(trigger, anchor = 'bottom') {
+    const existing = document.getElementById('account-dropdown');
+    if (existing && existing.classList.contains('is-open')) { UI.closeAccountDropdown(); return; }
+    let el = existing;
+    if (!el) { el = document.createElement('div'); el.id = 'account-dropdown'; el.className = 'account-dropdown'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Mon compte'); document.body.appendChild(el); }
+    el.innerHTML = UI.accountDropdownHTML();
+    if (trigger) {
+      const rect = trigger.getBoundingClientRect();
+      el.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 260 - 8)) + 'px';
+      if (anchor === 'top') {
+        // Déclencheur en bas de l'écran (fiche utilisateur sidebar) : le menu s'ouvre vers le haut
+        el.style.top = 'auto';
+        el.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+      } else {
+        // Déclencheur en haut de l'écran (avatar topbar) : le menu s'ouvre vers le bas
+        el.style.bottom = 'auto';
+        el.style.top = (rect.bottom + 8) + 'px';
+      }
+    }
+    el.classList.add('is-open');
+    trigger && trigger.setAttribute('aria-expanded', 'true');
+    const logoutBtn = document.getElementById('account-logout-btn');
+    if (logoutBtn) logoutBtn.addEventListener('click', UI.logout);
+    setTimeout(() => document.addEventListener('click', UI._accountOutsideClick, true), 0);
+  },
+  closeAccountDropdown() {
+    const el = document.getElementById('account-dropdown');
+    if (el) el.classList.remove('is-open');
+    document.querySelectorAll('#app-userchip-btn, #app-avatar-btn').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    document.removeEventListener('click', UI._accountOutsideClick, true);
+  },
+  _accountOutsideClick(e) {
+    const el = document.getElementById('account-dropdown');
+    if (!el) return;
+    if (el.contains(e.target) || e.target.closest('#app-userchip-btn, #app-avatar-btn')) return;
+    UI.closeAccountDropdown();
+  },
+  accountDropdownHTML() {
+    return `
+      <div class="account-dropdown__head">
+        <b>${UTILISATEUR.nom}</b>
+        <span>${UTILISATEUR.email}</span>
+      </div>
+      <div class="account-dropdown__body">
+        <a class="account-dropdown__item" href="abonnement.html">${UI._ic('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>')} Abonnement</a>
+        <div class="account-dropdown__sep"></div>
+        <button type="button" class="account-dropdown__item account-dropdown__item--danger" id="account-logout-btn">${UI._ic('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>')} Se déconnecter</button>
+      </div>`;
+  },
+  logout() {
+    UI.closeAccountDropdown();
+    window.location.href = '../login.html';
   },
   // Simule l'arrivée d'une notification push : un seul toast par session,
   // uniquement s'il y a au moins une alerte urgente à signaler à l'hôte.

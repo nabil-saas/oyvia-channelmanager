@@ -17,10 +17,12 @@
   position: sticky; top: 0; height: 100vh; z-index: var(--z-nav);
   transition: width var(--t), transform var(--t);
 }
-.app-sidebar__brand { display: flex; align-items: center; gap: var(--sp-2); height: var(--header-h); padding: 0 var(--sp-5); border-bottom: 1px solid var(--c-border); font-weight: var(--fw-bold); font-size: var(--fs-lg); letter-spacing: var(--tracking-tight); }
+.app-sidebar__brand { display: flex; align-items: flex-start; gap: var(--sp-2); height: var(--header-h); padding: 0 var(--sp-5); font-weight: var(--fw-bold); font-size: var(--fs-lg); letter-spacing: var(--tracking-tight); overflow: visible; position: relative; z-index: 1; }
+/* Le logo déborde volontairement en dessous de la barre (plus grand qu'elle) : aligné en haut (la sidebar commence tout en haut de l'écran, il n'y a pas de place au-dessus) et compensé par le padding de la nav ci-dessous pour ne jamais chevaucher les liens */
+.app-sidebar__brand .brand-logo { height: 116px; }
 .app-sidebar__mark { width: 32px; height: 32px; border-radius: 9px; background: var(--blue-600); color: #fff; display: grid; place-items: center; flex-shrink: 0; box-shadow: var(--shadow-blue); }
 .app-sidebar__mark svg { width: 19px; height: 19px; }
-.app-sidebar__nav { flex: 1; overflow-y: auto; padding: var(--sp-4) var(--sp-3); display: flex; flex-direction: column; gap: 2px; }
+.app-sidebar__nav { flex: 1; overflow-y: auto; padding: calc(var(--sp-4) + 36px) var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 2px; }
 .app-navlabel { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); padding: var(--sp-3) var(--sp-3) var(--sp-2); }
 .app-navitem {
   display: flex; align-items: center; gap: var(--sp-3);
@@ -47,7 +49,9 @@
 .app-sidebar.is-mini .app-userchip__meta,
 .app-sidebar.is-mini .app-navitem__badge { display: none; }
 .app-sidebar.is-mini .app-navitem { justify-content: center; padding: var(--sp-3); }
-.app-sidebar.is-mini .app-sidebar__brand { justify-content: center; padding: 0; }
+.app-sidebar.is-mini .app-sidebar__brand { justify-content: center; align-items: center; padding: 0; }
+.app-sidebar.is-mini .app-sidebar__brand .brand-logo { height: auto; max-width: 40px; }
+.app-sidebar.is-mini .app-sidebar__nav { padding-top: var(--sp-4); }
 .app-sidebar.is-mini .app-userchip { justify-content: center; }
 
 /* ------------------------------------------------------------
@@ -87,6 +91,21 @@
 .notif-item__body p { font-size: var(--fs-xs); color: var(--c-text-soft); margin-top: 2px; line-height: var(--lh-snug); }
 .notif-empty { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: var(--sp-8) var(--sp-5); text-align: center; color: var(--c-text-muted); font-size: var(--fs-sm); }
 .notif-empty svg { width: 28px; height: 28px; color: var(--c-positive-ink); }
+
+/* Menu de compte (dropdown ancré à l'avatar / à la fiche utilisateur) */
+.account-dropdown { position: fixed; z-index: var(--z-modal); width: 260px; max-width: calc(100vw - 2 * var(--sp-4)); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl); box-shadow: var(--shadow-lg); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity var(--t-fast), visibility var(--t-fast), transform var(--t-fast); overflow: hidden; }
+.account-dropdown.is-open { opacity: 1; visibility: visible; transform: translateY(0); }
+.account-dropdown__head { padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--c-border); }
+.account-dropdown__head b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-dropdown__head span { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.account-dropdown__body { padding: var(--sp-2); }
+.account-dropdown__item { display: flex; align-items: center; gap: var(--sp-3); width: 100%; padding: var(--sp-3); border: 0; border-radius: var(--r-md); background: none; color: var(--c-text); font-size: var(--fs-sm); font-weight: var(--fw-medium); text-align: left; cursor: pointer; transition: background var(--t-fast); }
+.account-dropdown__item:hover { background: var(--c-nav-hover-bg); }
+.account-dropdown__item svg { width: 17px; height: 17px; color: var(--c-text-soft); flex-shrink: 0; }
+.account-dropdown__item--danger { color: var(--c-danger-ink); }
+.account-dropdown__item--danger svg { color: var(--c-danger-ink); }
+.account-dropdown__item--danger:hover { background: var(--c-danger-soft); }
+.account-dropdown__sep { height: 1px; background: var(--c-border); margin: var(--sp-2) 0; }
 
 /* Toast « push » simulé pour le centre de notifications (message plus long : pilule → carte) */
 .toast--notif { cursor: pointer; border-radius: var(--r-xl); max-width: 360px; align-items: flex-start; }

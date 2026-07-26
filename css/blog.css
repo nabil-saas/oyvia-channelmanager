@@ -1,0 +1,52 @@
+/* ============================================================
+   OYVIA — Page Blog (liste des articles)
+   ============================================================ */
+
+/* Lien de nav actif */
+.lp-navlinks a.is-current { color: var(--c-accent); font-weight: var(--fw-semibold); }
+
+/* ---------- Hero ---------- */
+.blog-hero { padding: var(--sp-12) 0 var(--sp-8); text-align: center; }
+.blog-hero .eyebrow { margin-bottom: var(--sp-3); display: inline-block; }
+.blog-hero h1 { font-size: clamp(2rem, 4.5vw, var(--fs-4xl)); letter-spacing: var(--tracking-tighter); max-width: 760px; margin-inline: auto; }
+.blog-hero p { color: var(--c-text-soft); font-size: var(--fs-md); margin-top: var(--sp-4); max-width: 620px; margin-inline: auto; line-height: var(--lh-snug); }
+
+/* ---------- Filtres par catégorie ---------- */
+.blog-filters { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; margin-bottom: var(--sp-10); }
+.blog-filter { height: 38px; padding: 0 var(--sp-4); border-radius: var(--r-full); border: 1px solid var(--c-border); background: var(--c-surface); color: var(--c-text-soft); font-size: var(--fs-sm); font-weight: var(--fw-medium); transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
+.blog-filter:hover { color: var(--c-text); border-color: var(--ink-300); }
+.blog-filter.is-active { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
+
+/* ---------- Article à la une ---------- */
+.blog-featured { display: grid; grid-template-columns: 340px 1fr; gap: var(--sp-8); align-items: stretch; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-2xl); overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: var(--sp-10); transition: transform var(--t), box-shadow var(--t); }
+.blog-featured:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.blog-featured__media { display: grid; place-items: center; background: linear-gradient(160deg, var(--c-accent-soft), var(--bg-subtle)); color: var(--c-accent); min-height: 220px; }
+.blog-featured__media svg { width: 72px; height: 72px; }
+.blog-featured__media--reglementation { background: linear-gradient(160deg, var(--c-accent-soft), var(--bg-subtle)); color: var(--c-accent); }
+.blog-featured__body { padding: var(--sp-8) var(--sp-8) var(--sp-8) 0; display: flex; flex-direction: column; justify-content: center; }
+.blog-featured__body h2 { font-size: var(--fs-2xl); font-weight: var(--fw-bold); letter-spacing: var(--tracking-tight); line-height: var(--lh-snug); margin-top: var(--sp-3); }
+.blog-featured__body p { color: var(--c-text-soft); margin-top: var(--sp-3); line-height: var(--lh-snug); }
+.blog-featured__body .lp-blog__meta { margin-top: var(--sp-5); }
+
+/* ---------- Tags additionnels (voyageurs / outils) ---------- */
+.lp-blog__tag--voyageurs { background: var(--blue-100); color: var(--blue-700); }
+.lp-blog__tag--outils { background: var(--ink-100); color: var(--ink-600); }
+
+.blog-empty { text-align: center; color: var(--c-text-soft); padding: var(--sp-10) 0; }
+
+/* ---------- Pagination ---------- */
+.blog-pagination { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-10); }
+.blog-pagination__btn, .blog-pagination__num { width: 38px; height: 38px; border-radius: var(--r-full); border: 1px solid var(--c-border); background: var(--c-surface); color: var(--c-text-soft); display: grid; place-items: center; font-size: var(--fs-sm); font-weight: var(--fw-medium); transition: background var(--t-fast), color var(--t-fast); }
+.blog-pagination__btn svg { width: 16px; height: 16px; }
+.blog-pagination__btn:disabled { opacity: 0.4; cursor: default; }
+.blog-pagination__num:hover { color: var(--c-text); }
+.blog-pagination__num.is-active { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
+
+@media (max-width: 720px) {
+  .blog-hero { padding: var(--sp-10) 0 var(--sp-6); }
+  .blog-filters { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; margin-inline: calc(var(--sp-4) * -1); padding: 0 var(--sp-4) var(--sp-2); }
+  .blog-filter { flex-shrink: 0; }
+  .blog-featured { grid-template-columns: 1fr; }
+  .blog-featured__media { min-height: 160px; }
+  .blog-featured__body { padding: var(--sp-6); }
+}

@@ -34,40 +34,6 @@
     }, 1900);
   })();
 
-  /* ---------- Hero : bascule automatique entre les 4 aperçus (calendrier, messagerie, automatisations, ménage) ---------- */
-  (function heroShowcase() {
-    const tabsRoot = document.getElementById('hw-tabs');
-    const panelsRoot = document.getElementById('hw-panels');
-    if (!tabsRoot || !panelsRoot) return;
-    const tabs = [...tabsRoot.querySelectorAll('button')];
-    const panels = [...panelsRoot.querySelectorAll('.lp-window__panel')];
-    const title = document.getElementById('hw-title');
-    const TITLES = [
-      'Oyvia · Calendrier unifié — Juillet 2026',
-      'Oyvia · Messagerie unifiée',
-      'Oyvia · Automatisations',
-      'Oyvia · Ménage & équipe',
-    ];
-    let idx = 0, timer = null;
-
-    function activate(i) {
-      idx = (i + tabs.length) % tabs.length;
-      tabs.forEach((t, ti) => t.classList.toggle('is-active', ti === idx));
-      panels.forEach((p, pi) => p.classList.toggle('is-active', pi === idx));
-      if (title) title.textContent = TITLES[idx] || TITLES[0];
-    }
-    function start() { stop(); timer = setInterval(() => activate(idx + 1), 4200); }
-    function stop() { if (timer) clearInterval(timer); }
-
-    tabs.forEach((t, i) => t.addEventListener('click', () => { activate(i); start(); }));
-    const win = tabsRoot.closest('.lp-window');
-    win.addEventListener('mouseenter', stop);
-    win.addEventListener('mouseleave', start);
-
-    activate(0);
-    start();
-  })();
-
   /* ---------- Slider : ce qui vous fait perdre du temps ---------- */
   (function problemsSlider() {
     const root = document.getElementById('pbSlider');

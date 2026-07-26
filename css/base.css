@@ -95,8 +95,8 @@ h4 { font-size: var(--fs-lg); }
 .divider { height: 1px; background: var(--c-border); border: 0; width: 100%; }
 
 /* Logo Oyvia (wordmark SVG) */
-.brand-logo { height: 38px; width: auto; display: block; }
-.brand-logo--lg { height: 50px; }
+.brand-logo { height: 84px; width: auto; display: block; }
+.brand-logo--lg { height: 108px; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
