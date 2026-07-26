@@ -519,6 +519,13 @@
 .cal-tt__row { display: flex; justify-content: space-between; gap: var(--sp-4); margin-top: 4px; color: rgba(255,255,255,0.75); }
 .cal-tt__row span:last-child { color: #fff; font-weight: var(--fw-semibold); }
 
+/* Liste de prestataires à cocher (modale « Bloquer des dates ») */
+.blk-prest-list { display: flex; flex-direction: column; gap: 2px; max-height: 180px; overflow-y: auto; border: 1px solid var(--c-border); border-radius: var(--r-md); padding: var(--sp-2); }
+.blk-prest-row { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2); border-radius: var(--r-sm); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; transition: background var(--t-fast); }
+.blk-prest-row:hover { background: var(--c-nav-hover-bg); }
+.blk-prest-row input { width: 16px; height: 16px; accent-color: var(--blue-600); flex-shrink: 0; }
+.blk-prest-row small { color: var(--c-text-muted); font-weight: var(--fw-medium); margin-left: auto; }
+
 /* Panneau de détail réservation */
 .rp-section { padding: var(--sp-4) 0; border-bottom: 1px solid var(--c-border); }
 .rp-section:last-child { border-bottom: 0; }

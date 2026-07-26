@@ -137,9 +137,19 @@
     const t = TACHES.find(x => x.id === input.dataset.photoInput);
     if (!t) return;
     t.photos = t.photos || [];
-    [...input.files].forEach(file => t.photos.push(URL.createObjectURL(file)));
-    render();
-    if (typeof UI !== 'undefined') UI.toast(input.files.length > 1 ? 'Photos ajoutées' : 'Photo ajoutée');
+    const files = [...input.files];
+    // On convertit en data URL (base64) plutôt qu'en blob URL : ça survit
+    // à la sauvegarde dans localStorage et donc aux rechargements de page.
+    Promise.all(files.map(file => new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    }))).then(dataUrls => {
+      t.photos.push(...dataUrls);
+      render();
+      saveOyviaState();
+      if (typeof UI !== 'undefined') UI.toast(files.length > 1 ? 'Photos ajoutées' : 'Photo ajoutée');
+    });
   });
 
   // Connexion directe via ?p=P1

@@ -91,7 +91,12 @@
         <div class="field"><label class="field__label" for="blk-from">Du</label><input class="input" type="date" id="blk-from" value="2026-08-03" /></div>
         <div class="field"><label class="field__label" for="blk-to">Au</label><input class="input" type="date" id="blk-to" value="2026-08-06" /></div>
       </div>
-      <div class="field mt-4"><label class="field__label" for="blk-motif">Motif (facultatif)</label><input class="input" id="blk-motif" placeholder="Maintenance, usage personnel…" /></div>
+      <div class="field mt-4"><label class="field__label" for="blk-motif">Motif</label><input class="input" id="blk-motif" placeholder="Maintenance, usage personnel…" /></div>
+      <div class="field mt-4">
+        <label class="field__label">Assigner à des prestataires <span class="text-muted">(optionnel)</span></label>
+        <p class="field__hint mb-2">Une tâche sera créée automatiquement pour chaque prestataire sélectionné.</p>
+        <div class="blk-prest-list" id="blk-prest-list"><!-- injecté --></div>
+      </div>
     </div>
     <div class="modal__foot">
       <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>

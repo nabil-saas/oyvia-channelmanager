@@ -146,19 +146,47 @@ Layout.init('calendrier');
 
   /* ---------- Blocage de dates ---------- */
   document.getElementById('blk-log').innerHTML = LOGEMENTS.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
-  document.getElementById('cal-block').addEventListener('click', () => UI.openPanel('cal-modal'));
+  document.getElementById('blk-prest-list').innerHTML = PRESTATAIRES.map(p => `
+    <label class="blk-prest-row">
+      <input type="checkbox" value="${p.id}">
+      ${p.nom}
+      <small>${p.role} · ${p.zone}</small>
+    </label>`).join('');
+  document.getElementById('cal-block').addEventListener('click', () => {
+    document.getElementById('blk-motif').value = '';
+    document.querySelectorAll('#blk-prest-list input:checked').forEach(c => { c.checked = false; });
+    UI.openPanel('cal-modal');
+  });
   document.getElementById('blk-confirm').addEventListener('click', () => {
     const logId = document.getElementById('blk-log').value;
     const from = document.getElementById('blk-from').value;
     const to = document.getElementById('blk-to').value;
     const motif = document.getElementById('blk-motif').value.trim();
+    if (!motif) { UI.toast('Le motif est obligatoire', false); return; }
     if (!from || !to || parseDate(to) <= parseDate(from)) { UI.toast('Dates invalides', false); return; }
+
+    const blockId = 'RB' + Date.now();
     RESERVATIONS.push({
-      id: 'RB' + Date.now(), logementId: logId, voyageurId: null, voyageur: motif || 'Blocage',
+      id: blockId, logementId: logId, voyageurId: null, voyageur: motif,
       canal: 'bloque', arrivee: from, depart: to, pers: 0, montant: 0, paiement: 'paye',
-      statut: 'confirme', ref: '—', note: motif || 'Blocage manuel', nuits: nuitsEntre(from, to),
+      statut: 'confirme', ref: '—', note: motif, nuits: nuitsEntre(from, to),
     });
-    UI.closeAll(); render(); UI.toast('Dates bloquées');
+
+    // Assignation optionnelle à un ou plusieurs prestataires : une tâche par prestataire coché
+    const prestIds = [...document.querySelectorAll('#blk-prest-list input:checked')].map(c => c.value);
+    prestIds.forEach((prestataireId, i) => {
+      TACHES.push({
+        id: 'T' + Date.now() + i, type: 'maintenance',
+        logementId: logId, date: from, heure: '10:00',
+        prestataireId, statut: 'a_faire', montant: 0,
+        reservationId: blockId, note: motif,
+      });
+    });
+
+    UI.closeAll(); render();
+    UI.toast(prestIds.length
+      ? `Dates bloquées · ${prestIds.length} tâche${prestIds.length > 1 ? 's' : ''} créée${prestIds.length > 1 ? 's' : ''}`
+      : 'Dates bloquées');
   });
 
   /* ---------- Navigation ---------- */

@@ -616,3 +616,71 @@ const DECLENCHEUR_LABEL = {
   reservation:'À la réservation', j_moins_1:'J-1 avant arrivée', jour_arrivee:'Jour de l\'arrivée',
   jour_depart:'Jour du départ', j_plus_1:'J+1 après départ', j_plus_3:'J+3 après départ',
 };
+
+/* ============================================================
+   PERSISTANCE LOCALE (localStorage) — c'est un mockup sans backend :
+   toutes les données ci-dessus ne sont que des valeurs de démarrage,
+   qui se réinitialiseraient sinon à chaque rechargement. On restaure
+   ici l'état sauvegardé (s'il existe) EN PLACE dans les mêmes tableaux
+   et objets, avant que les autres scripts de la page ne les lisent,
+   puis on sauvegarde automatiquement à chaque action.
+   Ça marche pareil une fois hébergé sur GitHub Pages : localStorage
+   est propre à chaque navigateur/appareil sur le domaine du site
+   (pas de synchronisation entre appareils ni de vraie base de données,
+   mais les actions d'un même visiteur survivent aux rechargements et
+   aux visites suivantes, tant qu'il ne vide pas les données du site).
+   ============================================================ */
+const OYVIA_STATE_KEY = 'oyvia_state_v1';
+
+// Entités mutables à sauvegarder/restaurer. Les données purement
+// statiques (STATS, TRANCHES_TARIFAIRES, HISTORIQUE_FACTURATION…) ne
+// sont jamais modifiées depuis l'UI et n'ont pas besoin d'être stockées.
+const _OYVIA_ENTITIES = {
+  LOGEMENTS, RESERVATIONS, VOYAGEURS, CONVERSATIONS, TACHES,
+  PRESTATAIRES, AUTOMATISATIONS, RECURRENTES, PLATEFORMES,
+  COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, TACHE_LABEL,
+};
+
+(function _oyviaRestoreState() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(OYVIA_STATE_KEY)); } catch { saved = null; }
+  if (!saved) return;
+  Object.keys(_OYVIA_ENTITIES).forEach(name => {
+    const ref = _OYVIA_ENTITIES[name];
+    const data = saved[name];
+    if (data === undefined || data === null) return;
+    if (Array.isArray(ref)) {
+      ref.length = 0;
+      data.forEach(item => ref.push(item));
+    } else if (ref && typeof ref === 'object') {
+      Object.keys(ref).forEach(k => delete ref[k]);
+      Object.assign(ref, data);
+    }
+  });
+})();
+
+let _oyviaResetting = false;
+function saveOyviaState() {
+  if (_oyviaResetting) return; // une réinitialisation est en cours : ne pas réécrire l'ancien état
+  try {
+    const snapshot = {};
+    Object.keys(_OYVIA_ENTITIES).forEach(name => { snapshot[name] = _OYVIA_ENTITIES[name]; });
+    localStorage.setItem(OYVIA_STATE_KEY, JSON.stringify(snapshot));
+  } catch (e) { /* quota dépassé, navigation privée… on ignore silencieusement */ }
+}
+
+// Sauvegarde automatique : à la fermeture/navigation, quand l'onglet
+// passe en arrière-plan, et un filet de sécurité toutes les 2 secondes
+// pour couvrir les cas où ces évènements ne se déclenchent pas.
+window.addEventListener('pagehide', saveOyviaState);
+window.addEventListener('beforeunload', saveOyviaState);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveOyviaState(); });
+setInterval(saveOyviaState, 2000);
+
+// Réinitialise les données de démonstration à leur état d'origine
+// (utile si la démo part en vrille) — accessible depuis le menu compte.
+function resetOyviaState() {
+  _oyviaResetting = true;
+  try { localStorage.removeItem(OYVIA_STATE_KEY); } catch {}
+  location.reload();
+}

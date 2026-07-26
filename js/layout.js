@@ -260,6 +260,8 @@ const UI = {
     trigger && trigger.setAttribute('aria-expanded', 'true');
     const logoutBtn = document.getElementById('account-logout-btn');
     if (logoutBtn) logoutBtn.addEventListener('click', UI.logout);
+    const resetBtn = document.getElementById('account-reset-btn');
+    if (resetBtn) resetBtn.addEventListener('click', UI.resetDemo);
     setTimeout(() => document.addEventListener('click', UI._accountOutsideClick, true), 0);
   },
   closeAccountDropdown() {
@@ -282,6 +284,7 @@ const UI = {
       </div>
       <div class="account-dropdown__body">
         <a class="account-dropdown__item" href="parametres.html">${UI._ic('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>')} Paramètres</a>
+        <button type="button" class="account-dropdown__item" id="account-reset-btn">${UI._ic('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>')} Réinitialiser les données de démo</button>
         <div class="account-dropdown__sep"></div>
         <button type="button" class="account-dropdown__item account-dropdown__item--danger" id="account-logout-btn">${UI._ic('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>')} Se déconnecter</button>
       </div>`;
@@ -289,6 +292,12 @@ const UI = {
   logout() {
     UI.closeAccountDropdown();
     window.location.href = '../login.html';
+  },
+  resetDemo() {
+    UI.closeAccountDropdown();
+    if (confirm('Réinitialiser toutes les données de démo (réservations, tâches, prestataires, paramètres…) ? Cette action est irréversible.')) {
+      resetOyviaState();
+    }
   },
   // Simule l'arrivée d'une notification push : un seul toast par session,
   // uniquement s'il y a au moins une alerte urgente à signaler à l'hôte.
