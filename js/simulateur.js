@@ -1,30 +1,16 @@
 /* ============================================================
-   OYVIA — Landing : simulateur de tarif + option WhatsApp
+   OYVIA — Landing : simulateur de tarif
    Modèle : un tarif dégressif par logement géré, qu'il ait été
    réservé ou non dans le mois (total = prix_tranche × nombre de
    logements).
+
+   L'option WhatsApp est simplement mentionnée dans la page (sans
+   tarif) ; son détail de facturation reste dans l'app, sur
+   Paramètres > Options supplémentaires.
    ============================================================ */
 (function () {
   // formatMAD() et trancheTarifaire() sont définis globalement dans data.js
   // (partagés avec l'abonnement de l'app pour rester cohérents).
-
-  /* ---------- Option WhatsApp (facturée au message) ---------- */
-  function renderOptions() {
-    const wa = OPTIONS_LANDING.find(o => o.id === 'whatsapp');
-    const rates = wa.tarifs.map(t => `
-      <div class="lp-wa__rate">
-        <span class="cat">${t.cat}<small>${t.detail}</small></span>
-        <span class="price ${t.prix === 0 ? 'free' : ''}">${t.prix === 0 ? 'Gratuit' : formatMAD(t.prix, 2) + ' / message'}</span>
-      </div>`).join('');
-    document.getElementById('options').innerHTML = `
-      <div class="lp-wa">
-        <div class="lp-wa__head">
-          <div class="lp-wa__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/></svg></div>
-          <div><b>${wa.nom}</b><span>${wa.desc}</span></div>
-        </div>
-        <div class="lp-wa__rates">${rates}</div>
-      </div>`;
-  }
 
   /* ---------- Simulateur : curseur + saisie libre d'un chiffre, synchronisés ---------- */
   const range = document.getElementById('sim-range');
@@ -69,6 +55,5 @@
   elCount.addEventListener('input', () => { if (elCount.value !== '') renderSim(parseInt(elCount.value, 10)); });
   elCount.addEventListener('blur', () => renderSim(parseInt(elCount.value, 10)));
 
-  renderOptions();
   renderSim(parseInt(elCount.value, 10));
 })();
