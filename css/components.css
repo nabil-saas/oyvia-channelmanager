@@ -61,6 +61,8 @@
 .badge-canal--booking { color: var(--ch-booking-ink); } .badge-canal--booking .dot { background: var(--ch-booking); }
 .badge-canal--direct  { color: var(--ch-direct-ink); }  .badge-canal--direct  .dot { background: var(--ch-direct); }
 .badge-canal--bloque  { color: var(--ch-bloque-ink); }  .badge-canal--bloque  .dot { background: var(--ch-bloque); }
+.badge-canal--whatsapp{ color: var(--ch-whatsapp-ink); }.badge-canal--whatsapp.dot,.badge-canal--whatsapp .dot { background: var(--ch-whatsapp); }
+.badge-canal--email   { color: var(--ch-email-ink); }   .badge-canal--email   .dot { background: var(--ch-email); }
 
 /* Chip canal plein */
 .chip-canal { display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 var(--sp-3); border-radius:var(--r-full); font-size:var(--fs-xs); font-weight:var(--fw-semibold); }
@@ -68,6 +70,8 @@
 .chip-canal--booking { background: var(--ch-booking-soft); color: var(--ch-booking-ink); }
 .chip-canal--direct  { background: var(--ch-direct-soft);  color: var(--ch-direct-ink); }
 .chip-canal--bloque  { background: var(--ch-bloque-soft);  color: var(--ch-bloque-ink); }
+.chip-canal--whatsapp{ background: var(--ch-whatsapp-soft);color: var(--ch-whatsapp-ink); }
+.chip-canal--email   { background: var(--ch-email-soft);   color: var(--ch-email-ink); }
 
 /* Point de statut */
 .status-dot { width: 8px; height: 8px; border-radius: var(--r-full); display: inline-block; }

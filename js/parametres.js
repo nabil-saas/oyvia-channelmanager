@@ -478,7 +478,7 @@ Layout.init('parametres');
   const PF_COLOR = {
     airbnb: 'var(--ch-airbnb)', booking: 'var(--ch-booking)', expedia: 'var(--ch-expedia)',
     agoda: 'var(--ch-agoda)', vrbo: 'var(--ch-vrbo)', google: 'var(--ch-google)',
-    pricelabs: 'var(--ch-pricelabs)', ical: 'var(--ch-ical)',
+    pricelabs: 'var(--ch-pricelabs)', ical: 'var(--ch-ical)', whatsapp: 'var(--ch-whatsapp)',
   };
 
   function pfCard(p) {

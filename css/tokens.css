@@ -47,6 +47,9 @@
   --ch-booking:     #0A3D91;   --ch-booking-soft:#DEE7F5;  --ch-booking-ink: #0A3D91;
   --ch-direct:      #00A550;   --ch-direct-soft: #D8F5E5;  --ch-direct-ink:  #067a3e;
   --ch-bloque:      #94A3B8;   --ch-bloque-soft: #EAEDF2;  --ch-bloque-ink:  #55607a;
+  /* Canaux propres à la messagerie (aucune réservation associée) */
+  --ch-whatsapp:    #25D366;   --ch-whatsapp-soft:#DCF8E8; --ch-whatsapp-ink:#0E7A3D;
+  --ch-email:       #64748B;   --ch-email-soft:  #EEF1F5;  --ch-email-ink:   #46536B;
 
   /* --- Couleurs des plateformes & intégrations (page Paramètres) --- */
   --ch-expedia:     #FDB913;   --ch-expedia-soft:#FFF3D6;  --ch-expedia-ink:  #8A5A00;

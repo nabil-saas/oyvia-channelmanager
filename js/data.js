@@ -296,10 +296,21 @@ const VOYAGEURS = [
 ];
 
 /* ============================================================
-   CONVERSATIONS (15) — reliées à une réservation
-   canal : airbnb | booking | email
+   CONVERSATIONS (18) — reliées à une réservation
+   canal : airbnb | booking | email | whatsapp
+
+   WhatsApp est surtout utilisé par les voyageurs en réservation
+   directe, qui n'ont pas de messagerie OTA pour vous joindre.
+   Ces conversations ne s'affichent que si la plateforme WhatsApp
+   est connectée (Paramètres > Plateformes).
    ============================================================ */
 const CONVERSATIONS = [
+  { id:'C16', reservationId:'R21', canal:'whatsapp', nonLu:2, horodatage:'10:24', messages:[
+    { de:'voyageur', texte:'Bonjour ! On arrive le 2 août vers 14h, est-ce qu\'on peut déposer les valises avant le check-in ?', heure:'10:05' },
+    { de:'hote',     texte:'Bonjour Sarah ! Oui, le logement est libre dès 12h ce jour-là, vous pourrez entrer directement.', heure:'10:18' },
+    { de:'voyageur', texte:'Super ! Et le linge de lit est fourni ?', heure:'10:22' },
+    { de:'voyageur', texte:'Dernière question : y a-t-il un parking à proximité ?', heure:'10:24' },
+  ]},
   { id:'C01', reservationId:'R07', canal:'airbnb', nonLu:2, horodatage:'09:12', messages:[
     { de:'voyageur', texte:'Bonjour ! J\'arrive aujourd\'hui vers 15h. Comment récupérer les clés ?', heure:'08:40' },
     { de:'hote',     texte:'Bonjour Nina, bienvenue ! L\'accès se fait par boîte à clés, code 7734B à droite de la porte.', heure:'08:52' },
@@ -310,6 +321,16 @@ const CONVERSATIONS = [
     { de:'voyageur', texte:'Bonjour, nous arrivons en voiture ce soir. Y a-t-il un parking à proximité ?', heure:'08:30' },
     { de:'hote',     texte:'Bonjour Antoine, oui, le parking République est à 100m (payant, environ 18€/jour).', heure:'08:48' },
     { de:'voyageur', texte:'Super, merci. On sera là vers 19h.', heure:'08:55' },
+  ]},
+  { id:'C17', reservationId:'R08', canal:'whatsapp', nonLu:0, horodatage:'Hier', messages:[
+    { de:'voyageur', texte:'Bonsoir, je viens de régler l\'acompte. Vous confirmez la réservation du 1er au 4 août ?', heure:'Hier 20:10' },
+    { de:'hote',     texte:'Bonsoir Thomas, c\'est bien reçu, réservation confirmée. Je vous envoie les instructions d\'arrivée la veille.', heure:'Hier 20:26' },
+    { de:'voyageur', texte:'Parfait, merci beaucoup !', heure:'Hier 20:31' },
+  ]},
+  { id:'C18', reservationId:'R30', canal:'whatsapp', nonLu:1, horodatage:'21 juil.', messages:[
+    { de:'voyageur', texte:'Bonjour, nous serons finalement 3 au lieu de 2. C\'est possible ?', heure:'21 juil. 15:40' },
+    { de:'hote',     texte:'Bonjour Lucas, aucun souci, le duplex accueille jusqu\'à 4 personnes. Je mets à jour la réservation.', heure:'21 juil. 16:02' },
+    { de:'voyageur', texte:'Merci ! Il y aura un lit d\'appoint du coup ?', heure:'21 juil. 16:15' },
   ]},
   { id:'C03', reservationId:'R23', canal:'airbnb', nonLu:1, horodatage:'Hier', messages:[
     { de:'voyageur', texte:'Bonjour, le wifi ne fonctionne pas très bien dans la chambre. Une solution ?', heure:'Hier 21:15' },
@@ -634,6 +655,7 @@ const PLATEFORMES = [
   { id:'expedia',    section:'ota',          nom:'Expedia',      lettre:'E', connecte:false, desc:"Diffusez vos logements sur Expedia et Hotels.com." },
   { id:'agoda',      section:'ota',          nom:'Agoda',        lettre:'A', connecte:false, desc:"Diffusez vos logements sur Agoda, très utilisé en Asie." },
   { id:'vrbo',       section:'ota',          nom:'Vrbo',         lettre:'V', connecte:false, desc:"Synchronisez vos annonces Vrbo et gérez vos réservations depuis Oyvia." },
+  { id:'whatsapp',   section:'connexions',   nom:'WhatsApp',     lettre:'W', connecte:true,  desc:"Recevez et répondez aux messages WhatsApp de vos voyageurs directement dans la messagerie Oyvia." },
   { id:'google',     section:'connexions',   nom:'Google',       lettre:'G', connecte:false, desc:"Affichez vos disponibilités sur Google (Recherche et Maps)." },
   { id:'pricelabs',  section:'applications', nom:'PriceLabs',    lettre:'P', connecte:false, desc:"Synchronisez une tarification dynamique, logement par logement." },
   { id:'ical',       section:'applications', nom:'iCal',         lettre:'I', connecte:true,  desc:"Importez un calendrier externe (Airbnb, Vrbo, Google…) pour bloquer les dates." },
@@ -700,7 +722,9 @@ function saveFichePolice(reservationId, index, data) {
 }
 
 // Libellés lisibles
-const CANAL_LABEL = { airbnb:'Airbnb', booking:'Booking.com', direct:'Direct', bloque:'Blocage' };
+// Les 4 premiers sont des canaux de réservation ; « whatsapp » et « email »
+// n'existent que côté messagerie (une conversation, mais pas de réservation).
+const CANAL_LABEL = { airbnb:'Airbnb', booking:'Booking.com', direct:'Direct', bloque:'Blocage', whatsapp:'WhatsApp', email:'E-mail' };
 const PAIEMENT_LABEL = { paye:'Payé', acompte:'Acompte', impaye:'Impayé', rembourse:'Remboursé' };
 const STATUT_LABEL = { confirme:'Confirmée', en_cours:'En cours', termine:'Terminée', annule:'Annulée' };
 

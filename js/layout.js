@@ -56,7 +56,15 @@ const Layout = (function () {
 
   function svg(paths, w) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`; }
 
-  function unreadCount() { return CONVERSATIONS.reduce((s, c) => s + (c.nonLu || 0), 0); }
+  // Ne compte que les conversations réellement visibles dans la messagerie :
+  // un canal dont la plateforme est déconnectée ne doit pas gonfler le badge.
+  function canalConnecte(canal) {
+    const pf = PLATEFORMES.find(p => p.id === canal);
+    return pf ? pf.connecte : true;
+  }
+  function unreadCount() {
+    return CONVERSATIONS.reduce((s, c) => s + (canalConnecte(c.canal) ? (c.nonLu || 0) : 0), 0);
+  }
 
   function sidebarHTML(active) {
     const groups = NAV_GROUPS.map(g => {

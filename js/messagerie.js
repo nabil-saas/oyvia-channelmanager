@@ -29,7 +29,17 @@ Layout.init('messagerie');
   elTemplate.innerHTML = '<option value="">Insérer un modèle…</option>' +
     MODELES.map((m, i) => `<option value="${i}">${m.nom}</option>`).join('');
 
-  let activeId = (CONVERSATIONS.find(c => c.nonLu > 0) || CONVERSATIONS[0]).id;
+  // Un canal n'alimente la messagerie que si sa plateforme est connectée
+  // (Paramètres > Plateformes). Les canaux sans plateforme, comme l'e-mail,
+  // restent toujours disponibles.
+  function canalActif(canal) {
+    const pf = PLATEFORMES.find(p => p.id === canal);
+    return pf ? pf.connecte : true;
+  }
+  const conversationsVisibles = () => CONVERSATIONS.filter(c => canalActif(c.canal));
+
+  const visibles = conversationsVisibles();
+  let activeId = (visibles.find(c => c.nonLu > 0) || visibles[0] || CONVERSATIONS[0]).id;
 
   const ctxOf = c => { const r = getReservation(c.reservationId); return { r, l: getLogement(r.logementId), v: r.voyageurId ? getVoyageur(r.voyageurId) : null }; };
 
@@ -46,7 +56,7 @@ Layout.init('messagerie');
   /* ---------- Liste des conversations ---------- */
   function renderList() {
     const q = elSearch.value.trim().toLowerCase();
-    const list = CONVERSATIONS.filter(c => {
+    const list = conversationsVisibles().filter(c => {
       const { l } = ctxOf(c);
       return !q || `${c.voyageur || getReservation(c.reservationId).voyageur} ${l.nom}`.toLowerCase().includes(q);
     });
@@ -54,8 +64,8 @@ Layout.init('messagerie');
       const { r, l } = ctxOf(c);
       const nom = r.voyageur;
       const last = c.messages[c.messages.length - 1];
-      const canalTxt = c.canal === 'email' ? 'E-mail' : CANAL_LABEL[c.canal];
-      const dotClass = c.canal === 'email' ? 'badge-canal--bloque' : `badge-canal--${c.canal}`;
+      const canalTxt = CANAL_LABEL[c.canal];
+      const dotClass = `badge-canal--${c.canal}`;
       return `<div class="msg-conv ${c.id === activeId ? 'is-active' : ''}" data-id="${c.id}">
         <span class="avatar ${AVA[i % 4]}">${initiales(nom)}</span>
         <div class="msg-conv__body">
@@ -80,7 +90,7 @@ Layout.init('messagerie');
       <span class="avatar">${initiales(r.voyageur)}</span>
       <div class="msg-threadhead__meta">
         <b>${r.voyageur}</b>
-        <small>${l.nom} · ${l.ville} · <span class="badge-canal badge-canal--${c.canal === 'email' ? 'bloque' : c.canal}"><span class="dot"></span>${c.canal === 'email' ? 'E-mail' : CANAL_LABEL[c.canal]}</span></small>
+        <small>${l.nom} · ${l.ville} · <span class="badge-canal badge-canal--${c.canal}"><span class="dot"></span>${CANAL_LABEL[c.canal]}</span></small>
       </div>
       <div class="msg-threadhead__actions">
         <button class="btn btn--secondary btn--sm" onclick="UI.openResa('${r.id}')">Voir la réservation</button>
