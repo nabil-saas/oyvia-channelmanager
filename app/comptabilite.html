@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Comptabilité</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Comptabilité</h1>
+            <p>Suivi financier par propriétaire : chiffre d'affaires, commission et dépenses.</p>
+          </div>
+        </div>
+
+        <div class="tabs" id="cp-tabs">
+          <button type="button" class="is-active" data-tab="synthese">Synthèse comptable</button>
+          <button type="button" data-tab="facturation">Facturation</button>
+          <button type="button" data-tab="depenses">Dépenses</button>
+        </div>
+
+        <!-- Synthèse comptable -->
+        <div class="tabpane is-active" data-pane="synthese" id="cp-pane-synthese">
+          <div class="card card--pad mb-4">
+            <div class="cp-filters">
+              <div class="field">
+                <label class="field__label" for="cp-owner">Propriétaire</label>
+                <select class="select" id="cp-owner"></select>
+              </div>
+              <div class="field">
+                <label class="field__label" for="cp-from">Du</label>
+                <input class="input" type="date" id="cp-from" />
+              </div>
+              <div class="field">
+                <label class="field__label" for="cp-to">Au</label>
+                <input class="input" type="date" id="cp-to" />
+              </div>
+              <button class="btn btn--secondary" id="cp-period-month">Ce mois-ci</button>
+            </div>
+          </div>
+
+          <div id="cp-invoice-alert"><!-- injecté --></div>
+
+          <p class="text-sm text-soft mb-4" id="cp-mode-note"><!-- injecté --></p>
+
+          <div class="app-grid app-grid--kpi mb-4" id="cp-kpis"><!-- injecté --></div>
+
+          <div class="card card--pad mb-4">
+            <p class="eyebrow mb-4">Répartition du chiffre d'affaires</p>
+            <div id="cp-bar"><!-- injecté --></div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>Logement</th><th class="num">CA</th><th class="num">Dépenses</th><th class="num">Commission</th></tr>
+              </thead>
+              <tbody id="cp-synth-table"><!-- injecté --></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Facturation -->
+        <div class="tabpane" data-pane="facturation" id="cp-pane-facturation">
+          <p class="text-sm text-soft mb-4">Chaque propriétaire a son propre modèle de facturation. Définissez-le ici (commission, forfait, mixte, ou reversement du net), puis suivez la génération des factures mensuelles (✓ générée, ⏳ en attente).</p>
+          <div id="cp-owners"><!-- injecté --></div>
+        </div>
+
+        <!-- Dépenses -->
+        <div class="tabpane" data-pane="depenses" id="cp-pane-depenses">
+          <div class="app-pagehead" style="margin-bottom:var(--sp-4)">
+            <div class="row gap-3" style="flex-wrap:wrap">
+              <div class="field" style="max-width:220px">
+                <label class="field__label" for="cp-dep-filter-owner">Filtrer par propriétaire</label>
+                <select class="select" id="cp-dep-filter-owner"></select>
+              </div>
+              <div class="field" style="max-width:220px">
+                <label class="field__label" for="cp-dep-filter">Filtrer par logement</label>
+                <select class="select" id="cp-dep-filter"></select>
+              </div>
+            </div>
+            <div class="app-pagehead__actions">
+              <button class="btn btn--primary" id="cp-dep-add">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Ajouter une dépense
+              </button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>Date</th><th>Logement</th><th>Propriétaire</th><th>Libellé</th><th class="num">Montant TTC</th><th>Justificatif</th><th></th></tr>
+              </thead>
+              <tbody id="cp-dep-table"><!-- injecté --></tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : ajouter une dépense -->
+  <div class="modal" id="cp-dep-modal" role="dialog" aria-modal="true" aria-labelledby="cp-dep-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="cp-dep-title">Ajouter une dépense</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="field mb-4">
+        <label class="field__label" for="cp-f-logement">Logement</label>
+        <select class="select" id="cp-f-logement"></select>
+      </div>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="cp-f-date">Date</label><input class="input" type="date" id="cp-f-date" /></div>
+        <div class="field"><label class="field__label" for="cp-f-montant">Montant TTC (€)</label><input class="input" type="number" min="0" step="0.01" id="cp-f-montant" placeholder="0" /></div>
+      </div>
+      <div class="field mt-4"><label class="field__label" for="cp-f-libelle">Libellé</label><input class="input" id="cp-f-libelle" placeholder="Réparation, entretien, achat…" /></div>
+      <div class="field mt-4">
+        <label class="field__label">Facture / justificatif <span class="text-muted">(optionnel)</span></label>
+        <label class="btn btn--secondary" style="cursor:pointer;display:inline-flex">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          Joindre un fichier
+          <input type="file" id="cp-f-facture" hidden />
+        </label>
+        <span class="text-xs text-muted" id="cp-f-facture-name" style="margin-left:var(--sp-3)"></span>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="cp-dep-confirm">Ajouter la dépense</button>
+    </div>
+  </div>
+
+  <!-- Modale : visualiser un justificatif -->
+  <div class="modal modal--lg" id="cp-just-modal" role="dialog" aria-modal="true" aria-labelledby="cp-just-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="cp-just-title">Justificatif</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div id="cp-just-body"><!-- injecté --></div>
+    </div>
+    <div class="modal__foot">
+      <a class="btn btn--secondary" id="cp-just-download" download>Télécharger</a>
+      <button class="btn btn--primary" onclick="UI.closeAll()">Fermer</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/comptabilite.js"></script>
+</body>
+</html>

@@ -77,12 +77,23 @@ Layout.init('calendrier');
     logements.forEach(l => {
       let cells, extra = '';
       if (mode === 'taches') {
+        // Une tâche multi-jours (dateFin renseignée, ex. blocage de dates) apparaît
+        // sur chacun des jours qu'elle couvre, pas seulement son jour de début.
         const tByDate = {};
-        TACHES.filter(t => t.logementId === l.id).forEach(t => { (tByDate[t.date] = tByDate[t.date] || []).push(t); });
+        TACHES.filter(t => t.logementId === l.id).forEach(t => {
+          const fin = (t.dateFin && parseDate(t.dateFin) > parseDate(t.date)) ? t.dateFin : t.date;
+          let d = t.date;
+          while (parseDate(d) <= parseDate(fin)) {
+            (tByDate[d] = tByDate[d] || []).push({ task: t, isStart: d === t.date });
+            d = addDays(d, 1);
+          }
+        });
         cells = days.map(d => {
-          const chips = (tByDate[ymd(d)] || []).sort((a, b) => a.heure.localeCompare(b.heure)).map(t => {
+          const chips = (tByDate[ymd(d)] || []).sort((a, b) => a.task.heure.localeCompare(b.task.heure)).map(({ task: t, isStart }) => {
             const p = getPrestataire(t.prestataireId);
-            return `<div class="cal-tchip cal-tchip--${t.type}" data-task="${t.id}"><b>${t.heure}</b> ${p ? p.nom : (TACHE_LABEL[t.type] || t.type)}</div>`;
+            const nom = p ? p.nom : (TACHE_LABEL[t.type] || t.type);
+            const head = isStart ? `<b>${t.heure}</b>` : '<b>↳</b>';
+            return `<div class="cal-tchip cal-tchip--${t.type} ${isStart ? '' : 'cal-tchip--suite'}" data-task="${t.id}">${head} ${nom}</div>`;
           }).join('');
           return `<div class="cal-daycell ${isToday(d) ? 'cal-daycell--today' : ''} ${isWE(d) ? 'cal-daycell--we' : ''}">${chips ? `<div class="cal-tchips">${chips}</div>` : ''}</div>`;
         }).join('');
@@ -109,8 +120,12 @@ Layout.init('calendrier');
       const t = TACHES.find(x => x.id === taskEl.dataset.task); if (!t) return;
       const p = getPrestataire(t.prestataireId);
       const stLabel = { a_faire: 'À faire', en_cours: 'En cours', termine: 'Terminé' }[t.statut];
+      const multi = t.dateFin && parseDate(t.dateFin) > parseDate(t.date);
+      const quand = multi
+        ? `${formatPlage(t.date, t.dateFin)} · ${nuitsEntre(t.date, t.dateFin) + 1} jours`
+        : `${formatDate(t.date)} · ${t.heure}`;
       tt.innerHTML = `<b>${TACHE_LABEL[t.type] || t.type} · ${getLogement(t.logementId).nom}</b>
-        <div class="cal-tt__row"><span>Quand</span><span>${formatDate(t.date)} · ${t.heure}</span></div>
+        <div class="cal-tt__row"><span>Quand</span><span>${quand}</span></div>
         <div class="cal-tt__row"><span>Prestataire</span><span>${p ? p.nom : '—'}</span></div>
         <div class="cal-tt__row"><span>Statut</span><span>${stLabel}</span></div>
         ${t.montant ? `<div class="cal-tt__row"><span>Montant</span><span>${formatEuro(t.montant)}</span></div>` : ''}`;
@@ -172,12 +187,15 @@ Layout.init('calendrier');
       statut: 'confirme', ref: '—', note: motif, nuits: nuitsEntre(from, to),
     });
 
-    // Assignation optionnelle à un ou plusieurs prestataires : une tâche par prestataire coché
+    // Assignation optionnelle à un ou plusieurs prestataires : une tâche par prestataire coché.
+    // dateFin = dernier jour réellement bloqué (le "Au" est exclusif, comme un départ de réservation).
+    const dateFin = addDays(to, -1);
     const prestIds = [...document.querySelectorAll('#blk-prest-list input:checked')].map(c => c.value);
     prestIds.forEach((prestataireId, i) => {
       TACHES.push({
         id: 'T' + Date.now() + i, type: 'maintenance',
-        logementId: logId, date: from, heure: '10:00',
+        logementId: logId, date: from, dateFin,
+        heure: '10:00',
         prestataireId, statut: 'a_faire', montant: 0,
         reservationId: blockId, note: motif,
       });

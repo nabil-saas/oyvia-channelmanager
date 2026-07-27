@@ -24,6 +24,7 @@
 .app-sidebar__mark svg { width: 19px; height: 19px; }
 .app-sidebar__nav { flex: 1; overflow-y: auto; padding: 16px var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 2px; }
 .app-navlabel { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); line-height: 1; padding: 0 var(--sp-3) var(--sp-2); }
+.app-navlabel:not(:first-of-type) { margin-top: var(--sp-3); }
 .app-navitem {
   display: flex; align-items: center; gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-3); border-radius: var(--r-md);
@@ -316,6 +317,11 @@
 .mn-task__meta { min-width: 0; flex: 1; }
 .mn-task__meta b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
 .mn-task__meta small { font-size: var(--fs-xs); color: var(--c-text-muted); display: block; }
+.mn-task__span { display: inline-block; margin-top: var(--sp-1); font-size: var(--fs-xs); font-weight: var(--fw-medium); }
+.mn-task__continuation-tag { font-weight: var(--fw-medium); font-size: var(--fs-xs); color: var(--c-text-muted); }
+.mn-task--continuation { background: var(--c-surface-alt); }
+.mn-task__time--continuation { display: flex; align-items: center; justify-content: center; color: var(--c-text-muted); }
+.mn-task__time--continuation svg { width: 17px; height: 17px; }
 .mn-task__prest { width: 190px; flex-shrink: 0; }
 .mn-task__prest .select { height: 36px; font-size: var(--fs-sm); }
 .mn-task__amount { width: 64px; text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); font-size: var(--fs-sm); flex-shrink: 0; }
@@ -510,6 +516,8 @@
 .cal-tchip--checkin { border-color: var(--green-600); background: var(--green-100); color: var(--green-700); }
 .cal-tchip--maintenance { border-color: var(--amber-500); background: var(--amber-100); color: var(--amber-700); }
 .cal-tchip--linge { border-color: var(--ch-booking); background: var(--ch-booking-soft); color: var(--ch-booking-ink); }
+/* Jours suivants d'une tâche multi-jours : bordure pointillée + légèrement estompée */
+.cal-tchip--suite { border-left-style: dashed; opacity: 0.75; }
 .cal-grid--taches .cal-row--body { height: 60px; }
 
 /* Tooltip flottant du calendrier */
@@ -571,3 +579,79 @@
 .pf-card__desc { font-size: var(--fs-sm); color: var(--c-text-soft); line-height: var(--lh-snug); flex: 1; }
 @media (max-width: 980px) { .pf-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .pf-grid { grid-template-columns: 1fr; } }
+
+/* ------------------------------------------------------------
+   Comptabilité — synthèse / facturation / dépenses  (.cp-)
+   ------------------------------------------------------------ */
+.cp-filters { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: var(--sp-4); align-items: end; }
+.cp-filters .btn { height: 44px; }
+@media (max-width: 900px) { .cp-filters { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .cp-filters { grid-template-columns: 1fr; } }
+
+.cp-bar { display: flex; height: 14px; border-radius: var(--r-full); overflow: hidden; background: var(--ink-100); }
+.cp-bar__seg { height: 100%; transition: width var(--t-slow); }
+.cp-bar__seg--comm { background: var(--c-warning); }
+.cp-bar__seg--dep  { background: var(--c-danger); }
+.cp-bar__seg--net  { background: var(--c-positive); }
+.cp-legend { display: flex; flex-wrap: wrap; gap: var(--sp-5); margin-top: var(--sp-4); font-size: var(--fs-sm); }
+.cp-legend span { display: flex; align-items: center; gap: var(--sp-2); }
+.cp-dot { width: 10px; height: 10px; border-radius: var(--r-full); display: inline-block; flex-shrink: 0; }
+.cp-dot--comm { background: var(--c-warning); }
+.cp-dot--dep  { background: var(--c-danger); }
+.cp-dot--net  { background: var(--c-positive); }
+
+.cp-ownercard { border: 1px solid var(--c-border); border-radius: var(--r-xl); padding: var(--sp-5); background: var(--c-surface); box-shadow: var(--shadow-sm); }
+.cp-ownercard + .cp-ownercard { margin-top: var(--sp-4); }
+.cp-ownercard__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-4); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--c-border); }
+.cp-ownercard__id b { display: block; font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+.cp-ownercard__id small { color: var(--c-text-muted); }
+.cp-ownercard__rate { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.cp-ownercard__rate input { width: 64px; text-align: right; }
+.cp-months { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-2); }
+.cp-month { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3); border: 1px solid var(--c-border); border-radius: var(--r-md); font-size: var(--fs-sm); cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast); background: none; text-align: left; }
+.cp-month:hover { background: var(--c-surface-alt); }
+.cp-month__ic { width: 20px; height: 20px; flex-shrink: 0; }
+.cp-month--generee .cp-month__ic { color: var(--c-positive); }
+.cp-month--attente { border-style: dashed; }
+.cp-month--attente .cp-month__ic { color: var(--c-warning-ink); }
+.cp-month b { display: block; font-weight: var(--fw-semibold); }
+.cp-month small { display: block; color: var(--c-text-muted); font-size: var(--fs-xs); }
+
+.cp-depense__facture { display: inline-flex; align-items: center; gap: 6px; color: var(--c-accent-ink); font-weight: var(--fw-medium); background: none; border: none; padding: 0; cursor: pointer; font-size: inherit; font-family: inherit; }
+.cp-depense__facture:hover { text-decoration: underline; }
+.cp-depense__facture svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.cp-alert { display: flex; align-items: center; gap: var(--sp-4); background: var(--c-warning-soft); color: var(--c-warning-ink); border-radius: var(--r-xl); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-4); }
+.cp-alert svg { width: 22px; height: 22px; flex-shrink: 0; }
+.cp-alert__body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.cp-alert__body b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.cp-alert__body span { font-size: var(--fs-xs); opacity: .85; }
+.cp-alert .btn { flex-shrink: 0; }
+
+.modal--lg { width: min(720px, calc(100vw - 2 * var(--sp-6))); }
+
+/* ------------------------------------------------------------
+   Propriétaires — fiche par propriétaire + biens rattachés  (.po-)
+   ------------------------------------------------------------ */
+.po-card { border: 1px solid var(--c-border); border-radius: var(--r-xl); padding: var(--sp-5); background: var(--c-surface); box-shadow: var(--shadow-sm); }
+.po-card + .po-card { margin-top: var(--sp-4); }
+.po-card__head { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-4); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--c-border); }
+.po-card__meta { flex: 1; min-width: 180px; }
+.po-card__meta b { display: block; font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+.po-card__meta small { display: block; color: var(--c-text-muted); }
+.po-card__actions { display: flex; align-items: center; gap: var(--sp-2); }
+.po-card__editgrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); flex: 1; min-width: 260px; }
+.po-card__editgrid input { width: 100%; }
+
+.po-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-2) 0 var(--sp-4); }
+.po-chip { display: inline-flex; align-items: center; gap: var(--sp-2); background: var(--c-surface-alt); border: 1px solid var(--c-border); border-radius: var(--r-full); padding: 6px 8px 6px 14px; font-size: var(--fs-sm); }
+.po-chip__del { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: var(--r-full); border: none; background: var(--ink-100); color: var(--c-text-soft); cursor: pointer; flex-shrink: 0; }
+.po-chip__del:hover { background: var(--c-danger-soft); color: var(--c-danger-ink); }
+.po-chip__del svg { width: 11px; height: 11px; }
+.po-chips-empty { font-size: var(--fs-sm); color: var(--c-text-muted); font-style: italic; margin: var(--sp-2) 0 var(--sp-4); }
+
+.po-addrow { display: flex; gap: var(--sp-2); align-items: center; }
+.po-addrow .select { flex: 1; max-width: 340px; }
+
+.po-billing { font-size: var(--fs-xs); color: var(--c-text-muted); }
+.po-billing a { color: var(--c-accent-ink); font-weight: var(--fw-medium); }

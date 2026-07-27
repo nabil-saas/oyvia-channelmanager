@@ -1,9 +1,8 @@
 /* ============================================================
    OYVIA — Landing : simulateur de tarif + option WhatsApp
-   Modèle : vous ne payez que pour les logements ayant reçu au
-   moins une réservation durant le mois en cours. Le tarif de la
-   tranche s'applique à ces logements réservés
-   (total = prix_tranche × nombre de logements réservés).
+   Modèle : un tarif dégressif par logement géré, qu'il ait été
+   réservé ou non dans le mois (total = prix_tranche × nombre de
+   logements).
    ============================================================ */
 (function () {
   // formatMAD() et trancheTarifaire() sont définis globalement dans data.js
@@ -55,15 +54,15 @@
       elSub.textContent = 'tarif dégressif pour les grands parcs';
     } else if (t.prix === 0) {
       elTotal.textContent = 'Gratuit';
-      elSub.textContent = 'si votre unique logement est réservé ce mois-ci';
+      elSub.textContent = 'pour un seul logement géré';
     } else {
       const total = t.prix * n;
       elTotal.textContent = formatMAD(total);
-      elSub.textContent = `par mois, si vos ${n} logement${n > 1 ? 's sont réservés' : ' est réservé'} ce mois-ci`;
+      elSub.textContent = `par mois, pour vos ${n} logement${n > 1 ? 's gérés' : ' géré'}`;
     }
 
-    const prixTxt = t.prix === null ? 'tarif sur devis' : t.prix === 0 ? 'gratuit' : `${formatMAD(t.prix)} / logement réservé / mois`;
-    elPlan.innerHTML = `Sur cette tranche : <b>${prixTxt}</b>. Un logement non réservé ce mois-ci ne vous coûte rien.`;
+    const prixTxt = t.prix === null ? 'tarif sur devis' : t.prix === 0 ? 'gratuit' : `${formatMAD(t.prix)} / logement / mois`;
+    elPlan.innerHTML = `Sur cette tranche : <b>${prixTxt}</b>. Facturation simple sur l'ensemble de votre parc, réservé ou non.`;
   }
 
   range.addEventListener('input', () => renderSim(parseInt(range.value, 10)));

@@ -25,27 +25,41 @@ Layout.init('menage');
     PRESTATAIRES.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
 
   /* ---------- Planning groupé par jour ---------- */
+  // Une tâche issue d'un blocage multi-jours (dateFin renseignée) apparaît dans le
+  // groupe de CHAQUE jour qu'elle couvre (pas seulement son jour de début), pour que
+  // le planning d'une journée donnée reflète fidèlement qui est sur place ce jour-là.
+  // C'est toujours la même tâche (même id) : changer son statut/prestataire un jour
+  // le change partout, puisque render() régénère tout à partir des mêmes objets.
   function render() {
     const list = TACHES.filter(t => {
-      if (parseDate(t.date) < parseDate(AUJOURDHUI)) return false; // on masque le passé
+      const fin = t.dateFin || t.date;
+      if (parseDate(fin) < parseDate(AUJOURDHUI)) return false; // on masque les tâches entièrement passées
       if (F.prest.value !== 'all' && t.prestataireId !== F.prest.value) return false;
       if (F.type.value !== 'all' && t.type !== F.type.value) return false;
       if (F.statut.value !== 'all' && t.statut !== F.statut.value) return false;
       return true;
-    }).sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
+    });
 
     const byDay = {};
-    list.forEach(t => { (byDay[t.date] = byDay[t.date] || []).push(t); });
+    list.forEach(t => {
+      const fin = (t.dateFin && parseDate(t.dateFin) > parseDate(t.date)) ? t.dateFin : t.date;
+      let d = parseDate(t.date) < parseDate(AUJOURDHUI) ? AUJOURDHUI : t.date; // on n'affiche pas les jours déjà passés
+      while (parseDate(d) <= parseDate(fin)) {
+        (byDay[d] = byDay[d] || []).push({ task: t, isStart: d === t.date });
+        d = addDays(d, 1);
+      }
+    });
 
     const days = Object.keys(byDay).sort();
     const html = days.map(date => {
       const isToday = date === AUJOURDHUI;
-      const rows = byDay[date].map(t => taskRow(t)).join('');
+      const entries = byDay[date].sort((a, b) => a.task.heure.localeCompare(b.task.heure));
+      const rows = entries.map(e => taskRow(e.task, e.isStart)).join('');
       return `<div class="mn-daygroup">
         <div class="mn-dayhead ${isToday ? 'mn-dayhead--today' : ''}">
           <h3>${formatDate(date, { jourSemaine: true, moisLong: true })}</h3>
           ${isToday ? '<span class="badge badge--accent">Aujourd\'hui</span>' : ''}
-          <span class="badge badge--neutral">${byDay[date].length} tâche${byDay[date].length > 1 ? 's' : ''}</span>
+          <span class="badge badge--neutral">${entries.length} tâche${entries.length > 1 ? 's' : ''}</span>
         </div>
         <div class="mn-tasks">${rows}</div>
       </div>`;
@@ -54,15 +68,26 @@ Layout.init('menage');
     document.getElementById('mn-planning').innerHTML = html;
   }
 
-  function taskRow(t) {
+  function taskRow(t, isStart) {
     const l = getLogement(t.logementId);
     const options = PRESTATAIRES.map(p => `<option value="${p.id}" ${p.id === t.prestataireId ? 'selected' : ''}>${p.nom}</option>`).join('');
-    return `<div class="mn-task ${t.statut === 'termine' ? 'is-done' : ''}" data-id="${t.id}">
-      <span class="mn-task__time">${t.heure}</span>
+    const isMultiDay = t.dateFin && t.dateFin !== t.date;
+
+    const timeCell = isStart
+      ? `<span class="mn-task__time">${t.heure}</span>`
+      : `<span class="mn-task__time mn-task__time--continuation" title="Suite d'une tâche débutée le ${formatDate(t.date)}">${icon('<path d="M4 4v7a4 4 0 0 0 4 4h12"/><path d="m16 10 5 5-5 5"/>')}</span>`;
+    const spanBadge = isStart && isMultiDay
+      ? `<span class="badge badge--neutral mn-task__span">→ ${formatDate(t.dateFin)} · ${nuitsEntre(t.date, t.dateFin) + 1} jours</span>`
+      : '';
+    const continuationTag = !isStart ? `<span class="mn-task__continuation-tag">(suite)</span>` : '';
+
+    return `<div class="mn-task ${t.statut === 'termine' ? 'is-done' : ''} ${!isStart ? 'mn-task--continuation' : ''}" data-id="${t.id}">
+      ${timeCell}
       <span class="mn-task__ic mn-task__ic--${t.type}">${icon(TYPE_IC[t.type] || 'M12 2 2 7v10l10 5 10-5V7z')}</span>
       <div class="mn-task__meta">
-        <b>${TACHE_LABEL[t.type]} · ${l.nom}</b>
+        <b>${TACHE_LABEL[t.type]} · ${l.nom} ${continuationTag}</b>
         <small>${l.ville}${t.note ? ' · ' + t.note : ''}</small>
+        ${spanBadge}
       </div>
       <div class="mn-task__prest"><select class="select" data-assign="${t.id}">${options}</select></div>
       <span class="mn-task__amount">${t.montant ? formatEuro(t.montant) : '—'}</span>

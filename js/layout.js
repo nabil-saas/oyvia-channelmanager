@@ -17,6 +17,8 @@ const Layout = (function () {
     equipe:    '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M2 13h20"/>',
     statistiques:'<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>',
     voyageurs: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+    proprietaires:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M5.5 17c.6-2.2 2.2-3.5 3.5-3.5s2.9 1.3 3.5 3.5"/><path d="M14 9h5M14 13h5"/>',
+    comptabilite:'<path d="M4 2h13l3 3v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M17 2v4h4"/><path d="M8 11h8M8 15h8M8 19h5"/>',
     abonnement:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
     parametres:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
     search:    '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
@@ -28,16 +30,28 @@ const Layout = (function () {
   const NAV = [
     { id:'dashboard',    label:'Tableau de bord', title:'Tableau de bord',   href:'dashboard.html' },
     { id:'calendrier',   label:'Calendrier',      title:'Calendrier unifié', href:'calendrier.html' },
+    { id:'statistiques', label:'Statistiques',    title:'Statistiques',      href:'statistiques.html' },
+    { id:'logements',    label:'Logements',       title:'Logements',         href:'logements.html' },
+    { id:'proprietaires',label:'Propriétaires',   title:'Propriétaires',     href:'proprietaires.html' },
     { id:'reservations', label:'Réservations',    title:'Réservations',      href:'reservations.html' },
+    { id:'voyageurs',    label:'Voyageurs',       title:'Voyageurs',         href:'voyageurs.html' },
     { id:'messagerie',   label:'Messagerie',      title:'Messagerie',        href:'messagerie.html', badge:'unread' },
     { id:'automatisations', label:'Automatisations', title:'Automatisations', href:'automatisations.html' },
-    { id:'logements',    label:'Logements',       title:'Logements',         href:'logements.html' },
     { id:'menage',       label:'Gestion des tâches', title:'Gestion des tâches', href:'menage.html' },
     { id:'equipe',       label:'Équipe',          title:'Équipe',            href:'equipe.html' },
-    { id:'statistiques', label:'Statistiques',    title:'Statistiques',      href:'statistiques.html' },
-    { id:'voyageurs',    label:'Voyageurs',       title:'Voyageurs',         href:'voyageurs.html' },
+    { id:'comptabilite', label:'Comptabilité',    title:'Comptabilité',      href:'comptabilite.html' },
     { id:'abonnement',   label:'Abonnement',      title:'Abonnement & Facturation', href:'abonnement.html' },
     { id:'parametres',   label:'Paramètres',      title:'Paramètres',       href:'parametres.html' },
+  ];
+
+  // Regroupement du menu par catégories (l'ordre des groupes = l'ordre affiché).
+  const NAV_GROUPS = [
+    { label:'Aperçu',        items:['dashboard', 'calendrier', 'statistiques'] },
+    { label:'Locations',     items:['logements', 'proprietaires', 'reservations', 'voyageurs'] },
+    { label:'Communication', items:['messagerie', 'automatisations'] },
+    { label:'Équipe',        items:['menage', 'equipe'] },
+    { label:'Comptabilité',  items:['comptabilite'] },
+    { label:'Compte',        items:['abonnement', 'parametres'] },
   ];
 
   function svg(paths, w) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`; }
@@ -45,16 +59,18 @@ const Layout = (function () {
   function unreadCount() { return CONVERSATIONS.reduce((s, c) => s + (c.nonLu || 0), 0); }
 
   function sidebarHTML(active) {
-    const items = NAV.map(n => {
-      const badge = n.badge === 'unread' && unreadCount() > 0 ? `<span class="app-navitem__badge">${unreadCount()}</span>` : '';
-      return `<a class="app-navitem ${n.id === active ? 'is-active' : ''}" href="${n.href}">
-        ${svg(I[n.id])}<span>${n.label}</span>${badge}</a>`;
+    const groups = NAV_GROUPS.map(g => {
+      const items = g.items.map(id => NAV.find(n => n.id === id)).filter(Boolean).map(n => {
+        const badge = n.badge === 'unread' && unreadCount() > 0 ? `<span class="app-navitem__badge">${unreadCount()}</span>` : '';
+        return `<a class="app-navitem ${n.id === active ? 'is-active' : ''}" href="${n.href}">
+          ${svg(I[n.id])}<span>${n.label}</span>${badge}</a>`;
+      }).join('');
+      return `<p class="app-navlabel">${g.label}</p>${items}`;
     }).join('');
     return `
       <div class="app-sidebar__brand"><img src="../assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></div>
       <nav class="app-sidebar__nav" aria-label="Navigation">
-        <p class="app-navlabel">Pilotage</p>
-        ${items}
+        ${groups}
       </nav>
       <div class="app-sidebar__foot">
         <button type="button" class="app-userchip" id="app-userchip-btn" aria-haspopup="true" aria-expanded="false">
@@ -175,6 +191,46 @@ const UI = {
     const s = document.getElementById('ui-scrim'); if (s) s.classList.remove('is-open');
     UI.closeNotifDropdown();
     UI.closeAccountDropdown();
+  },
+
+  // Popup de confirmation avec le même design que le reste de l'app (au lieu du confirm() natif du navigateur).
+  // Usage : UI.confirm({ title, message, confirmText, danger, onConfirm })
+  confirm({ title = 'Confirmer', message = '', confirmText = 'Confirmer', cancelText = 'Annuler', danger = false, onConfirm } = {}) {
+    let modal = document.getElementById('ui-confirm-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.id = 'ui-confirm-modal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-labelledby', 'ui-confirm-title');
+      modal.innerHTML = `
+        <div class="modal__head">
+          <h3 class="modal__title" id="ui-confirm-title"></h3>
+          <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="modal__body"><p id="ui-confirm-message" class="text-sm text-soft" style="white-space:pre-line"></p></div>
+        <div class="modal__foot">
+          <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+          <button class="btn" id="ui-confirm-ok"></button>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+    modal.querySelector('#ui-confirm-title').textContent = title;
+    modal.querySelector('#ui-confirm-message').textContent = message;
+    modal.querySelector('.modal__foot button:first-child').textContent = cancelText;
+
+    const okBtn = modal.querySelector('#ui-confirm-ok');
+    okBtn.textContent = confirmText;
+    okBtn.className = 'btn ' + (danger ? 'btn--danger' : 'btn--primary');
+    const freshOk = okBtn.cloneNode(true); // évite d'empiler les listeners d'un appel précédent
+    okBtn.parentNode.replaceChild(freshOk, okBtn);
+    freshOk.addEventListener('click', () => {
+      UI.closeAll();
+      if (typeof onConfirm === 'function') onConfirm();
+    });
+
+    UI.openPanel('ui-confirm-modal');
   },
 
   /* ---------- Centre de notifications (cloche de la topbar) ---------- */
@@ -452,18 +508,47 @@ const UI = {
   deleteResa(id) {
     const i = RESERVATIONS.findIndex(r => r.id === id);
     if (i > -1) RESERVATIONS.splice(i, 1);
-    UI.closeAll(); UI.toast('Dates débloquées');
+    // Les tâches créées pour ce blocage n'ont plus lieu d'être : sinon un prestataire
+    // resterait assigné à un blocage supprimé (tâche fantôme dans le planning).
+    let n = 0;
+    for (let k = TACHES.length - 1; k >= 0; k--) { if (TACHES[k].reservationId === id) { TACHES.splice(k, 1); n++; } }
+    UI.closeAll();
+    UI.toast(n ? `Dates débloquées · ${n} tâche${n > 1 ? 's' : ''} supprimée${n > 1 ? 's' : ''}` : 'Dates débloquées');
     document.dispatchEvent(new Event('resaChanged'));
   },
   resaPanelHTML(r) {
     const close = '<button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>';
     const l = getLogement(r.logementId);
     if (r.canal === 'bloque') {
+      const STATUT_TACHE = { a_faire: ['badge--warning', 'À faire'], en_cours: ['badge--accent', 'En cours'], termine: ['badge--positive', 'Terminé'] };
+      const tachesBloc = TACHES.filter(t => t.reservationId === r.id);
+      const prestRows = tachesBloc.length
+        ? tachesBloc.map(t => {
+          const p = getPrestataire(t.prestataireId);
+          const [cls, txt] = STATUT_TACHE[t.statut] || ['badge--neutral', t.statut];
+          const quand = (t.dateFin && t.dateFin !== t.date)
+            ? `${formatPlage(t.date, t.dateFin)} · ${nuitsEntre(t.date, t.dateFin) + 1} jours`
+            : `${formatDate(t.date)} · ${t.heure}`;
+          return `<div class="rp-fiche">
+              <div class="rp-fiche__who">
+                <span class="rp-fiche__ic rp-fiche__ic--done">${UI._ic('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>')}</span>
+                <div><b>${p ? p.nom : '—'}</b><small class="text-muted">${TACHE_LABEL[t.type] || t.type} · ${quand}</small></div>
+              </div>
+              <span class="badge ${cls}">${txt}</span>
+            </div>`;
+        }).join('')
+        : '<p class="text-muted text-sm">Aucun prestataire assigné à ce blocage.</p>';
+
       return `<div class="panel__head"><div><span class="chip-canal chip-canal--bloque">Blocage manuel</span>
           <h3 style="margin-top:8px;">${r.note || 'Dates bloquées'}</h3><p class="text-soft text-sm">${l.nom} · ${l.ville}</p></div>${close}</div>
-        <div class="panel__body"><div class="rp-section">
-          <div class="rp-row"><span>Période</span><span>${formatPlage(r.arrivee, r.depart)}</span></div>
-          <div class="rp-row"><span>Durée</span><span>${r.nuits} nuit${r.nuits > 1 ? 's' : ''}</span></div></div></div>
+        <div class="panel__body">
+          <div class="rp-section"><p class="eyebrow mb-2">Blocage</p>
+            <div class="rp-row"><span>Motif</span><span class="fw-semibold">${r.note || '—'}</span></div>
+            <div class="rp-row"><span>Période</span><span>${formatPlage(r.arrivee, r.depart)}</span></div>
+            <div class="rp-row"><span>Durée</span><span>${r.nuits} nuit${r.nuits > 1 ? 's' : ''}</span></div>
+            <div class="rp-row"><span>Logement</span><span>${l.nom} · ${l.ville}</span></div></div>
+          <div class="rp-section"><p class="eyebrow mb-2">Prestataires assignés (${tachesBloc.length})</p>${prestRows}</div>
+        </div>
         <div class="panel__foot"><button class="btn btn--danger btn--block" onclick="UI.deleteResa('${r.id}')">Débloquer ces dates</button></div>`;
     }
     const v = r.voyageurId ? getVoyageur(r.voyageurId) : null;

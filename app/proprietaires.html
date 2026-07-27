@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Propriétaires</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Propriétaires</h1>
+            <p>Coordonnées de chaque propriétaire et logements qui lui sont rattachés.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <a class="btn btn--ghost" href="comptabilite.html#facturation">Configurer la facturation ↗</a>
+            <button class="btn btn--primary" id="po-add-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Ajouter un propriétaire
+            </button>
+          </div>
+        </div>
+
+        <div id="po-unassigned"><!-- injecté --></div>
+
+        <div id="po-list"><!-- injecté --></div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : ajouter / modifier un propriétaire -->
+  <div class="modal" id="po-modal" role="dialog" aria-modal="true" aria-labelledby="po-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="po-modal-title">Ajouter un propriétaire</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="po-f-societe">Société / nom</label><input class="input" id="po-f-societe" placeholder="SCI Dupont" /></div>
+        <div class="field"><label class="field__label" for="po-f-contact">Contact</label><input class="input" id="po-f-contact" placeholder="Prénom Nom" /></div>
+      </div>
+      <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
+        <div class="field"><label class="field__label" for="po-f-email">Email</label><input class="input" type="email" id="po-f-email" placeholder="contact@exemple.fr" /></div>
+        <div class="field"><label class="field__label" for="po-f-tel">Téléphone</label><input class="input" id="po-f-tel" placeholder="+33 6 00 00 00 00" /></div>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="po-modal-confirm">Ajouter le propriétaire</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/proprietaires.js"></script>
+</body>
+</html>

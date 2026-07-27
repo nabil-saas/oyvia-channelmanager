@@ -18,7 +18,7 @@ function formatEuro(n, decimales = 0) {
     minimumFractionDigits: decimales, maximumFractionDigits: decimales
   }).format(n);
 }
-// Tarification landing + abonnement (modèle « logements réservés ce mois-ci »)
+// Tarification landing + abonnement (modèle « prix dégressif par logement géré »)
 function formatMAD(n, decimales = 0) {
   if (n === null || n === undefined) return 'Sur devis';
   return n.toLocaleString('fr-FR', { minimumFractionDigits: decimales, maximumFractionDigits: decimales }) + ' MAD';
@@ -40,6 +40,11 @@ function formatPlage(a, b) {
   return `${da.getDate()} ${MOIS_COURT[da.getMonth()]} – ${db.getDate()} ${MOIS_COURT[db.getMonth()]}`;
 }
 function nuitsEntre(a, b) { return Math.round((parseDate(b) - parseDate(a)) / 86400000); }
+function addDays(s, n) {
+  const d = parseDate(s);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 /* ============================================================
    LOGEMENTS (10)
@@ -172,16 +177,85 @@ RESERVATIONS.forEach(r => { r.nuits = nuitsEntre(r.arrivee, r.depart); });
 
 /* ============================================================
    PROPRIÉTAIRES — la conciergerie gère les biens pour le compte
-   de plusieurs propriétaires (commission prélevée sur le CA).
+   de plusieurs propriétaires. Chaque propriétaire a son propre
+   modèle de facturation (modeFacturation) :
+     - reversement : la conciergerie encaisse le CA, prélève sa
+       commission + les dépenses, puis reverse le net au propriétaire.
+     - commission  : le propriétaire encaisse directement le CA ; la
+       conciergerie lui facture uniquement sa commission (+ dépenses
+       si refacturerDepenses est activé).
+     - forfait     : abonnement mensuel fixe (forfaitMensuel),
+       indépendant du nombre de réservations.
+     - mixte       : commission + forfait mensuel fixe, dépenses
+       généralement refacturées à part (courant en haut de gamme).
    ============================================================ */
+const MODE_FACTURATION_LABEL = {
+  reversement: 'Le gestionnaire encaisse & reverse le net',
+  commission:  'Commission sur les réservations',
+  forfait:     'Forfait mensuel',
+  mixte:       'Mixte (commission + forfait)',
+};
+const MODE_FACTURATION_DESC = {
+  reversement: 'Vous encaissez les réservations, prélevez votre commission et (si activé) les dépenses, puis reversez le net au propriétaire.',
+  commission:  'Le propriétaire encaisse directement ses réservations ; vous lui facturez votre commission (et les dépenses si elles sont refacturées).',
+  forfait:     'Vous facturez un montant fixe chaque mois, quel que soit le nombre de réservations.',
+  mixte:       'Commission sur le CA + forfait mensuel fixe ; les dépenses sont généralement refacturées séparément.',
+};
 const PROPRIETAIRES = [
-  { id:'O1', societe:'SCI Bernard',            contact:'Paul Bernard',  email:'paul.bernard@sci-bernard.fr', tel:'+33 6 12 34 56 78', commission:0.20 },
-  { id:'O2', societe:'Investissements Lefort', contact:'Sophie Lefort',  email:'s.lefort@gmail.com',           tel:'+33 6 98 76 54 32', commission:0.18 },
-  { id:'O3', societe:'Patrimoine Aziz',        contact:'Karim Aziz',     email:'k.aziz@gmail.com',             tel:'+33 6 45 67 89 01', commission:0.22 },
+  { id:'O1', societe:'SCI Bernard',            contact:'Paul Bernard',  email:'paul.bernard@sci-bernard.fr', tel:'+33 6 12 34 56 78',
+    modeFacturation:'reversement', commission:0.20, forfaitMensuel:0,   refacturerDepenses:true },
+  { id:'O2', societe:'Investissements Lefort', contact:'Sophie Lefort',  email:'s.lefort@gmail.com',           tel:'+33 6 98 76 54 32',
+    modeFacturation:'commission',  commission:0.18, forfaitMensuel:0,   refacturerDepenses:true },
+  { id:'O3', societe:'Patrimoine Aziz',        contact:'Karim Aziz',     email:'k.aziz@gmail.com',             tel:'+33 6 45 67 89 01',
+    modeFacturation:'mixte',       commission:0.10, forfaitMensuel:99,  refacturerDepenses:true },
 ];
 // Répartition des 10 biens entre les 3 propriétaires
 const _PROP_MAP = { L001:'O1', L002:'O1', L003:'O1', L010:'O1', L004:'O2', L005:'O2', L006:'O2', L007:'O3', L008:'O3', L009:'O3' };
 LOGEMENTS.forEach(l => { l.proprietaireId = _PROP_MAP[l.id] || 'O1'; });
+
+/* ============================================================
+   DÉPENSES — frais engagés pour un logement (réparation, entretien,
+   remplacement de matériel…), saisis manuellement par la conciergerie
+   avec justificatif optionnel (facture jointe). Utilisées dans le
+   module Comptabilité pour calculer le résultat net du propriétaire :
+   CA − commission − dépenses.
+   ============================================================ */
+const DEPENSES = [
+  { id:'D01', logementId:'L001', date:'2026-07-05', montant:180, libelle:'Réparation robinet cuisine',        factureNom:'facture-plombier-L001.pdf', factureData:null },
+  { id:'D02', logementId:'L001', date:'2026-06-18', montant:65,  libelle:'Ampoules & consommables',           factureNom:null, factureData:null },
+  { id:'D03', logementId:'L002', date:'2026-07-10', montant:340, libelle:'Remplacement matelas',              factureNom:'facture-literie-L002.pdf', factureData:null },
+  { id:'D04', logementId:'L003', date:'2026-07-02', montant:120, libelle:'Entretien chaudière',                factureNom:'facture-chauffagiste.pdf', factureData:null },
+  { id:'D05', logementId:'L004', date:'2026-06-25', montant:450, libelle:'Vidange spa & produits',            factureNom:null, factureData:null },
+  { id:'D06', logementId:'L004', date:'2026-07-15', montant:90,  libelle:'Remplacement vaisselle cassée',     factureNom:null, factureData:null },
+  { id:'D07', logementId:'L005', date:'2026-07-08', montant:620, libelle:'Réparation pompe piscine',          factureNom:'facture-piscine-L005.pdf', factureData:null },
+  { id:'D08', logementId:'L006', date:'2026-06-30', montant:75,  libelle:'Produits ménagers',                  factureNom:null, factureData:null },
+  { id:'D09', logementId:'L007', date:'2026-07-12', montant:210, libelle:'Peinture volets',                    factureNom:'facture-peintre.pdf', factureData:null },
+  { id:'D10', logementId:'L008', date:'2026-07-04', montant:150, libelle:'Entretien jardin',                   factureNom:null, factureData:null },
+  { id:'D11', logementId:'L009', date:'2026-06-22', montant:95,  libelle:'Remplacement serrure',              factureNom:'facture-serrurier.pdf', factureData:null },
+  { id:'D12', logementId:'L010', date:'2026-07-18', montant:280, libelle:'Réparation lave-linge',             factureNom:'facture-electromenager.pdf', factureData:null },
+];
+function getDepensesByLogement(id) { return DEPENSES.filter(d => d.logementId === id); }
+function getDepensesByProprietaire(id) {
+  const biens = getLogementsByProprietaire(id).map(l => l.id);
+  return DEPENSES.filter(d => biens.includes(d.logementId));
+}
+
+/* ============================================================
+   FACTURATION PROPRIÉTAIRES — un relevé/facture de commission par
+   propriétaire et par mois. La conciergerie encaisse le CA des
+   réservations (via les plateformes ou en direct), prélève sa
+   commission + les dépenses avancées, puis reverse le net au
+   propriétaire ; la facture matérialise cette commission prélevée.
+   statut : generee (✓, déjà émise) | attente (⏳, à générer).
+   ============================================================ */
+const MOIS_COMPTABLES = ['Février 2026', 'Mars 2026', 'Avril 2026', 'Mai 2026', 'Juin 2026', 'Juillet 2026'];
+const FACTURES = [];
+PROPRIETAIRES.forEach(o => {
+  MOIS_COMPTABLES.forEach((mois, i) => {
+    FACTURES.push({ id:`F-${o.id}-${i}`, proprietaireId:o.id, mois, statut: i < MOIS_COMPTABLES.length - 1 ? 'generee' : 'attente' });
+  });
+});
+function getFacturesByProprietaire(id) { return FACTURES.filter(f => f.proprietaireId === id); }
 
 /* ============================================================
    VOYAGEURS (CRM) — quelques habitués (nbSejours > 1)
@@ -386,8 +460,9 @@ const RECURRENTES = [
 ];
 
 /* ============================================================
-   TARIFS — modèle unique « vous ne payez que pour les logements
-   ayant reçu au moins une réservation durant le mois en cours ».
+   TARIFS — modèle unique : un tarif dégressif par logement géré
+   (le nombre total de logements du parc, indépendamment du fait
+   qu'ils aient été réservés ou non dans le mois).
    Utilisé à la fois par la landing (index.html#tarifs) et par
    l'abonnement de l'app (app/abonnement.html), pour rester cohérents.
    ============================================================ */
@@ -419,17 +494,18 @@ const OPTIONS_LANDING = [
 
 /* ============================================================
    HISTORIQUE DE FACTURATION (app/abonnement.html) — pour chaque
-   mois, le nombre de logements ayant reçu au moins une réservation
-   (le montant se déduit via trancheTarifaire, pas de valeur en dur).
-   Dernier mois = mois en cours (juillet 2026, cf. AUJOURDHUI).
+   mois, le nombre total de logements gérés à cette date (le parc
+   grandit avec le temps ; le montant se déduit via trancheTarifaire,
+   pas de valeur en dur). Dernier mois = mois en cours (juillet 2026,
+   cf. AUJOURDHUI).
    ============================================================ */
 const HISTORIQUE_FACTURATION = [
-  { mois: 'Février 2026', logementsReserves: 4 },
-  { mois: 'Mars 2026',    logementsReserves: 5 },
-  { mois: 'Avril 2026',   logementsReserves: 6 },
-  { mois: 'Mai 2026',     logementsReserves: 8 },
-  { mois: 'Juin 2026',    logementsReserves: 9 },
-  { mois: 'Juillet 2026', logementsReserves: 10 },
+  { mois: 'Février 2026', nbLogements: 4 },
+  { mois: 'Mars 2026',    nbLogements: 5 },
+  { mois: 'Avril 2026',   nbLogements: 6 },
+  { mois: 'Mai 2026',     nbLogements: 8 },
+  { mois: 'Juin 2026',    nbLogements: 9 },
+  { mois: 'Juillet 2026', nbLogements: 10 },
 ];
 
 /* ============================================================
@@ -507,6 +583,7 @@ function getPrestataire(id) { return PRESTATAIRES.find(p => p.id === id); }
 function getConversationByReservation(id) { return CONVERSATIONS.find(c => c.reservationId === id); }
 function getProprietaire(id) { return PROPRIETAIRES.find(p => p.id === id); }
 function getLogementsByProprietaire(id) { return LOGEMENTS.filter(l => l.proprietaireId === id); }
+function getLogementsSansProprietaire() { return LOGEMENTS.filter(l => !l.proprietaireId); }
 function getReservationsByLogement(id) { return RESERVATIONS.filter(r => r.logementId === id); }
 function getReservationsByVoyageur(id) { return RESERVATIONS.filter(r => r.voyageurId === id); }
 function getRecurrentesByLogement(id) { return RECURRENTES.filter(r => r.logementId === id); }
@@ -639,6 +716,7 @@ const _OYVIA_ENTITIES = {
   LOGEMENTS, RESERVATIONS, VOYAGEURS, CONVERSATIONS, TACHES,
   PRESTATAIRES, AUTOMATISATIONS, RECURRENTES, PLATEFORMES,
   COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, TACHE_LABEL,
+  PROPRIETAIRES, DEPENSES, FACTURES,
 };
 
 (function _oyviaRestoreState() {
@@ -650,10 +728,24 @@ const _OYVIA_ENTITIES = {
     const data = saved[name];
     if (data === undefined || data === null) return;
     if (Array.isArray(ref)) {
-      ref.length = 0;
-      data.forEach(item => ref.push(item));
+      // Fusion par id plutôt que remplacement intégral : les objets « frais »
+      // définis ci-dessus dans ce fichier servent de base (ils contiennent
+      // les derniers champs ajoutés par le code), et on ne superpose que
+      // les valeurs sauvegardées par-dessus. Ça évite qu'un ancien
+      // instantané localStorage (enregistré avant l'ajout d'un nouveau
+      // champ) n'efface silencieusement ce nouveau champ après une mise à
+      // jour de l'app. Les entrées créées par l'utilisateur (sans
+      // équivalent « frais », ex. une tâche ou une dépense ajoutée depuis
+      // l'UI) sont simplement ajoutées telles quelles.
+      const savedById = new Map(data.filter(x => x && x.id != null).map(x => [x.id, x]));
+      ref.forEach(item => {
+        if (item && item.id != null && savedById.has(item.id)) {
+          Object.assign(item, savedById.get(item.id));
+          savedById.delete(item.id);
+        }
+      });
+      savedById.forEach(extra => ref.push(extra));
     } else if (ref && typeof ref === 'object') {
-      Object.keys(ref).forEach(k => delete ref[k]);
       Object.assign(ref, data);
     }
   });
