@@ -21,3 +21,33 @@ Workflow interne
         ├── Modifier la réservation
         ├── Informer le propriétaire
         └── Créer un ticket SAV
+
+
+Trois niveaux d'automatisation
+
+Tous les propriétaires n'ont pas le même niveau de confiance envers l'intelligence artificielle. Le système peut donc proposer plusieurs modes de fonctionnement.
+
+Niveau 1 — Assistant
+
+L'IA prépare les réponses et les actions.
+
+Le propriétaire valide avant exécution.
+
+Niveau 2 — Semi-automatique
+
+Les demandes simples sont traitées automatiquement.
+
+Les actions sensibles (annulation, remboursement, geste commercial...) nécessitent une validation.
+
+Niveau 3 — Entièrement automatisé
+
+L'IA peut :
+
+répondre aux voyageurs ;
+créer des tâches ;
+envoyer des WhatsApp ;
+modifier certaines réservations ;
+prévenir les prestataires ;
+informer les propriétaires.
+
+Le propriétaire reçoit uniquement un historique détaillé des actions effectuées.
