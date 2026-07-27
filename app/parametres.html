@@ -32,6 +32,7 @@
           <button type="button" data-tab="localisation">Localisation</button>
           <button type="button" data-tab="sejour">Séjour</button>
           <button type="button" data-tab="options">Options supplémentaires</button>
+          <button type="button" data-tab="roles">Rôles &amp; accès</button>
           <button type="button" data-tab="plateformes">Plateformes</button>
         </div>
 
@@ -39,9 +40,39 @@
         <div class="tabpane" data-pane="localisation" id="pf-pane-localisation"><!-- injecté --></div>
         <div class="tabpane" data-pane="sejour" id="pf-pane-sejour"><!-- injecté --></div>
         <div class="tabpane" data-pane="options" id="pf-pane-options"><!-- injecté --></div>
+        <div class="tabpane" data-pane="roles" id="pf-pane-roles"><!-- injecté --></div>
         <div class="tabpane" data-pane="plateformes" id="pf-pane-plateformes"><!-- injecté --></div>
 
       </main>
+    </div>
+  </div>
+
+  <!-- Modale : inviter un utilisateur -->
+  <div class="modal" id="rl-modal" role="dialog" aria-modal="true" aria-labelledby="rl-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="rl-modal-title">Inviter un utilisateur</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="field mb-4">
+        <label class="field__label" for="rl-f-role">Rôle</label>
+        <select class="select" id="rl-f-role"></select>
+        <p class="text-xs text-muted mt-2" id="rl-f-roledesc"></p>
+      </div>
+      <div class="field mb-4" id="rl-f-lien-wrap" hidden>
+        <label class="field__label" for="rl-f-lien">Fiche rattachée</label>
+        <select class="select" id="rl-f-lien"></select>
+        <p class="text-xs text-muted mt-2">Le compte ne verra que les données liées à cette fiche.</p>
+      </div>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="rl-f-nom">Nom complet</label><input class="input" id="rl-f-nom" placeholder="Prénom Nom" /></div>
+        <div class="field"><label class="field__label" for="rl-f-email">Adresse e-mail</label><input class="input" type="email" id="rl-f-email" placeholder="nom@exemple.fr" /></div>
+      </div>
+      <p class="text-xs text-muted mt-4">Une invitation sera envoyée par e-mail. L’utilisateur choisira lui-même son mot de passe lors de sa première connexion.</p>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="rl-modal-confirm">Envoyer l’invitation</button>
     </div>
   </div>
 

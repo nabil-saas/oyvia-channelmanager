@@ -655,3 +655,22 @@
 
 .po-billing { font-size: var(--fs-xs); color: var(--c-text-muted); }
 .po-billing a { color: var(--c-accent-ink); font-weight: var(--fw-medium); }
+
+/* ------------------------------------------------------------
+   Rôles & accès — comptes utilisateurs + permissions  (.rl-)
+   ------------------------------------------------------------ */
+.rl-comptes { margin-bottom: var(--sp-6); }
+.rl-roleselect { height: 34px; padding-top: 0; padding-bottom: 0; font-size: var(--fs-sm); min-width: 150px; }
+.rl-lien { margin-top: 4px; }
+
+.rl-rolecard { border: 1px solid var(--c-border); border-radius: var(--r-xl); padding: var(--sp-5); background: var(--c-surface); box-shadow: var(--shadow-sm); }
+.rl-rolecard + .rl-rolecard { margin-top: var(--sp-4); }
+.rl-rolecard__head { display: flex; align-items: flex-start; gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-4); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--c-border); }
+.rl-rolecard__head b { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+
+.rl-perms { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--sp-4); }
+.rl-permgroup__label { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); margin-bottom: var(--sp-2); }
+.rl-perm { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); padding: 3px 0; cursor: pointer; }
+.rl-perm input { cursor: pointer; flex-shrink: 0; }
+.rl-perm.is-locked { cursor: default; opacity: 0.7; }
+.rl-perm.is-locked input { cursor: default; }

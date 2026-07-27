@@ -239,6 +239,241 @@ Layout.init('parametres');
     UI.toast(t.checked ? 'Option activée' : 'Option désactivée');
   });
 
+  /* ============================================================
+     Rôles & accès : comptes utilisateurs + permissions par rôle
+     ============================================================ */
+  const rlIc = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const IC_EDIT = rlIc('<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>');
+  const IC_DEL  = rlIc('<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>');
+
+  const PORTAIL_BADGE = { app:'badge--accent', prestataire:'badge--warning', proprietaire:'badge--positive' };
+  const STATUT_BADGE  = { actif:'badge--positive', invite:'badge--warning', suspendu:'badge--danger' };
+
+  // Libellé de la fiche métier rattachée à un compte externe.
+  function lienLabel(u) {
+    if (!u.lienId) return null;
+    const r = getRole(u.roleId);
+    if (r && r.portail === 'prestataire') { const p = getPrestataire(u.lienId); return p ? p.nom : null; }
+    if (r && r.portail === 'proprietaire') { const o = getProprietaire(u.lienId); return o ? o.societe : null; }
+    return null;
+  }
+
+  const initialesDe = nom => nom.split(' ').map(m => m[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  const estMonCompte = u => u.email === UTILISATEUR.email;
+  const nbAdminsActifs = () => UTILISATEURS.filter(u => u.roleId === 'admin' && u.statut !== 'suspendu').length;
+
+  function renderComptes() {
+    const rows = UTILISATEURS.map(u => {
+      const r = getRole(u.roleId);
+      const lien = lienLabel(u);
+      const moi = estMonCompte(u);
+      return `<tr data-user="${u.id}">
+        <td>
+          <div class="row gap-3">
+            <span class="avatar avatar--sm">${initialesDe(u.nom)}</span>
+            <div><b>${u.nom}${moi ? ' <span class="text-xs text-muted">(vous)</span>' : ''}</b>
+              <div class="text-xs text-muted">${u.email}</div></div>
+          </div>
+        </td>
+        <td>
+          <select class="select rl-roleselect" data-user-role="${u.id}" aria-label="Rôle de ${u.nom}">
+            ${ROLES.map(x => `<option value="${x.id}" ${x.id === u.roleId ? 'selected' : ''}>${x.nom}</option>`).join('')}
+          </select>
+          ${lien ? `<div class="text-xs text-muted rl-lien">↳ ${lien}</div>` : ''}
+        </td>
+        <td><span class="badge ${PORTAIL_BADGE[r.portail]}">${PORTAIL_LABEL[r.portail]}</span></td>
+        <td><span class="badge ${STATUT_BADGE[u.statut]}">${STATUT_COMPTE_LABEL[u.statut]}</span></td>
+        <td class="text-soft">${u.dernierAcces ? formatDate(u.dernierAcces) : '—'}</td>
+        <td class="row gap-1" style="justify-content:flex-end">
+          <button class="icon-btn" data-user-toggle="${u.id}" title="${u.statut === 'suspendu' ? 'Réactiver' : 'Suspendre'}" aria-label="${u.statut === 'suspendu' ? 'Réactiver' : 'Suspendre'} ${u.nom}">
+            ${u.statut === 'suspendu'
+              ? rlIc('<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>')
+              : rlIc('<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6"/>')}
+          </button>
+          <button class="icon-btn icon-btn--danger" data-user-del="${u.id}" aria-label="Supprimer ${u.nom}">${IC_DEL}</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="app-pagehead" style="margin-bottom:var(--sp-4)">
+        <div><p class="eyebrow">Comptes</p>
+          <p class="text-sm text-soft">${UTILISATEURS.length} compte${UTILISATEURS.length > 1 ? 's' : ''} · ${nbAdminsActifs()} administrateur${nbAdminsActifs() > 1 ? 's' : ''}</p></div>
+        <div class="app-pagehead__actions">
+          <button class="btn btn--primary" id="rl-invite">${rlIc('<path d="M12 5v14M5 12h14"/>')} Inviter un utilisateur</button>
+        </div>
+      </div>
+      <div class="table-wrap rl-comptes">
+        <table class="table">
+          <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Accès</th><th>Statut</th><th>Dernier accès</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  function renderRoleCards() {
+    return ROLES.map(r => {
+      const nb = getComptesByRole(r.id).length;
+      const interne = r.portail === 'app';
+
+      const perms = interne
+        ? Object.entries(PERMISSIONS.reduce((acc, p) => { (acc[p.groupe] = acc[p.groupe] || []).push(p); return acc; }, {}))
+            .map(([groupe, items]) => `
+              <div class="rl-permgroup">
+                <p class="rl-permgroup__label">${groupe}</p>
+                ${items.map(p => `
+                  <label class="rl-perm ${r.systeme ? 'is-locked' : ''}">
+                    <input type="checkbox" data-perm="${r.id}:${p.id}" ${r.permissions.includes(p.id) ? 'checked' : ''} ${r.systeme ? 'disabled' : ''}>
+                    <span>${p.label}</span>
+                  </label>`).join('')}
+              </div>`).join('')
+        : `<p class="text-sm text-soft">Accès limité à son propre espace : ce rôle ne voit que les données qui le concernent, sans accéder à l’application de gestion.</p>`;
+
+      return `<div class="rl-rolecard">
+        <div class="rl-rolecard__head">
+          <div class="grow">
+            <div class="row gap-2" style="align-items:center">
+              <b>${r.nom}</b>
+              <span class="badge ${PORTAIL_BADGE[r.portail]}">${PORTAIL_LABEL[r.portail]}</span>
+              ${r.systeme ? `<span class="badge badge--neutral" title="Rôle système : ses accès ne sont pas modifiables">Système</span>` : ''}
+            </div>
+            <p class="text-sm text-soft mt-2">${r.desc}</p>
+          </div>
+          <span class="badge badge--neutral">${nb} compte${nb > 1 ? 's' : ''}</span>
+        </div>
+        ${interne ? `<p class="text-xs text-muted mb-2">Sections accessibles ${r.systeme ? '(non modifiable)' : ''}</p>` : ''}
+        <div class="rl-perms">${perms}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderRoles() {
+    document.getElementById('pf-pane-roles').innerHTML = `
+      ${renderComptes()}
+      <p class="eyebrow mb-2">Rôles</p>
+      <p class="text-sm text-soft mb-4">Chaque rôle définit ce que ses comptes peuvent consulter. Les rôles système ne sont pas modifiables afin d’éviter tout blocage d’accès.</p>
+      ${renderRoleCards()}`;
+  }
+
+  /* ---------- Interactions : comptes ---------- */
+  document.getElementById('pf-pane-roles').addEventListener('change', e => {
+    const roleSel = e.target.closest('[data-user-role]');
+    if (roleSel) {
+      const u = getUtilisateurCompte(roleSel.dataset.userRole);
+      const ancien = u.roleId;
+      if (ancien === 'admin' && roleSel.value !== 'admin' && nbAdminsActifs() <= 1) {
+        UI.toast('Gardez au moins un administrateur actif', false);
+        roleSel.value = ancien; return;
+      }
+      const nouveau = getRole(roleSel.value);
+      // Changer de famille de portail invalide la fiche rattachée.
+      if (getRole(ancien).portail !== nouveau.portail) u.lienId = null;
+      u.roleId = roleSel.value;
+      renderRoles();
+      UI.toast(`${u.nom} est désormais ${nouveau.nom}`);
+      return;
+    }
+
+    const perm = e.target.closest('[data-perm]');
+    if (perm) {
+      const [roleId, permId] = perm.dataset.perm.split(':');
+      const r = getRole(roleId);
+      if (perm.checked) { if (!r.permissions.includes(permId)) r.permissions.push(permId); }
+      else { r.permissions = r.permissions.filter(x => x !== permId); }
+      const label = (PERMISSIONS.find(p => p.id === permId) || {}).label || permId;
+      UI.toast(`${r.nom} · ${label} ${perm.checked ? 'autorisé' : 'retiré'}`);
+      return;
+    }
+  });
+
+  document.getElementById('pf-pane-roles').addEventListener('click', e => {
+    const inviteBtn = e.target.closest('#rl-invite');
+    if (inviteBtn) { openInviteModal(); return; }
+
+    const tog = e.target.closest('[data-user-toggle]');
+    if (tog) {
+      const u = getUtilisateurCompte(tog.dataset.userToggle);
+      if (u.statut !== 'suspendu' && u.roleId === 'admin' && nbAdminsActifs() <= 1) {
+        UI.toast('Gardez au moins un administrateur actif', false); return;
+      }
+      if (u.statut === 'suspendu') {
+        u.statut = 'actif'; renderRoles(); UI.toast(`${u.nom} réactivé`);
+      } else {
+        UI.confirm({
+          title: 'Suspendre ce compte ?',
+          message: `${u.nom} ne pourra plus se connecter tant que le compte reste suspendu. Ses données et son historique sont conservés.`,
+          confirmText: 'Suspendre', danger: true,
+          onConfirm: () => { u.statut = 'suspendu'; renderRoles(); UI.toast(`${u.nom} suspendu`); },
+        });
+      }
+      return;
+    }
+
+    const del = e.target.closest('[data-user-del]');
+    if (del) {
+      const u = getUtilisateurCompte(del.dataset.userDel);
+      if (estMonCompte(u)) { UI.toast('Vous ne pouvez pas supprimer votre propre compte', false); return; }
+      if (u.roleId === 'admin' && nbAdminsActifs() <= 1) { UI.toast('Gardez au moins un administrateur actif', false); return; }
+      UI.confirm({
+        title: 'Supprimer ce compte ?',
+        message: `Le compte de ${u.nom} (${u.email}) sera définitivement supprimé et son accès révoqué immédiatement. Cette action est irréversible.`,
+        confirmText: 'Supprimer', danger: true,
+        onConfirm: () => {
+          UTILISATEURS.splice(UTILISATEURS.findIndex(x => x.id === u.id), 1);
+          renderRoles(); UI.toast(`Compte de ${u.nom} supprimé`);
+        },
+      });
+      return;
+    }
+  });
+
+  /* ---------- Modale d'invitation ---------- */
+  const elRoleSel = document.getElementById('rl-f-role');
+  const elLienWrap = document.getElementById('rl-f-lien-wrap');
+  const elLienSel = document.getElementById('rl-f-lien');
+
+  function refreshLienField() {
+    const r = getRole(elRoleSel.value);
+    document.getElementById('rl-f-roledesc').textContent = r.desc;
+    if (r.portail === 'prestataire') {
+      elLienWrap.hidden = false;
+      elLienSel.innerHTML = PRESTATAIRES.map(p => `<option value="${p.id}">${p.nom} — ${p.role}</option>`).join('');
+    } else if (r.portail === 'proprietaire') {
+      elLienWrap.hidden = false;
+      elLienSel.innerHTML = PROPRIETAIRES.map(o => `<option value="${o.id}">${o.societe} — ${o.contact}</option>`).join('');
+    } else {
+      elLienWrap.hidden = true;
+      elLienSel.innerHTML = '';
+    }
+  }
+
+  function openInviteModal() {
+    elRoleSel.innerHTML = ROLES.map(r => `<option value="${r.id}">${r.nom}</option>`).join('');
+    elRoleSel.value = 'secretaire';
+    document.getElementById('rl-f-nom').value = '';
+    document.getElementById('rl-f-email').value = '';
+    refreshLienField();
+    UI.openPanel('rl-modal');
+  }
+
+  elRoleSel.addEventListener('change', refreshLienField);
+
+  document.getElementById('rl-modal-confirm').addEventListener('click', () => {
+    const nom = document.getElementById('rl-f-nom').value.trim();
+    const email = document.getElementById('rl-f-email').value.trim();
+    if (!nom) { UI.toast('Renseignez le nom complet', false); return; }
+    if (!email.includes('@')) { UI.toast('Adresse e-mail invalide', false); return; }
+    if (UTILISATEURS.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+      UI.toast('Un compte utilise déjà cette adresse e-mail', false); return;
+    }
+    const r = getRole(elRoleSel.value);
+    UTILISATEURS.push({
+      id: 'U' + Date.now(), nom, email, roleId: r.id, statut: 'invite',
+      lienId: (r.portail === 'app') ? null : elLienSel.value, dernierAcces: null,
+    });
+    UI.closeAll(); renderRoles();
+    UI.toast(`Invitation envoyée à ${email}`);
+  });
+
   /* ---------- Plateformes ---------- */
   const PF_COLOR = {
     airbnb: 'var(--ch-airbnb)', booking: 'var(--ch-booking)', expedia: 'var(--ch-expedia)',
@@ -285,5 +520,6 @@ Layout.init('parametres');
   renderLocalisation();
   renderSejour();
   renderOptionsSupp();
+  renderRoles();
   renderPlateformes();
 })();

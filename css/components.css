@@ -99,7 +99,9 @@
 /* ------------------------------------------------------------
    Tableaux  .table
    ------------------------------------------------------------ */
-.table-wrap { border: 1px solid var(--c-border); border-radius: var(--r-xl); overflow: hidden; background: var(--c-surface); box-shadow: var(--shadow-sm); }
+/* overflow-x:auto (et non hidden) : sur mobile, un tableau plus large que
+   l'écran doit pouvoir défiler horizontalement au lieu d'être coupé. */
+.table-wrap { border: 1px solid var(--c-border); border-radius: var(--r-xl); overflow-x: auto; background: var(--c-surface); box-shadow: var(--shadow-sm); -webkit-overflow-scrolling: touch; }
 .table { width: 100%; font-size: var(--fs-sm); }
 .table thead th {
   text-align: left; font-size: var(--fs-xs); font-weight: var(--fw-semibold);

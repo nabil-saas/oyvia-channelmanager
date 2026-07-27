@@ -542,6 +542,87 @@ const COMPTE = {
 };
 
 /* ============================================================
+   RÔLES & COMPTES UTILISATEURS  (Paramètres > Rôles & accès)
+
+   Deux familles de rôles :
+     - portail « app »  : l'équipe interne de la conciergerie, qui se
+       connecte à l'application complète. Ses accès sont définis
+       section par section (voir PERMISSIONS, calqué sur le menu).
+     - portails externes : prestataires et propriétaires, qui n'entrent
+       jamais dans l'app mais disposent de leur propre espace dédié
+       (prestataire.html / proprietaire.html) limité à leurs données.
+   ============================================================ */
+
+// Une permission = une section du menu de l'app.
+const PERMISSIONS = [
+  { id:'dashboard',       label:'Tableau de bord',   groupe:'Aperçu' },
+  { id:'calendrier',      label:'Calendrier',        groupe:'Aperçu' },
+  { id:'statistiques',    label:'Statistiques',      groupe:'Aperçu' },
+  { id:'logements',       label:'Logements',         groupe:'Locations' },
+  { id:'proprietaires',   label:'Propriétaires',     groupe:'Locations' },
+  { id:'reservations',    label:'Réservations',      groupe:'Locations' },
+  { id:'voyageurs',       label:'Voyageurs',         groupe:'Locations' },
+  { id:'messagerie',      label:'Messagerie',        groupe:'Communication' },
+  { id:'automatisations', label:'Automatisations',   groupe:'Communication' },
+  { id:'menage',          label:'Gestion des tâches',groupe:'Équipe' },
+  { id:'equipe',          label:'Équipe',            groupe:'Équipe' },
+  { id:'comptabilite',    label:'Comptabilité',      groupe:'Comptabilité' },
+  { id:'abonnement',      label:'Abonnement',        groupe:'Compte' },
+  { id:'parametres',      label:'Paramètres & rôles',groupe:'Compte' },
+];
+const TOUTES_PERMISSIONS = PERMISSIONS.map(p => p.id);
+
+const PORTAIL_LABEL = {
+  app:          'Application complète',
+  prestataire:  'Espace prestataire',
+  proprietaire: 'Espace propriétaire',
+};
+
+const ROLES = [
+  { id:'admin', nom:'Administrateur', portail:'app', systeme:true,
+    desc:'Accès total, y compris la facturation, les paramètres et la gestion des rôles.',
+    permissions:[...TOUTES_PERMISSIONS] },
+
+  { id:'gestionnaire', nom:'Gestionnaire', portail:'app', systeme:false,
+    desc:'Pilote l’activité au quotidien. N’accède ni à l’abonnement ni aux paramètres.',
+    permissions:['dashboard','calendrier','statistiques','logements','proprietaires','reservations','voyageurs','messagerie','automatisations','menage','equipe','comptabilite'] },
+
+  { id:'secretaire', nom:'Secrétaire', portail:'app', systeme:false,
+    desc:'Gère les réservations, les voyageurs et les échanges. Aucun accès financier.',
+    permissions:['dashboard','calendrier','reservations','voyageurs','messagerie','menage'] },
+
+  { id:'comptable', nom:'Comptable', portail:'app', systeme:false,
+    desc:'Suit la facturation, les dépenses et les reversements aux propriétaires.',
+    permissions:['dashboard','statistiques','proprietaires','comptabilite','abonnement'] },
+
+  { id:'prestataire', nom:'Prestataire', portail:'prestataire', systeme:true,
+    desc:'Consulte uniquement les tâches qui lui sont assignées et y ajoute ses photos.',
+    permissions:[] },
+
+  { id:'proprietaire', nom:'Propriétaire', portail:'proprietaire', systeme:true,
+    desc:'Consulte ses logements, ses réservations et sa synthèse comptable, en lecture seule.',
+    permissions:[] },
+];
+
+/* Comptes créés. `lienId` rattache un compte externe à sa fiche métier
+   (un prestataire de PRESTATAIRES, un propriétaire de PROPRIETAIRES). */
+const UTILISATEURS = [
+  { id:'U1', nom:'Camille Dupont',  email:'camille@conciergerie-lumia.fr', roleId:'admin',        statut:'actif',   lienId:null, dernierAcces:'2026-07-23' },
+  { id:'U2', nom:'Inès Marchand',   email:'ines@conciergerie-lumia.fr',    roleId:'secretaire',   statut:'actif',   lienId:null, dernierAcces:'2026-07-22' },
+  { id:'U3', nom:'Bruno Faure',     email:'bruno.faure@cabinet-fc.fr',     roleId:'comptable',    statut:'actif',   lienId:null, dernierAcces:'2026-07-18' },
+  { id:'U4', nom:'Sylvie Ménard',   email:'sylvie.menard@gmail.com',       roleId:'prestataire',  statut:'actif',   lienId:'P1', dernierAcces:'2026-07-23' },
+  { id:'U5', nom:'Marc Antoine',    email:'marc.antoine@gmail.com',        roleId:'prestataire',  statut:'actif',   lienId:'P4', dernierAcces:'2026-07-21' },
+  { id:'U6', nom:'Paul Bernard',    email:'paul.bernard@sci-bernard.fr',   roleId:'proprietaire', statut:'actif',   lienId:'O1', dernierAcces:'2026-07-20' },
+  { id:'U7', nom:'Sophie Lefort',   email:'s.lefort@gmail.com',            roleId:'proprietaire', statut:'invite',  lienId:'O2', dernierAcces:null },
+];
+
+const STATUT_COMPTE_LABEL = { actif:'Actif', invite:'Invitation envoyée', suspendu:'Suspendu' };
+
+function getRole(id) { return ROLES.find(r => r.id === id); }
+function getUtilisateurCompte(id) { return UTILISATEURS.find(u => u.id === id); }
+function getComptesByRole(id) { return UTILISATEURS.filter(u => u.roleId === id); }
+
+/* ============================================================
    PLATEFORMES — connexions aux OTA, moteurs de visibilité & outils
    (page Paramètres > Plateformes)
    ============================================================ */
@@ -717,6 +798,7 @@ const _OYVIA_ENTITIES = {
   PRESTATAIRES, AUTOMATISATIONS, RECURRENTES, PLATEFORMES,
   COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, TACHE_LABEL,
   PROPRIETAIRES, DEPENSES, FACTURES,
+  ROLES, UTILISATEURS,
 };
 
 (function _oyviaRestoreState() {
