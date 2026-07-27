@@ -1,0 +1,23 @@
+Airbnb
+Booking
+Expedia
+VRBO
+        │
+        ▼
+Message entrant
+        │
+        ▼
+Sonnet 5
+        │
+        ├── Comprend l'intention
+        ├── Génère la réponse
+        ├── Décide des actions
+        ▼
+Workflow interne
+        │
+        ├── Créer une tâche ménage
+        ├── Créer une intervention
+        ├── Envoyer un WhatsApp
+        ├── Modifier la réservation
+        ├── Informer le propriétaire
+        └── Créer un ticket SAV
