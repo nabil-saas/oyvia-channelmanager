@@ -1,0 +1,236 @@
+/* ============================================================
+   OYVIA — Vivi, l'assistant IA
+   Deux blocs indépendants :
+     .vivi-*   → le chat flottant (présent sur toutes les pages)
+     .vc-*     → la page de configuration de l'IA Avancée
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. Bouton flottant
+   ------------------------------------------------------------ */
+.vivi-fab {
+  position: fixed; right: var(--sp-5); bottom: var(--sp-5); z-index: var(--z-modal);
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: 56px; padding: 0 var(--sp-5) 0 var(--sp-4);
+  border: 0; border-radius: var(--r-full); cursor: pointer;
+  background: linear-gradient(135deg, var(--blue-600), #7C4DFF);
+  color: #fff; font-family: inherit; font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--t-fast), box-shadow var(--t-fast), opacity var(--t-fast);
+}
+.vivi-fab:hover { transform: translateY(-2px); box-shadow: 0 20px 46px rgba(13,25,55,0.24); }
+.vivi-fab:active { transform: translateY(0); }
+/* Quand la popup est ouverte, le bouton s'efface pour ne pas la doubler */
+.vivi-fab.is-hidden { opacity: 0; visibility: hidden; transform: scale(0.9); }
+.vivi-fab__label { white-space: nowrap; }
+
+/* L'avatar : le logo de Vivi dans une pastille blanche. Le fond plein est
+   nécessaire — le robot est bleu et blanc, il se perdrait sur le dégradé. */
+.vivi-face { width: 34px; height: 34px; border-radius: var(--r-full); background: #fff; display: grid; place-items: center; flex-shrink: 0; position: relative; }
+.vivi-avatar { width: 26px; height: 26px; display: block; animation: vivi-float 3.6s ease-in-out infinite; }
+@keyframes vivi-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+/* Point rouge : Vivi a quelque chose à signaler (réponses à relire) */
+.vivi-fab__dot { position: absolute; top: -7px; right: -7px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: var(--r-full); background: var(--c-danger); color: #fff; font-size: 10px; font-weight: var(--fw-bold); display: grid; place-items: center; border: 2px solid #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vivi-avatar { animation: none; }
+  .vivi-fab, .vivi-panel { transition: none; }
+}
+
+/* ------------------------------------------------------------
+   2. Popup de chat
+   ------------------------------------------------------------ */
+.vivi-panel {
+  position: fixed; right: var(--sp-5); bottom: var(--sp-5); z-index: var(--z-modal);
+  width: 400px; max-width: calc(100vw - 2 * var(--sp-4));
+  height: 620px; max-height: calc(100vh - 2 * var(--sp-5));
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--r-2xl); box-shadow: var(--shadow-lg);
+  opacity: 0; visibility: hidden; transform: translateY(12px) scale(0.98);
+  transition: opacity var(--t-fast), visibility var(--t-fast), transform var(--t-fast);
+}
+.vivi-panel.is-open { opacity: 1; visibility: visible; transform: none; }
+
+.vivi-panel__head { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4); background: linear-gradient(135deg, var(--blue-600), #7C4DFF); color: #fff; flex-shrink: 0; }
+.vivi-panel__head b { display: block; font-size: var(--fs-md); font-weight: var(--fw-bold); }
+.vivi-panel__head small { font-size: var(--fs-xs); opacity: 0.85; }
+.vivi-panel__close { margin-left: auto; width: 32px; height: 32px; border: 0; border-radius: var(--r-full); background: rgba(255,255,255,0.18); color: #fff; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; transition: background var(--t-fast); }
+.vivi-panel__close:hover { background: rgba(255,255,255,0.3); }
+.vivi-panel__close svg { width: 16px; height: 16px; }
+
+.vivi-body { flex: 1; overflow-y: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+
+/* Message d'accueil */
+.vivi-hello { background: var(--bg-subtle); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-4); }
+.vivi-hello b { font-size: var(--fs-md); }
+.vivi-hello p { font-size: var(--fs-sm); color: var(--c-text-soft); margin-top: var(--sp-2); }
+.vivi-hello ul { margin-top: var(--sp-3); display: flex; flex-direction: column; gap: 6px; }
+.vivi-hello li { font-size: var(--fs-sm); color: var(--c-text-soft); padding-left: var(--sp-4); position: relative; }
+.vivi-hello li::before { content: "•"; position: absolute; left: 4px; color: var(--c-accent); }
+.vivi-hello__plan { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--sp-3); font-size: var(--fs-xs); font-weight: var(--fw-semibold); background: var(--c-accent-soft); color: var(--blue-700); border-radius: var(--r-full); padding: 3px var(--sp-3); }
+
+/* Bulles */
+.vivi-msg { max-width: 88%; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-lg); font-size: var(--fs-sm); line-height: 1.5; }
+.vivi-msg--vivi { align-self: flex-start; background: var(--bg-subtle); border: 1px solid var(--c-border); border-bottom-left-radius: var(--r-sm); }
+.vivi-msg--moi  { align-self: flex-end; background: var(--blue-600); color: #fff; border-bottom-right-radius: var(--r-sm); }
+.vivi-msg__meta { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: var(--tracking-wider); opacity: 0.6; margin-bottom: 4px; }
+.vivi-msg b { font-weight: var(--fw-semibold); }
+.vivi-msg a { color: var(--blue-600); font-weight: var(--fw-semibold); text-decoration: underline; }
+.vivi-msg--moi a { color: #fff; }
+.vivi-msg ul { margin-top: var(--sp-2); padding-left: var(--sp-4); list-style: disc; }
+.vivi-msg li { margin-top: 3px; }
+/* Bouton d'action proposé dans une réponse (aller à une page, ouvrir un ticket…) */
+.vivi-msg__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.vivi-msg__actions .btn { height: 32px; padding: 0 var(--sp-3); font-size: var(--fs-xs); }
+
+/* Vivi réfléchit */
+.vivi-typing { align-self: flex-start; display: flex; gap: 4px; padding: var(--sp-3) var(--sp-4); background: var(--bg-subtle); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
+.vivi-typing i { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--c-text-muted); animation: vivi-bounce 1.2s infinite; }
+.vivi-typing i:nth-child(2) { animation-delay: 0.15s; }
+.vivi-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes vivi-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+/* FAQ rapide (3 suggestions rotatives) */
+.vivi-faq { flex-shrink: 0; padding: var(--sp-3) var(--sp-4) 0; border-top: 1px solid var(--c-border); }
+.vivi-faq__label { display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); margin-bottom: var(--sp-2); }
+.vivi-faq__shuffle { border: 0; background: none; color: var(--blue-600); font-family: inherit; font-size: 10px; font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); cursor: pointer; }
+.vivi-faq__list { display: flex; flex-direction: column; gap: 6px; }
+.vivi-faq__list button { text-align: left; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: var(--r-full); padding: 7px var(--sp-3); font-family: inherit; font-size: var(--fs-xs); color: var(--c-text-soft); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.vivi-faq__list button:hover { border-color: var(--blue-600); color: var(--blue-600); }
+
+/* Saisie */
+.vivi-input { flex-shrink: 0; display: flex; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4) var(--sp-4); }
+.vivi-input input { flex: 1; min-width: 0; height: 42px; padding: 0 var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-full); background: var(--c-surface); font-family: inherit; font-size: var(--fs-sm); color: var(--c-text); }
+.vivi-input input:focus { outline: none; border-color: var(--c-accent); box-shadow: 0 0 0 3px var(--c-accent-soft); }
+.vivi-input button { width: 42px; height: 42px; flex-shrink: 0; border: 0; border-radius: var(--r-full); background: var(--blue-600); color: #fff; display: grid; place-items: center; cursor: pointer; transition: filter var(--t-fast); }
+.vivi-input button:hover { filter: brightness(1.08); }
+.vivi-input button svg { width: 18px; height: 18px; }
+
+/* Plein écran sur mobile : une popup de 400px n'a pas de sens sur 375px */
+@media (max-width: 620px) {
+  /* inset plutôt que width/height en % : les pourcentages se résolvent sur le
+     bloc conteneur initial, qui exclut la barre de défilement — on perdait
+     quelques pixels sur chaque bord au lieu d'occuper vraiment tout l'écran. */
+  .vivi-panel { inset: 0; width: auto; height: auto; max-width: none; max-height: none; border-radius: 0; border: 0; }
+  .vivi-fab { right: var(--sp-4); bottom: var(--sp-4); height: 52px; padding: 0 var(--sp-4) 0 var(--sp-3); }
+  .vivi-fab__label { display: none; }
+  /* Pages avec une barre d'action ancrée en bas (le composeur de la
+     messagerie) : en une seule colonne, tout le coin bas-droit est occupé —
+     « Envoyer », puis les actions de la proposition de Vivi juste au-dessus.
+     Le remonter ne fait que déplacer la collision, on masque donc le bouton
+     flottant. Vivi reste accessible par le menu « Assistant IA », et sur la
+     messagerie ses propositions sont déjà affichées dans le fil. */
+  body.has-bottom-bar .vivi-fab,
+  body.has-bottom-bar .vivi-panel { display: none; }
+}
+
+/* ------------------------------------------------------------
+   3. Page de configuration de l'IA Avancée (.vc-)
+   ------------------------------------------------------------ */
+/* Bandeau de verrouillage pour les offres sans IA Avancée */
+.vc-lock { max-width: 640px; margin: var(--sp-8) auto; text-align: center; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-2xl); padding: var(--sp-8); box-shadow: var(--shadow-sm); }
+.vc-lock__ic { width: 84px; height: 84px; margin: 0 auto var(--sp-5); display: grid; place-items: center; }
+.vc-lock__ic img { width: 84px; height: 84px; display: block; }
+.vc-lock h2 { font-size: var(--fs-2xl); letter-spacing: var(--tracking-tight); }
+.vc-lock > p { margin-top: var(--sp-3); color: var(--c-text-soft); font-size: var(--fs-sm); }
+.vc-lock__list { margin: var(--sp-6) 0; text-align: left; display: grid; gap: var(--sp-3); }
+.vc-lock__list li { display: flex; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--c-text-soft); }
+.vc-lock__list svg { width: 17px; height: 17px; color: var(--c-accent); flex-shrink: 0; margin-top: 3px; }
+.vc-lock__cta { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
+
+/* Onglets de sections A→E */
+.vc-nav { display: flex; gap: 2px; padding: 3px; background: var(--c-surface-alt); border: 1px solid var(--c-border); border-radius: var(--r-full); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.vc-nav button { flex-shrink: 0; padding: var(--sp-2) var(--sp-4); border: 0; border-radius: var(--r-full); background: transparent; font-family: inherit; font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-soft); cursor: pointer; white-space: nowrap; transition: background var(--t-fast), color var(--t-fast); }
+.vc-nav button:hover:not(.is-active) { color: var(--c-text); }
+.vc-nav button.is-active { background: var(--c-surface); color: var(--blue-600); font-weight: var(--fw-semibold); box-shadow: var(--shadow-xs); }
+
+.vc-pane { display: none; }
+.vc-pane.is-active { display: block; }
+
+/* En-tête explicatif de chaque section : dire ce que ça change concrètement */
+.vc-intro { background: var(--c-accent-soft); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-4); font-size: var(--fs-sm); color: var(--blue-700); margin-bottom: var(--sp-5); }
+.vc-intro b { font-weight: var(--fw-semibold); }
+
+.vc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-5); }
+.vc-grid--1 { grid-template-columns: 1fr; }
+@media (max-width: 860px) { .vc-grid { grid-template-columns: 1fr; } }
+
+.vc-hint { font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: var(--sp-2); }
+
+/* Groupes de cases à cocher / radios */
+.vc-checks { display: grid; gap: var(--sp-2); }
+.vc-check { display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-3); border: 1px solid var(--c-border); border-radius: var(--r-md); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.vc-check:hover { border-color: var(--c-border-strong); }
+.vc-check.is-on { border-color: var(--blue-600); background: var(--c-accent-soft); }
+.vc-check input { margin-top: 3px; flex-shrink: 0; accent-color: var(--blue-600); }
+.vc-check__txt { font-size: var(--fs-sm); }
+.vc-check__txt small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
+.vc-checks--inline { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+
+/* Liste des logements à décrire */
+/* minmax(0,1fr) et non 1fr : par défaut un enfant de grille a min-width:auto
+   et refuse de descendre sous sa largeur de contenu — la fiche dépliée
+   débordait alors de l'écran sur mobile. */
+.vc-logs { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+.vc-log { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); background: var(--c-surface); }
+.vc-log__thumb { width: 34px; height: 34px; border-radius: var(--r-sm); flex-shrink: 0; display: grid; place-items: center; color: #fff; font-size: var(--fs-xs); font-weight: var(--fw-bold); }
+.vc-log__meta { min-width: 0; }
+.vc-log__meta b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.vc-log__meta small { font-size: var(--fs-xs); color: var(--c-text-muted); }
+.vc-log__state { margin-left: auto; display: flex; align-items: center; gap: var(--sp-3); flex-shrink: 0; }
+
+/* Fiche de contexte d'un logement (dépliée sous la ligne) */
+.vc-ctx { min-width: 0; border: 1px solid var(--blue-600); border-radius: var(--r-lg); padding: var(--sp-5); background: var(--c-surface); margin-bottom: var(--sp-3); }
+.vc-ctx__head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+.vc-ctx__head b { font-size: var(--fs-md); }
+.vc-ctx__head .btn { margin-left: auto; }
+/* Récapitulatif en lecture seule de ce que Vivi lit déjà dans la fiche du
+   logement : sans lui, l'utilisateur ressaisit l'adresse et le Wi-Fi ici. */
+.vc-deja { background: var(--bg-subtle); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-4); }
+.vc-deja__label { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); margin-bottom: var(--sp-3); }
+.vc-deja__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--sp-3); }
+.vc-deja__item small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.vc-deja__item span { font-size: var(--fs-sm); color: var(--c-text); }
+.vc-deja__foot { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--c-border); font-size: var(--fs-xs); color: var(--c-text-muted); }
+.vc-deja__foot a { color: var(--blue-600); font-weight: var(--fw-semibold); }
+
+/* Métriques de l'audit */
+.vc-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-3); }
+.vc-metric { border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-4); background: var(--c-surface); }
+.vc-metric small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
+.vc-metric b { display: block; font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.vc-metric em { font-style: normal; font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+/* Journal des réponses de Vivi */
+.vc-reps { display: grid; gap: var(--sp-3); }
+.vc-rep { border: 1px solid var(--c-border); border-left-width: 3px; border-radius: var(--r-lg); padding: var(--sp-4); background: var(--c-surface); }
+.vc-rep--envoyee   { border-left-color: var(--c-positive); }
+.vc-rep--attente   { border-left-color: var(--amber-500); }
+.vc-rep--escaladee { border-left-color: var(--c-danger); }
+.vc-rep__top { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.vc-rep__top .vc-rep__id { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-muted); }
+.vc-rep__top .vc-rep__when { margin-left: auto; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.vc-rep__q, .vc-rep__a { font-size: var(--fs-sm); padding-left: var(--sp-5); position: relative; }
+.vc-rep__q { color: var(--c-text); }
+.vc-rep__a { color: var(--c-text-soft); margin-top: var(--sp-2); }
+.vc-rep__q::before { content: "Voyageur"; }
+.vc-rep__a::before { content: "Vivi"; }
+.vc-rep__q::before, .vc-rep__a::before { position: absolute; left: 0; top: -14px; font-size: 10px; font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); }
+.vc-rep__q, .vc-rep__a { padding-left: 0; margin-top: var(--sp-5); }
+.vc-rep__why { margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--c-warning-ink); background: var(--c-warning-soft); border-radius: var(--r-sm); padding: 6px var(--sp-3); display: inline-block; }
+.vc-rep__foot { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--c-border); }
+.vc-rep__conf { font-size: var(--fs-xs); color: var(--c-text-muted); margin-right: auto; font-variant-numeric: tabular-nums; }
+.vc-rep__edit { width: 100%; margin-top: var(--sp-3); }
+.vc-rep__edit textarea { width: 100%; }
+
+/* Suggestions d'amélioration */
+.vc-sugg { display: grid; gap: var(--sp-2); }
+.vc-sugg__item { display: flex; gap: var(--sp-3); padding: var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); background: var(--c-surface); }
+.vc-sugg__n { width: 24px; height: 24px; flex-shrink: 0; border-radius: var(--r-full); background: var(--c-accent-soft); color: var(--blue-700); font-size: var(--fs-xs); font-weight: var(--fw-bold); display: grid; place-items: center; }
+.vc-sugg__item b { display: block; font-size: var(--fs-sm); }
+.vc-sugg__item p { font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
+.vc-sugg__item .btn { margin-left: auto; flex-shrink: 0; align-self: center; }

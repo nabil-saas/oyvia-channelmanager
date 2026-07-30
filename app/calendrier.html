@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
 </head>
 <body class="app">
   <div class="app-shell">
@@ -26,6 +27,8 @@
             <p>Toutes vos annonces et tous vos canaux sur une seule grille. Survolez une réservation pour le détail, cliquez pour l'ouvrir.</p>
           </div>
           <div class="app-pagehead__actions">
+            <!-- Filtre par logement — rempli et câblé par layout.js -->
+            <select class="select app-logement-select" id="app-logement" aria-label="Filtrer par logement"></select>
             <div class="seg" id="cal-mode">
               <button data-mode="reservations" class="is-active">Réservations</button>
               <button data-mode="taches">Tâches prestataires</button>
@@ -107,5 +110,6 @@
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/calendrier.js"></script>
+  <script src="../js/vivi.js"></script>
 </body>
 </html>

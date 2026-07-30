@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="app">
@@ -27,6 +28,8 @@
             <p id="dash-date">Voici l'activité de vos logements aujourd'hui.</p>
           </div>
           <div class="app-pagehead__actions">
+            <!-- Filtre par logement — rempli et câblé par layout.js -->
+            <select class="select app-logement-select" id="app-logement" aria-label="Filtrer par logement"></select>
             <a class="btn btn--secondary" href="calendrier.html">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
               Voir le calendrier
@@ -43,7 +46,7 @@
           <div class="card">
             <div class="card__head">
               <span class="card__title">Taux d'occupation</span>
-              <span class="badge badge--neutral">6 derniers mois</span>
+              <span class="badge badge--neutral" id="dash-occ-scope">6 derniers mois</span>
             </div>
             <div class="card__body">
               <div class="dash-chart"><canvas id="dash-occ"></canvas></div>
@@ -76,5 +79,6 @@
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/dashboard.js"></script>
+  <script src="../js/vivi.js"></script>
 </body>
 </html>

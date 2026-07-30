@@ -172,8 +172,8 @@
 .seg button.is-active { background: var(--c-surface); color: var(--c-accent); box-shadow: var(--shadow-xs); }
 
 /* Onglets */
-.tabs { display: flex; gap: var(--sp-2); border-bottom: 1px solid var(--c-border); }
-.tabs button { padding: var(--sp-3) var(--sp-2); font-size: var(--fs-base); font-weight: var(--fw-medium); color: var(--c-text-soft); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color var(--t-fast), border-color var(--t-fast); }
+.tabs { display: flex; gap: var(--sp-2); border-bottom: 1px solid var(--c-border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.tabs button { flex-shrink: 0; white-space: nowrap; padding: var(--sp-3) var(--sp-2); font-size: var(--fs-base); font-weight: var(--fw-medium); color: var(--c-text-soft); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color var(--t-fast), border-color var(--t-fast); }
 .tabs button:hover { color: var(--c-text); }
 .tabs button.is-active { color: var(--c-accent); border-bottom-color: var(--c-accent); }
 

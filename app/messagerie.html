@@ -12,8 +12,10 @@
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
 </head>
-<body class="app">
+<!-- has-bottom-bar : composeur ancré en bas, cf. .vivi-fab dans css/vivi.css -->
+<body class="app has-bottom-bar">
   <div class="app-shell">
     <aside class="app-sidebar" id="app-sidebar"></aside>
     <div class="app-body">
@@ -29,6 +31,12 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
                 <input class="input" type="search" id="msg-search" placeholder="Rechercher un voyageur…" />
               </div>
+              <!-- Filtres rapides ; « IA à relire » est la cible du lien de Vivi -->
+              <div class="seg seg--sm msg-filters" id="msg-filters">
+                <button type="button" data-filtre="tout" class="is-active">Toutes</button>
+                <button type="button" data-filtre="nonlu">Non lues</button>
+                <button type="button" data-filtre="ia">IA à relire</button>
+              </div>
             </div>
             <div class="msg-convs" id="msg-convs"><!-- injecté --></div>
           </section>
@@ -37,12 +45,14 @@
           <section class="msg-col msg-col--thread" aria-label="Discussion">
             <div class="msg-threadhead" id="msg-threadhead"><!-- injecté --></div>
             <div class="msg-thread" id="msg-thread"><!-- injecté --></div>
+            <!-- Proposition de réponse de Vivi (injectée par messagerie.js) -->
+            <div class="msg-vivi hidden" id="msg-vivi"></div>
             <div class="msg-composer">
               <div class="msg-composer__tools">
                 <select class="select" id="msg-template" aria-label="Modèle de message">
                   <option value="">Insérer un modèle…</option>
                 </select>
-                <span class="text-xs text-muted">Variables : {prenom}, {code_acces}, {wifi}</span>
+                <span class="text-xs text-muted">Variables : {prenom}, {lien_sejour}, {code_acces}, {wifi}</span>
               </div>
               <div class="msg-composer__box">
                 <textarea class="textarea grow" id="msg-input" placeholder="Écrire une réponse…" rows="1"></textarea>
@@ -65,5 +75,6 @@
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/messagerie.js"></script>
+  <script src="../js/vivi.js"></script>
 </body>
 </html>

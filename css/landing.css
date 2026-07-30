@@ -63,10 +63,6 @@
 .lp-hero__trust { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--sp-3) var(--sp-5); margin-top: var(--sp-6); font-size: var(--fs-sm); color: var(--c-text-muted); list-style: none; padding: 0; }
 .lp-hero__trust li { display: flex; align-items: center; gap: var(--sp-2); }
 .lp-hero__trust svg { width: 16px; height: 16px; color: var(--c-positive); flex-shrink: 0; }
-.lp-avatars { display: flex; }
-.lp-avatars .avatar { border: 2px solid var(--white); margin-left: -10px; }
-.lp-avatars .avatar:first-child { margin-left: 0; }
-.lp-stars { color: var(--amber-400); letter-spacing: 1px; }
 
 /* Fenêtre produit (mockup calendrier unifié) */
 .lp-window { max-width: 1000px; margin: var(--sp-12) auto 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-2xl); box-shadow: var(--shadow-lg); overflow: hidden; }
@@ -149,18 +145,46 @@
 .lp-integration { display: inline-flex; align-items: center; gap: var(--sp-2); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-full); padding: var(--sp-3) var(--sp-5); font-weight: var(--fw-medium); box-shadow: var(--shadow-xs); }
 .lp-integration i { width: 10px; height: 10px; border-radius: var(--r-full); }
 
-/* Témoignages */
-.lp-reviews { columns: 3; column-gap: var(--sp-5); }
-.lp-review { break-inside: avoid; margin-bottom: var(--sp-5); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl); padding: var(--sp-5); box-shadow: var(--shadow-sm); }
-.lp-review__stars { color: var(--amber-400); font-size: var(--fs-sm); letter-spacing: 1px; margin-bottom: var(--sp-3); }
-.lp-review p { font-size: var(--fs-base); color: var(--c-text); line-height: var(--lh-snug); }
-.lp-review__by { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-4); }
-.lp-review__by b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); display: block; }
-.lp-review__by span { font-size: var(--fs-xs); color: var(--c-text-muted); }
-
 /* ------------------------------------------------------------
    Tarifs
    ------------------------------------------------------------ */
+/* Les 3 offres (Gratuit · Smart · Business) */
+/* Les cartes suivent le simulateur : la marge est au-dessus, et assez ample
+   pour dégager le badge « Votre sélection » qui déborde en haut des cartes. */
+.lp-plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5); align-items: stretch; margin-top: var(--sp-16); }
+.lp-plan { position: relative; display: flex; flex-direction: column; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-2xl); padding: var(--sp-6); box-shadow: var(--shadow-sm); text-align: left; }
+/* L'offre la plus choisie ressort sans casser l'alignement de la grille */
+.lp-plan.is-popular { border-color: var(--blue-600); box-shadow: var(--shadow-blue), var(--shadow-md); }
+.lp-plan--free { background: var(--bg-subtle); }
+.lp-plan__flag { position: absolute; top: calc(-1 * var(--sp-3)); left: var(--sp-6); background: var(--blue-600); color: #fff; font-size: var(--fs-xs); font-weight: var(--fw-semibold); padding: 4px var(--sp-3); border-radius: var(--r-full); box-shadow: var(--shadow-sm); }
+.lp-plan__name { font-size: var(--fs-xl); font-weight: var(--fw-bold); letter-spacing: var(--tracking-tight); }
+.lp-plan__tag { font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
+.lp-plan__price { margin-top: var(--sp-4); }
+.lp-plan__price b { display: block; font-size: var(--fs-2xl); font-weight: var(--fw-bold); color: var(--blue-600); letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; }
+.lp-plan--free .lp-plan__price b { color: var(--green-600); }
+.lp-plan__price span { font-size: var(--fs-xs); color: var(--c-text-muted); }
+/* Le montant réel pour le parc saisi dans le simulateur */
+.lp-plan__total { margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--c-text-soft); background: var(--c-surface-alt); border: 1px solid var(--c-border); border-radius: var(--r-full); padding: 4px var(--sp-3); display: inline-block; }
+.lp-plan__total b { color: var(--c-text); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+/* Offre hors périmètre pour ce parc : lisible mais visiblement inerte */
+.lp-plan.is-locked { opacity: 0.55; }
+.lp-plan__resume { margin-top: var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-soft); }
+.lp-plan__feats { margin-top: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-3); }
+.lp-plan__feat { display: flex; gap: var(--sp-2); font-size: var(--fs-sm); }
+.lp-plan__feat svg { width: 16px; height: 16px; color: var(--c-accent); flex-shrink: 0; margin-top: 3px; }
+.lp-plan__feat b { font-weight: var(--fw-medium); color: var(--c-text); }
+.lp-plan__feat em { display: block; font-style: normal; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
+.lp-plan__feat--herite b { font-weight: var(--fw-semibold); }
+/* Intertitre de groupe (« Inclus », « Vivi IA Avancée »…) : sans lui, les dix
+   lignes de Business formeraient un bloc indigeste */
+.lp-plan__group { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); margin-top: var(--sp-3); }
+.lp-plan__feats > .lp-plan__group:first-child { margin-top: 0; }
+/* À qui l'offre s'adresse, juste au-dessus du bouton */
+.lp-plan__ideal { font-size: var(--fs-xs); color: var(--c-text-soft); margin-bottom: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--c-border); }
+.lp-plan__ideal b { color: var(--c-text); font-weight: var(--fw-semibold); }
+/* Le bouton reste collé en bas, quelle que soit la hauteur de la liste */
+.lp-plan__foot { margin-top: auto; padding-top: var(--sp-6); }
+
 /* Simulateur */
 .lp-sim { max-width: 640px; margin: 0 auto; background: linear-gradient(180deg, var(--c-surface), var(--bg-subtle)); border: 1px solid var(--c-border); border-radius: var(--r-2xl); padding: var(--sp-8); box-shadow: var(--shadow-md); text-align: center; }
 .lp-sim__head { display: flex; align-items: center; gap: var(--sp-3); text-align: left; }
@@ -181,34 +205,17 @@
 .lp-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: var(--r-full); background: var(--blue-600); border: 4px solid #fff; box-shadow: var(--shadow-blue); cursor: pointer; }
 .lp-sim__plan { margin-top: var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-soft); }
 .lp-sim__plan b { color: var(--blue-600); }
+.lp-sim__trial { display: inline-block; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--c-text-muted); }
 
-/* Tranches tarifaires (affichées pour la clarté, sous le simulateur) */
-.lp-tiers { max-width: 640px; margin: var(--sp-12) auto 0; }
-.lp-tiers__label { text-align: center; font-size: var(--fs-sm); color: var(--c-text-soft); margin-bottom: var(--sp-6); }
-
-/* Tableau simple des tranches, à titre d'information */
-.lp-tiers__table { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-2xl); overflow: hidden; box-shadow: var(--shadow-sm); }
-.lp-tiers__thead { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6); background: var(--bg-subtle); border-bottom: 1px solid var(--c-border); font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); }
-.lp-tiers__trow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-5) var(--sp-6); border-bottom: 1px solid var(--c-border); }
-.lp-tiers__trow:last-child { border-bottom: 0; }
-.lp-tiers__trow span:first-child { font-size: var(--fs-md); color: var(--c-text); }
-.lp-tiers__tprice { font-size: var(--fs-lg); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; color: var(--blue-600); }
-.lp-tiers__tprice--free { color: var(--green-600); }
-
-/* Fonctionnalités incluses, mises en avant clairement */
-/* Fonctionnalités incluses — même encadré que le simulateur, pas de bloc à part */
-.lp-sim__features { margin-top: var(--sp-8); padding-top: var(--sp-6); border-top: 1px solid var(--c-border); text-align: left; }
-.lp-sim__features-label { text-align: center; font-size: var(--fs-sm); font-weight: var(--fw-semibold); margin-bottom: var(--sp-4); }
-.lp-sim__features-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
-.lp-sim__features-list li { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--c-text-soft); }
-.lp-sim__features-list svg { width: 17px; height: 17px; color: var(--c-accent); flex-shrink: 0; }
-.lp-sim__features-note { text-align: center; margin-top: var(--sp-5); font-size: var(--fs-xs); color: var(--c-text-muted); }
-
-/* Option à la carte mentionnée dans le simulateur (WhatsApp), sans tarif */
-.lp-sim__addon { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-5); padding: var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); background: var(--c-surface-alt); font-size: var(--fs-sm); color: var(--c-text-soft); text-align: left; }
-.lp-sim__addon__ic { width: 34px; height: 34px; border-radius: var(--r-md); background: #25D366; color: #fff; display: grid; place-items: center; flex-shrink: 0; }
-.lp-sim__addon__ic svg { width: 20px; height: 20px; }
-.lp-sim__addon b { color: var(--c-text); font-weight: var(--fw-semibold); }
+/* Choix du niveau d'assistant IA — c'est lui qui détermine l'offre :
+   « Sans IA » = Smart, « IA Avancée (Vivi) » = Business. */
+.lp-simia { margin-top: var(--sp-6); }
+.lp-simia__label { font-size: var(--fs-sm); font-weight: var(--fw-semibold); margin-bottom: var(--sp-3); }
+.lp-simseg { display: inline-flex; gap: 2px; padding: 3px; background: var(--c-surface-alt); border: 1px solid var(--c-border); border-radius: var(--r-full); }
+.lp-simseg button { padding: var(--sp-2) var(--sp-4); border: 0; border-radius: var(--r-full); background: transparent; font-family: inherit; font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-soft); cursor: pointer; white-space: nowrap; transition: background var(--t-fast), color var(--t-fast); }
+.lp-simseg button:hover:not(:disabled):not(.is-active) { color: var(--c-text); }
+.lp-simseg button.is-active { background: var(--c-surface); color: var(--blue-600); font-weight: var(--fw-semibold); box-shadow: var(--shadow-xs); }
+.lp-simseg button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Appel à l'action du simulateur */
 .lp-sim__cta { margin-top: var(--sp-6); padding-top: var(--sp-6); border-top: 1px solid var(--c-border); text-align: center; }
@@ -274,8 +281,8 @@
 @media (max-width: 980px) {
   .lp-problems { grid-template-columns: repeat(2, 1fr); }
   .lp-features, .lp-steps, .lp-benefits, .lp-blog { grid-template-columns: repeat(2, 1fr); }
-  .lp-reviews { columns: 2; }
   .lp-footer__grid { grid-template-columns: 1fr 1fr; }
+  /* 4 offres côte à côte deviennent illisibles : on passe en 2 × 2 */
 }
 /* Nav : bascule en menu déroulant avant que ça se serre */
 @media (max-width: 900px) {
@@ -295,16 +302,21 @@
   .lp-navlinks__mobile-only { display: block; border-top: 1px solid var(--c-border); margin-top: 4px; padding-top: 6px; }
   .lp-section { padding: var(--sp-16) var(--sp-4); }
   .lp-problems, .lp-features, .lp-steps, .lp-benefits, .lp-blog { grid-template-columns: 1fr; }
-  .lp-reviews { columns: 1; }
   .lp-hero { padding-top: var(--sp-12); }
   .lp-hero__cta { flex-direction: column; align-items: stretch; }
-  .lp-hero__cta .btn { width: 100%; white-space: normal; height: auto; min-height: 52px; padding-block: var(--sp-3); line-height: 1.25; }
+  /* Les libellés longs (« Commencer gratuitement — 15 jours offerts ») ne
+     tiennent pas sur une ligne : on autorise le retour à la ligne plutôt
+     que de laisser le bouton déborder de l'écran. */
+  .lp-hero__cta .btn,
+  .lp-sim__cta .btn { width: 100%; white-space: normal; height: auto; min-height: 52px; padding-block: var(--sp-3); line-height: 1.25; }
   .hcal__row { grid-template-columns: 96px repeat(12, 1fr); height: 38px; }
   .hcal__cell--name { font-size: var(--fs-xs); }
   .lp-footer__grid { grid-template-columns: 1fr 1fr; }
   .lp-window__body { padding: var(--sp-3); }
-  .lp-tiers__thead, .lp-tiers__trow { padding: var(--sp-4); }
-  .lp-sim__features-list { grid-template-columns: 1fr; }
+  .lp-plans { grid-template-columns: 1fr; }
   .lp-sim__row { flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
   .lp-sim__result { text-align: left; }
+  /* Trois libellés côte à côte ne tiennent pas sur 375 px : on empile. */
+  .lp-simseg { display: flex; flex-direction: column; width: 100%; border-radius: var(--r-lg); }
+  .lp-simseg button { width: 100%; border-radius: var(--r-md); padding: var(--sp-3); }
 }

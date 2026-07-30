@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Vivi, Assistant IA</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Vivi — Assistant IA</h1>
+            <p id="vc-sub">Réglez la façon dont Vivi répond aux messages de vos voyageurs.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <button class="btn btn--secondary" type="button" id="vc-ask">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Demander à Vivi
+            </button>
+          </div>
+        </div>
+
+        <!-- Écran de verrouillage (offres sans IA Avancée) -->
+        <div id="vc-locked" class="hidden"><!-- injecté --></div>
+
+        <!-- Configuration complète (Business) -->
+        <div id="vc-app" class="hidden">
+          <div class="vc-nav" id="vc-nav" role="tablist">
+            <button type="button" data-pane="global"    class="is-active">Contexte global</button>
+            <button type="button" data-pane="ton">Personnalité &amp; ton</button>
+            <button type="button" data-pane="gardefous">Garde-fous &amp; escalade</button>
+            <button type="button" data-pane="logements">Contexte par logement</button>
+            <button type="button" data-pane="audit">Audit &amp; apprentissage</button>
+          </div>
+
+          <div class="mt-6">
+            <!-- A — Contexte global -->
+            <section class="vc-pane is-active" id="vc-pane-global"><!-- injecté --></section>
+            <!-- B — Personnalité & ton -->
+            <section class="vc-pane" id="vc-pane-ton"><!-- injecté --></section>
+            <!-- C — Garde-fous & escalade -->
+            <section class="vc-pane" id="vc-pane-gardefous"><!-- injecté --></section>
+            <!-- D — Contexte par logement -->
+            <section class="vc-pane" id="vc-pane-logements"><!-- injecté --></section>
+            <!-- E — Audit & apprentissage -->
+            <section class="vc-pane" id="vc-pane-audit"><!-- injecté --></section>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/vivi-config.js"></script>
+  <script src="../js/vivi.js"></script>
+</body>
+</html>

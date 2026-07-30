@@ -47,79 +47,725 @@ function addDays(s, n) {
 }
 
 /* ============================================================
-   LOGEMENTS (10)
+   RÉFÉRENTIELS LOGEMENT — vocabulaire normalisé
+
+   Ces listes reprennent le découpage réel des API de distribution
+   (Airbnb, Booking.com, VRBO/Expedia). Elles servent de pivot : un
+   channel manager reçoit des libellés différents selon la plateforme
+   et les ramène toujours à ces identifiants-là. C'est ce qui permet
+   de pousser une même fiche vers plusieurs canaux sans la ressaisir.
    ============================================================ */
-const LOGEMENTS = [
-  { id:'L001', nom:'T2 Vieux-Lyon avec balcon', ville:'Lyon', quartier:'Vieux-Lyon', pays:'France',
-    type:'T2', capacite:4, chambres:1, lits:2, sdb:1, tarifBase:95, menageTarif:45, couleur:'#B5654A',
-    adresse:'12 rue du Bœuf, 69005 Lyon', note:4.9, avis:127,
-    canaux:{ airbnb:'ok', booking:'ok', direct:'ok' },
-    codeAcces:'A2481', wifi:{ ssid:'Oyvia-VieuxLyon', pass:'balcon2024' },
-    equipements:['Wifi fibre','Balcon','Lave-linge','Cuisine équipée','Chauffage'] },
 
-  { id:'L002', nom:'Studio Montmartre lumineux', ville:'Paris', quartier:'Montmartre', pays:'France',
-    type:'Studio', capacite:2, chambres:1, lits:1, sdb:1, tarifBase:78, menageTarif:35, couleur:'#3D5A80',
-    adresse:'8 rue Lepic, 75018 Paris', note:4.7, avis:203,
-    canaux:{ airbnb:'ok', booking:'ok', direct:'ok' },
-    codeAcces:'7734B', wifi:{ ssid:'OyviaParis18', pass:'lepic0018' },
-    equipements:['Wifi','Ascenseur','Cuisine','Vue Sacré-Cœur'] },
-
-  { id:'L003', nom:'Appartement Chartrons design', ville:'Bordeaux', quartier:'Chartrons', pays:'France',
-    type:'T3', capacite:4, chambres:2, lits:3, sdb:1, tarifBase:88, menageTarif:40, couleur:'#5B7A6B',
-    adresse:'24 cours de la Martinique, 33000 Bordeaux', note:4.8, avis:96,
-    canaux:{ airbnb:'ok', booking:'attention', direct:'ok' },
-    codeAcces:'C9012', wifi:{ ssid:'Oyvia-Chartrons', pass:'design2024' },
-    equipements:['Wifi fibre','Parking','Lave-vaisselle','Terrasse'] },
-
-  { id:'L004', nom:'Chalet vue lac d\'Annecy', ville:'Annecy', quartier:'Veyrier-du-Lac', pays:'France',
-    type:'Chalet', capacite:6, chambres:3, lits:4, sdb:2, tarifBase:165, menageTarif:70, couleur:'#4A6A58',
-    adresse:'5 chemin des Cyprès, 74290 Veyrier-du-Lac', note:5.0, avis:64,
-    canaux:{ airbnb:'ok', booking:'ok', direct:'ok' },
-    codeAcces:'CH440', wifi:{ ssid:'ChaletLac', pass:'annecy2024' },
-    equipements:['Wifi','Cheminée','Vue lac','Parking 2 voitures','Jardin'] },
-
-  { id:'L005', nom:'Villa front de mer', ville:'Biarritz', quartier:'Côte des Basques', pays:'France',
-    type:'Villa', capacite:8, chambres:4, lits:5, sdb:3, tarifBase:240, menageTarif:90, couleur:'#C99A3C',
-    adresse:'18 avenue de la Plage, 64200 Biarritz', note:4.9, avis:81,
-    canaux:{ airbnb:'ok', booking:'ok', direct:'ok' },
-    codeAcces:'VILLA6', wifi:{ ssid:'VillaBiarritz', pass:'ocean2024' },
-    equipements:['Wifi','Piscine','Accès plage','Parking','Terrasse'] },
-
-  { id:'L006', nom:'Loft Vieux-Port', ville:'Marseille', quartier:'Le Panier', pays:'France',
-    type:'Loft', capacite:3, chambres:1, lits:2, sdb:1, tarifBase:82, menageTarif:35, couleur:'#8A5A3C',
-    adresse:'3 rue du Panier, 13002 Marseille', note:4.6, avis:112,
-    canaux:{ airbnb:'ok', booking:'ok', direct:'ok' },
-    codeAcces:'P1330', wifi:{ ssid:'OyviaPanier', pass:'vieuxport13' },
-    equipements:['Wifi','Climatisation','Vue port','Cuisine'] },
-
-  { id:'L007', nom:'Studio Promenade des Anglais', ville:'Nice', quartier:'Promenade', pays:'France',
-    type:'Studio', capacite:2, chambres:1, lits:1, sdb:1, tarifBase:72, menageTarif:30, couleur:'#3D6E80',
-    adresse:'45 promenade des Anglais, 06000 Nice', note:4.7, avis:158,
-    canaux:{ airbnb:'ok', booking:'ok', direct:'ok' },
-    codeAcces:'NCE07', wifi:{ ssid:'OyviaNice', pass:'promenade06' },
-    equipements:['Wifi','Climatisation','Balcon','Vue mer'] },
-
-  { id:'L008', nom:'Maison de pêcheur', ville:'La Rochelle', quartier:'Vieux-Port', pays:'France',
-    type:'Maison', capacite:5, chambres:2, lits:3, sdb:1, tarifBase:110, menageTarif:50, couleur:'#6E7A5B',
-    adresse:'9 rue des Voiliers, 17000 La Rochelle', note:4.8, avis:73,
-    canaux:{ airbnb:'ok', booking:'ok', direct:'ok' },
-    codeAcces:'LR170', wifi:{ ssid:'MaisonPecheur', pass:'larochelle17' },
-    equipements:['Wifi','Vélos','Jardin','Cuisine équipée','Barbecue'] },
-
-  { id:'L009', nom:'Duplex Capitole', ville:'Toulouse', quartier:'Capitole', pays:'France',
-    type:'Duplex', capacite:4, chambres:2, lits:2, sdb:1, tarifBase:84, menageTarif:38, couleur:'#9A5A6E',
-    adresse:'2 place du Capitole, 31000 Toulouse', note:4.7, avis:89,
-    canaux:{ airbnb:'ok', booking:'ok', direct:'attention' },
-    codeAcces:'TLS09', wifi:{ ssid:'OyviaCapitole', pass:'toulouse31' },
-    equipements:['Wifi','Cuisine','Machine à laver','Centre-ville'] },
-
-  { id:'L010', nom:'T3 Presqu\'île rénové', ville:'Lyon', quartier:'Presqu\'île', pays:'France',
-    type:'T3', capacite:5, chambres:2, lits:3, sdb:1, tarifBase:98, menageTarif:45, couleur:'#4A6A80',
-    adresse:'30 rue de la République, 69002 Lyon', note:4.8, avis:104,
-    canaux:{ airbnb:'ok', booking:'ok', direct:'ok' },
-    codeAcces:'LY102', wifi:{ ssid:'OyviaPresquile', pass:'republique69' },
-    equipements:['Wifi fibre','Ascenseur','Lave-vaisselle','Centre-ville'] },
+// property_type côté Airbnb / accommodation type côté Booking.
+const TYPES_LOGEMENT = [
+  { id:'appartement', label:'Appartement' }, { id:'maison',  label:'Maison' },
+  { id:'studio',      label:'Studio' },      { id:'loft',    label:'Loft' },
+  { id:'villa',       label:'Villa' },       { id:'chalet',  label:'Chalet' },
+  { id:'duplex',      label:'Duplex' },      { id:'autre',   label:'Autre' },
 ];
+
+// room_type : ce que le voyageur loue réellement. Champ obligatoire chez
+// Airbnb, et le plus structurant — il change le prix, les règles et le public.
+const TYPES_CHAMBRE = [
+  { id:'entier',   label:'Logement entier',   desc:"Le voyageur dispose de tout le logement." },
+  { id:'privee',   label:'Chambre privée',    desc:"Chambre pour le voyageur, espaces communs partagés." },
+  { id:'partagee', label:'Chambre partagée',  desc:"Le voyageur partage la chambre avec d'autres." },
+];
+
+// Configuration des couchages, pièce par pièce (bedrooms[].beds[] chez Airbnb).
+const TYPES_LIT = [
+  { id:'king',      label:'Lit king size',  places:2 },
+  { id:'queen',     label:'Lit queen size', places:2 },
+  { id:'double',    label:'Lit double',     places:2 },
+  { id:'simple',    label:'Lit simple',     places:1 },
+  { id:'canape',    label:'Canapé-lit',     places:2 },
+  { id:'superpose', label:'Lits superposés',places:2 },
+  { id:'bebe',      label:'Lit bébé',       places:0 },
+];
+
+// Équipements normalisés. Airbnb en expose une centaine ; on garde ceux
+// qui pèsent sur le référencement et sur les questions des voyageurs.
+const AMENITY_CATEGORIES = {
+  essentiels:    'Essentiels',
+  cuisine:       'Cuisine & repas',
+  confort:       'Confort',
+  exterieur:     'Extérieur & loisirs',
+  stationnement: 'Stationnement & accès',
+  securite:      'Sécurité',
+  famille:       'Famille',
+};
+const AMENITIES = [
+  { id:'wifi',          label:'Wi-Fi',                   cat:'essentiels' },
+  { id:'wifi_fibre',    label:'Wi-Fi fibre',             cat:'essentiels' },
+  { id:'chauffage',     label:'Chauffage',               cat:'essentiels' },
+  { id:'clim',          label:'Climatisation',           cat:'essentiels' },
+  { id:'eau_chaude',    label:'Eau chaude',              cat:'essentiels' },
+  { id:'lave_linge',    label:'Lave-linge',              cat:'essentiels' },
+  { id:'seche_linge',   label:'Sèche-linge',             cat:'essentiels' },
+  { id:'linge_fourni',  label:'Draps et serviettes',     cat:'essentiels' },
+  { id:'espace_travail',label:'Espace de travail',       cat:'essentiels' },
+  { id:'tv',            label:'Télévision',              cat:'confort' },
+  { id:'cuisine',       label:'Cuisine équipée',         cat:'cuisine' },
+  { id:'lave_vaisselle',label:'Lave-vaisselle',          cat:'cuisine' },
+  { id:'four',          label:'Four',                    cat:'cuisine' },
+  { id:'micro_ondes',   label:'Micro-ondes',             cat:'cuisine' },
+  { id:'cafetiere',     label:'Cafetière',               cat:'cuisine' },
+  { id:'ascenseur',     label:'Ascenseur',               cat:'confort' },
+  { id:'cheminee',      label:'Cheminée',                cat:'confort' },
+  { id:'vue_mer',       label:'Vue mer',                 cat:'confort' },
+  { id:'vue_lac',       label:'Vue lac',                 cat:'confort' },
+  { id:'vue_monument',  label:'Vue sur monument',        cat:'confort' },
+  { id:'balcon',        label:'Balcon',                  cat:'exterieur' },
+  { id:'terrasse',      label:'Terrasse',                cat:'exterieur' },
+  { id:'jardin',        label:'Jardin',                  cat:'exterieur' },
+  { id:'piscine',       label:'Piscine',                 cat:'exterieur' },
+  { id:'barbecue',      label:'Barbecue',                cat:'exterieur' },
+  { id:'velos',         label:'Vélos',                   cat:'exterieur' },
+  { id:'acces_plage',   label:'Accès direct à la plage', cat:'exterieur' },
+  { id:'parking_gratuit',label:'Parking gratuit',        cat:'stationnement' },
+  { id:'parking_payant',label:'Parking payant',          cat:'stationnement' },
+  { id:'arrivee_auto',  label:'Arrivée autonome',        cat:'stationnement' },
+  { id:'detecteur_fumee',label:'Détecteur de fumée',     cat:'securite' },
+  { id:'detecteur_co',  label:'Détecteur de monoxyde',   cat:'securite' },
+  { id:'extincteur',    label:'Extincteur',              cat:'securite' },
+  { id:'trousse_secours',label:'Trousse de secours',     cat:'securite' },
+  { id:'lit_bebe',      label:'Lit bébé',                cat:'famille' },
+  { id:'chaise_haute',  label:'Chaise haute',            cat:'famille' },
+];
+
+// Politiques d'annulation : chaque plateforme a ses noms, mais tous les
+// canaux se ramènent à ces quatre paliers.
+const POLITIQUES_ANNULATION = [
+  { id:'flexible',      label:'Flexible',            desc:"Remboursement intégral jusqu'à 24 h avant l'arrivée." },
+  { id:'moderee',       label:'Modérée',             desc:"Remboursement intégral jusqu'à 5 jours avant l'arrivée." },
+  { id:'stricte',       label:'Stricte',             desc:"Remboursement intégral dans les 48 h suivant la réservation, si l'arrivée est à plus de 14 jours." },
+  { id:'non_remboursable', label:'Non remboursable', desc:"Aucun remboursement, tarif réduit en contrepartie." },
+];
+
+// Comment le voyageur entre dans le logement.
+const TYPES_ACCES = [
+  { id:'boite_cles',        label:'Boîte à clés' },
+  { id:'serrure_connectee', label:'Serrure connectée' },
+  { id:'digicode',          label:'Digicode' },
+  { id:'accueil',           label:'Accueil en personne' },
+  { id:'concierge',         label:'Concierge / gardien' },
+];
+
+const STATUT_ANNONCE = {
+  publie:    { label:'Publiée',    badge:'badge--positive' },
+  masque:    { label:'Masquée',    badge:'badge--neutral'  },
+  en_pause:  { label:'En pause',   badge:'badge--warning'  },
+  brouillon: { label:'Brouillon',  badge:'badge--neutral'  },
+};
+
+// Assiette de la taxe de séjour : elle varie d'une commune à l'autre.
+const MODES_TAXE_SEJOUR = {
+  par_personne_nuit: 'Par personne et par nuit',
+  pourcentage:       'Pourcentage du prix de la nuit',
+  par_sejour:        'Forfait par séjour',
+};
+/* ============================================================
+   LOGEMENTS (10) — schéma normalisé de channel manager
+
+   Chaque champ correspond à une donnée réellement échangée avec les
+   plateformes (Airbnb, Booking.com, VRBO/Expedia). Le modèle est
+   organisé comme chez Guesty ou Hospitable : un socle commun, que
+   chaque canal consomme à sa façon.
+
+   Les champs de premier niveau (nom, ville, adresse, type, capacite,
+   tarifBase, menageTarif, codeAcces, wifi, note, couleur) restent à
+   plat : ils sont lus partout dans l'app (réservations, messagerie,
+   comptabilité, portail voyageur). Le reste est regroupé par thème.
+
+   DEFAUTS_LOGEMENT documente le schéma complet et sert de base à
+   chaque fiche : un logement ne déclare que ce qui lui est propre,
+   et aucune fiche ne peut se retrouver avec un champ manquant —
+   c'est ce qui casserait l'affichage du détail.
+   ============================================================ */
+const DEFAUTS_LOGEMENT = {
+  statut: 'publie',                 // cf. STATUT_ANNONCE
+
+  /* --- Annonce publique : ce que le voyageur lit avant de réserver --- */
+  annonce: {
+    titre: '',                      // titre commercial, distinct du nom interne
+    resume: '',                     // « summary » Airbnb
+    espace: '',                     // « the space » : description détaillée
+    quartierTxt: '',                // « neighborhood overview »
+    transports: '',                 // « getting around »
+    aSavoir: '',                    // « other things to note »
+  },
+
+  /* --- Localisation --- */
+  lieu: {
+    rue: '', complement: '', codePostal: '', region: '',
+    latitude: null, longitude: null,
+    fuseau: 'Europe/Paris',
+    adressePrecise: false,          // Airbnb ne révèle l'adresse exacte qu'après réservation
+  },
+
+  /* --- Structure & couchages --- */
+  typeChambre: 'entier',            // cf. TYPES_CHAMBRE — champ obligatoire Airbnb
+  typologie: '',                    // typologie française (T2, T3…), hors API
+  surface: null,                    // m²
+  sdbPrivees: 1, sdbPartagees: 0,
+  couchages: [],                    // [{ piece, lits:[{ type, nb }] }]
+  equipements: [],                  // identifiants AMENITIES
+
+  /* --- Tarification --- */
+  tarifs: {
+    devise: 'EUR',
+    weekend: null,                  // prix vendredi/samedi, null = même prix
+    personnesIncluses: 2,
+    personneSup: 0,                 // par personne au-delà du seuil, par nuit
+    fraisMenagePar: 'sejour',       // sejour | nuit
+    caution: 0,
+    fraisAnimal: 0,
+    taxeSejour: { mode: 'par_personne_nuit', montant: 0, plafondNuits: 7 },
+    remises: { hebdo: 0, mensuelle: 0, earlyBirdJours: 0, earlyBird: 0, lastMinuteJours: 0, lastMinute: 0 },
+    min: null, max: null,           // bornes de la tarification dynamique
+    dynamique: { actif: false, source: null },
+  },
+
+  /* --- Disponibilité & restrictions de séjour --- */
+  sejour: {
+    nuitsMin: 2, nuitsMax: 30,
+    preavis: 1,                     // délai minimum avant l'arrivée, en jours
+    preparation: 0,                 // nuits bloquées entre deux séjours
+    fenetreMois: 12,                // horizon d'ouverture du calendrier
+    reservationInstantanee: true,
+    arrivee: '15:00', arriveeMax: '21:00', depart: '11:00',
+    arriveeFlexible: false,
+    joursArrivee: ['lun','mar','mer','jeu','ven','sam','dim'],
+    joursDepart:  ['lun','mar','mer','jeu','ven','sam','dim'],
+  },
+
+  /* --- Politiques & règlement intérieur --- */
+  politiqueAnnulation: 'moderee',
+  regles: {
+    fumeurs: false, animaux: false, animauxMax: 0,
+    fetes: false, enfants: true, bebes: true,
+    silenceDebut: '22:00', silenceFin: '08:00',
+    complement: '',
+  },
+
+  /* --- Accès & logistique terrain --- */
+  acces: {
+    type: 'boite_cles',             // cf. TYPES_ACCES
+    emplacementCles: '',
+    etage: 0, ascenseur: false,
+    parking: '',
+    instructions: '',
+    contactUrgence: '',
+  },
+
+  /* --- Conformité (déclaration en mairie, plafond de nuitées) --- */
+  conformite: {
+    numeroEnregistrement: '', typeDeclaration: 'meuble_tourisme',
+    plafondNuits: null, nuitsConsommees: 0,
+    assurance: '',
+  },
+
+  /* --- Notes détaillées, telles que renvoyées par Airbnb --- */
+  notesDetail: { proprete: 0, precision: 0, arrivee: 0, communication: 0, emplacement: 0, qualitePrix: 0 },
+  superhote: false,
+
+  /* --- Photos : ordre + légende ; la première est la couverture --- */
+  photos: [],
+
+  /* --- Connexions aux plateformes --- */
+  // statut : ok | attention | erreur · listingId = identifiant chez le canal
+  canaux: {},
+  ical: { importe: [], exporte: '' },
+};
+
+// Chaque fiche ne déclare que ses spécificités : la fusion garantit qu'aucun
+// champ ne manque, y compris dans les sous-objets.
+function _logement(o) {
+  const D = DEFAUTS_LOGEMENT;
+  return {
+    ...D, ...o,
+    annonce:    { ...D.annonce,    ...(o.annonce    || {}) },
+    lieu:       { ...D.lieu,       ...(o.lieu       || {}) },
+    tarifs:     { ...D.tarifs,     ...(o.tarifs     || {}),
+                  taxeSejour: { ...D.tarifs.taxeSejour, ...((o.tarifs || {}).taxeSejour || {}) },
+                  remises:    { ...D.tarifs.remises,    ...((o.tarifs || {}).remises    || {}) },
+                  dynamique:  { ...D.tarifs.dynamique,  ...((o.tarifs || {}).dynamique  || {}) } },
+    sejour:     { ...D.sejour,     ...(o.sejour     || {}) },
+    regles:     { ...D.regles,     ...(o.regles     || {}) },
+    acces:      { ...D.acces,      ...(o.acces      || {}) },
+    conformite: { ...D.conformite, ...(o.conformite || {}) },
+    notesDetail:{ ...D.notesDetail,...(o.notesDetail|| {}) },
+    ical:       { ...D.ical,       ...(o.ical       || {}) },
+  };
+}
+const LOGEMENTS = [
+  _logement({
+    id:'L001', nom:'T2 Vieux-Lyon avec balcon', couleur:'#B5654A',
+    ville:'Lyon', quartier:'Vieux-Lyon', pays:'France',
+    adresse:'12 rue du Bœuf, 69005 Lyon',
+    type:'appartement', typologie:'T2', typeChambre:'entier',
+    capacite:4, chambres:1, lits:2, sdb:1, surface:48,
+    tarifBase:95, menageTarif:45, note:4.9, avis:127, superhote:true,
+    annonce:{
+      titre:"T2 avec balcon au cœur du Vieux-Lyon — vue cour calme",
+      resume:"Appartement rénové de 48 m² dans un immeuble Renaissance, à 5 minutes à pied de la cathédrale Saint-Jean. Balcon sur cour intérieure, très calme malgré l'hyper-centre.",
+      espace:"Séjour avec canapé-lit, chambre séparée avec lit double, cuisine entièrement équipée et salle de bain avec douche à l'italienne. Le balcon donne sur une cour intérieure plantée.",
+      quartierTxt:"Le Vieux-Lyon est piéton et classé au patrimoine mondial. Boulangerie ouverte 7 j/7 au coin de la rue, marché Saint-Antoine à 10 minutes.",
+      transports:"Métro D Vieux-Lyon à 300 m. Aéroport Saint-Exupéry en 45 min via le Rhônexpress depuis Part-Dieu.",
+      aSavoir:"Immeuble ancien du XVIᵉ : la porte de la rue coince un peu, il faut pousser en tournant la clé.",
+    },
+    lieu:{ rue:'12 rue du Bœuf', codePostal:'69005', region:'Auvergne-Rhône-Alpes', latitude:45.7623, longitude:4.8271 },
+    couchages:[
+      { piece:'Chambre 1', lits:[{ type:'double', nb:1 }] },
+      { piece:'Séjour',    lits:[{ type:'canape', nb:1 }] },
+    ],
+    equipements:['wifi_fibre','chauffage','eau_chaude','lave_linge','linge_fourni','espace_travail','tv','cuisine','lave_vaisselle','four','micro_ondes','cafetiere','balcon','arrivee_auto','detecteur_fumee','detecteur_co','extincteur','trousse_secours'],
+    tarifs:{ weekend:115, personnesIncluses:2, personneSup:15, caution:300,
+      taxeSejour:{ mode:'par_personne_nuit', montant:2.30, plafondNuits:7 },
+      remises:{ hebdo:10, mensuelle:25, earlyBirdJours:60, earlyBird:8, lastMinuteJours:7, lastMinute:12 },
+      min:75, max:180, dynamique:{ actif:true, source:'PriceLabs' } },
+    sejour:{ nuitsMin:2, nuitsMax:30, preavis:1, preparation:0, arrivee:'15:00', arriveeMax:'22:00', depart:'11:00', arriveeFlexible:true },
+    politiqueAnnulation:'moderee',
+    regles:{ fumeurs:false, animaux:false, fetes:false, complement:"Pas de bruit après 22 h. Fumer est autorisé sur le balcon uniquement." },
+    acces:{ type:'boite_cles', emplacementCles:"Boîte à clés noire, à droite de la porte d'entrée", etage:2, ascenseur:false,
+      parking:"Parking Saint-Jean à 100 m, payant, 15 €/nuit",
+      instructions:"Composez le code sur la boîte à clés, prenez le trousseau, 2ᵉ étage porte gauche.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'A2481', wifi:{ ssid:'Oyvia-VieuxLyon', pass:'balcon2024' },
+    conformite:{ numeroEnregistrement:'6938300123456', plafondNuits:120, nuitsConsommees:87, assurance:'AXA Loueur meublé n° 4417820' },
+    notesDetail:{ proprete:4.9, precision:4.8, arrivee:5.0, communication:4.9, emplacement:5.0, qualitePrix:4.7 },
+    photos:[
+      { legende:'Séjour et balcon' }, { legende:'Chambre' }, { legende:'Cuisine équipée' },
+      { legende:'Salle de bain' }, { legende:'Vue depuis le balcon' }, { legende:"Entrée de l'immeuble" },
+    ],
+    canaux:{
+      airbnb: { connecte:true, statut:'ok', listingId:'AB-48211937', url:'https://airbnb.fr/rooms/48211937', note:4.9, avis:98,  commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true, statut:'ok', listingId:'BK-8842190',  url:'https://booking.com/hotel/fr/8842190', note:9.2, avis:29, commission:15, derniereSynchro:'2026-07-23 12:38' },
+      direct: { connecte:true, statut:'ok', listingId:'OY-L001',     url:'https://oyvia.com/l/t2-vieux-lyon', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
+    },
+    ical:{ importe:['https://calendar.google.com/…/lyon.ics'], exporte:'https://oyvia.com/ical/L001.ics' },
+  }),
+
+  _logement({
+    id:'L002', nom:'Studio Montmartre lumineux', couleur:'#3D5A80',
+    ville:'Paris', quartier:'Montmartre', pays:'France',
+    adresse:'8 rue Lepic, 75018 Paris',
+    type:'studio', typologie:'T1', typeChambre:'entier',
+    capacite:2, chambres:1, lits:1, sdb:1, surface:26,
+    tarifBase:78, menageTarif:35, note:4.7, avis:203, superhote:true,
+    annonce:{
+      titre:"Studio lumineux rue Lepic — 5 min du Sacré-Cœur",
+      resume:"Studio de 26 m² au 3ᵉ étage sans ascenseur, en plein Montmartre. Grande fenêtre plein sud, vue sur les toits.",
+      espace:"Pièce de vie avec lit double, coin cuisine équipé, salle d'eau séparée.",
+      quartierTxt:"Rue Lepic, entre le marché et le Moulin de la Galette. Commerces de bouche au pied de l'immeuble.",
+      transports:"Métro Blanche et Abbesses à 5 minutes. Gare du Nord en 15 min.",
+      aSavoir:"3ᵉ étage sans ascenseur : à signaler aux voyageurs qui annoncent de grosses valises. La rue est en pente.",
+    },
+    lieu:{ rue:'8 rue Lepic', codePostal:'75018', region:'Île-de-France', latitude:48.8846, longitude:2.3376 },
+    couchages:[{ piece:'Pièce principale', lits:[{ type:'double', nb:1 }] }],
+    equipements:['wifi','chauffage','eau_chaude','lave_linge','linge_fourni','tv','cuisine','micro_ondes','cafetiere','vue_monument','arrivee_auto','detecteur_fumee','extincteur'],
+    tarifs:{ weekend:92, personnesIncluses:2, caution:250,
+      taxeSejour:{ mode:'par_personne_nuit', montant:5.20, plafondNuits:7 },
+      remises:{ hebdo:8, mensuelle:20, lastMinuteJours:5, lastMinute:10 },
+      min:62, max:140, dynamique:{ actif:true, source:'PriceLabs' } },
+    sejour:{ nuitsMin:2, nuitsMax:21, preavis:1, arrivee:'16:00', arriveeMax:'23:00', depart:'11:00' },
+    politiqueAnnulation:'stricte',
+    regles:{ complement:"Immeuble ancien : merci d'éviter le bruit dans les escaliers après 21 h." },
+    acces:{ type:'digicode', emplacementCles:"Boîte à clés dans le hall, sous les boîtes aux lettres", etage:3, ascenseur:false,
+      parking:"Aucun stationnement sur place, parking Anvers à 400 m",
+      instructions:"Digicode 7734B à la porte de la rue, puis 3ᵉ étage porte droite.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'7734B', wifi:{ ssid:'OyviaParis18', pass:'lepic0018' },
+    conformite:{ numeroEnregistrement:'7511800987654', plafondNuits:120, nuitsConsommees:112, assurance:'AXA Loueur meublé n° 4417820' },
+    notesDetail:{ proprete:4.8, precision:4.6, arrivee:4.7, communication:4.9, emplacement:4.9, qualitePrix:4.5 },
+    photos:[{ legende:'Pièce principale' }, { legende:'Coin cuisine' }, { legende:'Salle d\'eau' }, { legende:'Vue sur les toits' }],
+    canaux:{
+      airbnb: { connecte:true, statut:'ok', listingId:'AB-31905442', url:'https://airbnb.fr/rooms/31905442', note:4.7, avis:167, commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true, statut:'ok', listingId:'BK-6610233',  url:'https://booking.com/hotel/fr/6610233', note:8.9, avis:36, commission:15, derniereSynchro:'2026-07-23 12:39' },
+      direct: { connecte:true, statut:'ok', listingId:'OY-L002',     url:'https://oyvia.com/l/studio-montmartre', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
+    },
+    ical:{ exporte:'https://oyvia.com/ical/L002.ics' },
+  }),
+
+  _logement({
+    id:'L003', nom:'Appartement Chartrons design', couleur:'#5B7A6B',
+    ville:'Bordeaux', quartier:'Chartrons', pays:'France',
+    adresse:'24 cours de la Martinique, 33000 Bordeaux',
+    type:'appartement', typologie:'T3', typeChambre:'entier',
+    capacite:4, chambres:2, lits:3, sdb:1, surface:65,
+    tarifBase:88, menageTarif:40, note:4.8, avis:96,
+    annonce:{
+      titre:"T3 design aux Chartrons — terrasse et parking",
+      resume:"Appartement de 65 m² entièrement rénové dans le quartier des antiquaires, avec terrasse et place de parking privative.",
+      espace:"Deux chambres, séjour ouvert sur la cuisine, terrasse de 12 m² exposée ouest.",
+      quartierTxt:"Les Chartrons : brocantes, quais aménagés et marché dominical au bord de la Garonne.",
+      transports:"Tram B station CAPC à 5 minutes. Gare Saint-Jean en 20 min.",
+    },
+    lieu:{ rue:'24 cours de la Martinique', codePostal:'33000', region:'Nouvelle-Aquitaine', latitude:44.8543, longitude:-0.5701 },
+    couchages:[
+      { piece:'Chambre 1', lits:[{ type:'queen', nb:1 }] },
+      { piece:'Chambre 2', lits:[{ type:'simple', nb:2 }] },
+    ],
+    equipements:['wifi_fibre','chauffage','clim','eau_chaude','lave_linge','seche_linge','linge_fourni','espace_travail','tv','cuisine','lave_vaisselle','four','micro_ondes','terrasse','parking_gratuit','detecteur_fumee','detecteur_co','extincteur'],
+    tarifs:{ weekend:104, personnesIncluses:2, personneSup:12, caution:400,
+      taxeSejour:{ mode:'par_personne_nuit', montant:2.10, plafondNuits:7 },
+      remises:{ hebdo:12, mensuelle:22 }, min:70, max:150 },
+    sejour:{ nuitsMin:3, nuitsMax:60, preavis:2, preparation:1, arrivee:'16:00', depart:'10:00', joursArrivee:['ven','sam','dim','lun'] },
+    politiqueAnnulation:'moderee',
+    regles:{ animaux:true, animauxMax:1 },
+    acces:{ type:'serrure_connectee', emplacementCles:'Serrure connectée, code envoyé la veille', etage:1, ascenseur:true,
+      parking:"Place privative n° 12 au sous-sol, hauteur max 1,90 m",
+      instructions:"Le code de la serrure est envoyé automatiquement 24 h avant l'arrivée.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'C9012', wifi:{ ssid:'Oyvia-Chartrons', pass:'design2024' },
+    conformite:{ numeroEnregistrement:'3306300445566', plafondNuits:120, nuitsConsommees:54 },
+    notesDetail:{ proprete:4.9, precision:4.8, arrivee:4.7, communication:4.8, emplacement:4.7, qualitePrix:4.8 },
+    photos:[{ legende:'Séjour' }, { legende:'Terrasse' }, { legende:'Chambre 1' }, { legende:'Chambre 2' }, { legende:'Cuisine' }],
+    canaux:{
+      airbnb: { connecte:true, statut:'ok',        listingId:'AB-52847103', url:'https://airbnb.fr/rooms/52847103', note:4.8, avis:71, commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true, statut:'attention', listingId:'BK-9034117',  url:'https://booking.com/hotel/fr/9034117', note:9.0, avis:25, commission:15, derniereSynchro:'2026-07-21 08:12', message:"Tarifs refusés par Booking : la caution dépasse le plafond autorisé sur ce canal." },
+      direct: { connecte:true, statut:'ok',        listingId:'OY-L003',     url:'https://oyvia.com/l/chartrons-design', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
+    },
+  }),
+
+  _logement({
+    id:'L004', nom:"Chalet vue lac d'Annecy", couleur:'#4A6A58',
+    ville:'Annecy', quartier:'Veyrier-du-Lac', pays:'France',
+    adresse:'5 chemin des Cyprès, 74290 Veyrier-du-Lac',
+    type:'chalet', typeChambre:'entier',
+    capacite:6, chambres:3, lits:4, sdb:2, surface:120,
+    tarifBase:165, menageTarif:70, note:5.0, avis:64, superhote:true,
+    annonce:{
+      titre:"Chalet avec vue lac à Veyrier — cheminée et jardin",
+      resume:"Chalet familial de 120 m² surplombant le lac d'Annecy, avec jardin clos et cheminée.",
+      espace:"Trois chambres, deux salles de bain, grand séjour avec cheminée, cuisine ouverte, jardin de 400 m².",
+      quartierTxt:"Veyrier-du-Lac, rive est du lac. Plage à 800 m, sentiers de randonnée au départ du chalet.",
+      transports:"Voiture indispensable. Annecy centre à 10 min, Genève à 50 min.",
+      aSavoir:"Chemin d'accès en pente, verglacé en hiver : pneus neige conseillés de décembre à mars.",
+    },
+    lieu:{ rue:'5 chemin des Cyprès', codePostal:'74290', region:'Auvergne-Rhône-Alpes', latitude:45.8721, longitude:6.1898 },
+    couchages:[
+      { piece:'Chambre 1', lits:[{ type:'king', nb:1 }] },
+      { piece:'Chambre 2', lits:[{ type:'double', nb:1 }] },
+      { piece:'Chambre 3', lits:[{ type:'simple', nb:2 }] },
+    ],
+    equipements:['wifi','chauffage','eau_chaude','lave_linge','seche_linge','linge_fourni','tv','cuisine','lave_vaisselle','four','micro_ondes','cafetiere','cheminee','vue_lac','jardin','barbecue','parking_gratuit','detecteur_fumee','detecteur_co','extincteur','trousse_secours','lit_bebe','chaise_haute'],
+    tarifs:{ weekend:195, personnesIncluses:4, personneSup:25, caution:800, fraisAnimal:30,
+      taxeSejour:{ mode:'par_personne_nuit', montant:1.80, plafondNuits:7 },
+      remises:{ hebdo:15, mensuelle:30, earlyBirdJours:90, earlyBird:10 },
+      min:120, max:320, dynamique:{ actif:true, source:'PriceLabs' } },
+    sejour:{ nuitsMin:3, nuitsMax:90, preavis:2, preparation:1, fenetreMois:18, reservationInstantanee:false,
+      arrivee:'17:00', arriveeMax:'21:00', depart:'10:00', joursArrivee:['sam'], joursDepart:['sam'] },
+    politiqueAnnulation:'stricte',
+    regles:{ animaux:true, animauxMax:2, fetes:false, complement:"Le jardin est clos mais non surveillé." },
+    acces:{ type:'boite_cles', emplacementCles:'Boîte à clés sur le portail, à gauche', etage:0, ascenseur:false,
+      parking:"2 places dans la cour, portail automatique",
+      instructions:"Le portail s'ouvre avec la télécommande laissée dans l'entrée. Une clé de secours se trouve dans le boîtier à gauche.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'CH440', wifi:{ ssid:'ChaletLac', pass:'annecy2024' },
+    conformite:{ numeroEnregistrement:'7429000778899', assurance:'Allianz Multirisque location saisonnière' },
+    notesDetail:{ proprete:5.0, precision:5.0, arrivee:4.9, communication:5.0, emplacement:5.0, qualitePrix:4.9 },
+    photos:[{ legende:'Vue sur le lac' }, { legende:'Séjour et cheminée' }, { legende:'Jardin' }, { legende:'Chambre parentale' }, { legende:'Cuisine ouverte' }, { legende:'Terrasse' }],
+    canaux:{
+      airbnb: { connecte:true, statut:'ok', listingId:'AB-61230944', url:'https://airbnb.fr/rooms/61230944', note:5.0, avis:47, commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true, statut:'ok', listingId:'BK-7719004',  url:'https://booking.com/hotel/fr/7719004', note:9.6, avis:17, commission:15, derniereSynchro:'2026-07-23 12:39' },
+      direct: { connecte:true, statut:'ok', listingId:'OY-L004',     url:'https://oyvia.com/l/chalet-annecy', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
+      vrbo:   { connecte:true, statut:'ok', listingId:'VR-2299013',  url:'https://vrbo.com/2299013', note:4.8, avis:12, commission:8, derniereSynchro:'2026-07-23 11:05' },
+    },
+    ical:{ importe:['https://ical.booking.com/…/7719004.ics'], exporte:'https://oyvia.com/ical/L004.ics' },
+  }),
+
+  _logement({
+    id:'L005', nom:'Villa front de mer', couleur:'#C99A3C',
+    ville:'Biarritz', quartier:'Côte des Basques', pays:'France',
+    adresse:'18 avenue de la Plage, 64200 Biarritz',
+    type:'villa', typeChambre:'entier',
+    capacite:8, chambres:4, lits:5, sdb:3, surface:210,
+    tarifBase:240, menageTarif:90, note:4.9, avis:81, superhote:true,
+    annonce:{
+      titre:"Villa front de mer à Biarritz — piscine et accès plage",
+      resume:"Villa de 210 m² face à l'océan, avec piscine et accès direct à la Côte des Basques.",
+      espace:"Quatre chambres, trois salles de bain, vaste séjour ouvert sur la terrasse et la piscine.",
+      quartierTxt:"Côte des Basques, spot de surf historique. Centre de Biarritz à 15 min à pied.",
+      transports:"Aéroport de Biarritz à 10 min en voiture. Gare à 15 min.",
+      aSavoir:"Piscine non chauffée, ouverte d'avril à octobre.",
+    },
+    lieu:{ rue:'18 avenue de la Plage', codePostal:'64200', region:'Nouvelle-Aquitaine', latitude:43.4772, longitude:-1.5652 },
+    couchages:[
+      { piece:'Chambre 1', lits:[{ type:'king', nb:1 }] },
+      { piece:'Chambre 2', lits:[{ type:'queen', nb:1 }] },
+      { piece:'Chambre 3', lits:[{ type:'double', nb:1 }] },
+      { piece:'Chambre 4', lits:[{ type:'simple', nb:2 }] },
+    ],
+    equipements:['wifi_fibre','chauffage','clim','eau_chaude','lave_linge','seche_linge','linge_fourni','espace_travail','tv','cuisine','lave_vaisselle','four','micro_ondes','cafetiere','vue_mer','terrasse','jardin','piscine','barbecue','acces_plage','parking_gratuit','detecteur_fumee','detecteur_co','extincteur','trousse_secours','lit_bebe','chaise_haute'],
+    tarifs:{ weekend:290, personnesIncluses:6, personneSup:35, caution:1500,
+      taxeSejour:{ mode:'pourcentage', montant:5, plafondNuits:7 },
+      remises:{ hebdo:10, mensuelle:20, earlyBirdJours:120, earlyBird:12 },
+      min:180, max:520, dynamique:{ actif:true, source:'PriceLabs' } },
+    sejour:{ nuitsMin:5, nuitsMax:60, preavis:3, preparation:1, fenetreMois:18, reservationInstantanee:false,
+      arrivee:'16:00', arriveeMax:'20:00', depart:'10:00', joursArrivee:['sam'], joursDepart:['sam'] },
+    politiqueAnnulation:'stricte',
+    regles:{ animaux:true, animauxMax:1, fetes:false, complement:"Piscine non surveillée : enfants sous la responsabilité des parents. Aucun événement sans accord écrit." },
+    acces:{ type:'accueil', emplacementCles:'Remise en main propre', etage:0, ascenseur:false,
+      parking:"2 places dans la cour fermée",
+      instructions:"Accueil sur place par la conciergerie, merci de confirmer votre heure d'arrivée la veille.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'VILLA6', wifi:{ ssid:'VillaBiarritz', pass:'ocean2024' },
+    conformite:{ numeroEnregistrement:'6412200112233', plafondNuits:null, assurance:'Allianz Multirisque location saisonnière' },
+    notesDetail:{ proprete:4.9, precision:4.9, arrivee:4.8, communication:5.0, emplacement:5.0, qualitePrix:4.6 },
+    photos:[{ legende:'Vue océan' }, { legende:'Piscine' }, { legende:'Séjour' }, { legende:'Chambre parentale' }, { legende:'Terrasse' }, { legende:'Cuisine' }],
+    canaux:{
+      airbnb: { connecte:true, statut:'ok', listingId:'AB-70118225', url:'https://airbnb.fr/rooms/70118225', note:4.9, avis:58, commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true, statut:'ok', listingId:'BK-8123776',  url:'https://booking.com/hotel/fr/8123776', note:9.4, avis:23, commission:15, derniereSynchro:'2026-07-23 12:39' },
+      direct: { connecte:true, statut:'ok', listingId:'OY-L005',     url:'https://oyvia.com/l/villa-biarritz', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
+      vrbo:   { connecte:true, statut:'ok', listingId:'VR-3390771',  url:'https://vrbo.com/3390771', note:4.9, avis:9, commission:8, derniereSynchro:'2026-07-23 11:05' },
+    },
+    ical:{ exporte:'https://oyvia.com/ical/L005.ics' },
+  }),
+
+  _logement({
+    id:'L006', nom:'Loft Vieux-Port', couleur:'#8A5A3C',
+    ville:'Marseille', quartier:'Le Panier', pays:'France',
+    adresse:'3 rue du Panier, 13002 Marseille',
+    type:'loft', typeChambre:'entier',
+    capacite:3, chambres:1, lits:2, sdb:1, surface:42,
+    tarifBase:82, menageTarif:35, note:4.6, avis:112,
+    annonce:{
+      titre:"Loft d'artiste au Panier — 5 min du Vieux-Port",
+      resume:"Loft de 42 m² sous verrière dans le plus vieux quartier de Marseille.",
+      espace:"Espace ouvert avec mezzanine, cuisine américaine, salle d'eau.",
+      quartierTxt:"Le Panier, ses ruelles colorées et ses ateliers d'artistes. MuCEM à 10 minutes.",
+      transports:"Métro Vieux-Port à 6 minutes à pied.",
+    },
+    lieu:{ rue:'3 rue du Panier', codePostal:'13002', region:"Provence-Alpes-Côte d'Azur", latitude:43.2988, longitude:5.3690 },
+    couchages:[
+      { piece:'Mezzanine', lits:[{ type:'double', nb:1 }] },
+      { piece:'Séjour',    lits:[{ type:'canape', nb:1 }] },
+    ],
+    equipements:['wifi','chauffage','clim','eau_chaude','lave_linge','linge_fourni','tv','cuisine','micro_ondes','arrivee_auto','detecteur_fumee','extincteur'],
+    tarifs:{ weekend:96, personnesIncluses:2, personneSup:14, caution:250,
+      taxeSejour:{ mode:'par_personne_nuit', montant:1.65, plafondNuits:7 },
+      remises:{ hebdo:8, mensuelle:18 }, min:60, max:130 },
+    sejour:{ nuitsMin:2, preavis:1, arrivee:'15:00', depart:'11:00' },
+    politiqueAnnulation:'flexible',
+    acces:{ type:'boite_cles', emplacementCles:'Boîte à clés côté droit de la porte', etage:1, ascenseur:false,
+      parking:"Aucun stationnement, ruelles piétonnes. Parking Vieux-Port à 500 m",
+      instructions:"Ruelle piétonne : les taxis vous déposent place de Lenche, à 100 m.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'MRS13', wifi:{ ssid:'LoftPanier', pass:'marseille13' },
+    conformite:{ numeroEnregistrement:'1320200334455', plafondNuits:120, nuitsConsommees:71 },
+    notesDetail:{ proprete:4.5, precision:4.6, arrivee:4.7, communication:4.8, emplacement:4.9, qualitePrix:4.6 },
+    photos:[{ legende:'Espace de vie' }, { legende:'Mezzanine' }, { legende:'Cuisine' }, { legende:'Ruelle du Panier' }],
+    canaux:{
+      airbnb: { connecte:true,  statut:'ok', listingId:'AB-44902118', url:'https://airbnb.fr/rooms/44902118', note:4.6, avis:88, commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true,  statut:'ok', listingId:'BK-7005512',  url:'https://booking.com/hotel/fr/7005512', note:8.7, avis:24, commission:15, derniereSynchro:'2026-07-23 12:39' },
+      direct: { connecte:true,  statut:'ok', listingId:'OY-L006',     url:'https://oyvia.com/l/loft-panier', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
+    },
+  }),
+
+  _logement({
+    id:'L007', nom:'Studio Promenade des Anglais', couleur:'#3D6E80',
+    ville:'Nice', quartier:'Promenade', pays:'France',
+    adresse:'45 promenade des Anglais, 06000 Nice',
+    type:'studio', typologie:'T1', typeChambre:'entier',
+    capacite:2, chambres:1, lits:1, sdb:1, surface:30,
+    tarifBase:72, menageTarif:30, note:4.7, avis:158,
+    annonce:{
+      titre:"Studio vue mer sur la Promenade des Anglais",
+      resume:"Studio de 30 m² au 4ᵉ étage avec balcon et vue frontale sur la Baie des Anges.",
+      espace:"Pièce de vie avec lit double, kitchenette, salle d'eau, balcon plein sud.",
+      quartierTxt:"Face à la plage, à 10 minutes du Vieux-Nice et du marché aux fleurs.",
+      transports:"Aéroport de Nice à 10 min en tram. Arrêt Congrès à 200 m.",
+    },
+    lieu:{ rue:'45 promenade des Anglais', codePostal:'06000', region:"Provence-Alpes-Côte d'Azur", latitude:43.6934, longitude:7.2489 },
+    couchages:[{ piece:'Pièce principale', lits:[{ type:'double', nb:1 }] }],
+    equipements:['wifi','chauffage','clim','eau_chaude','linge_fourni','tv','cuisine','micro_ondes','balcon','vue_mer','ascenseur','arrivee_auto','detecteur_fumee','extincteur'],
+    tarifs:{ weekend:88, personnesIncluses:2, caution:200,
+      taxeSejour:{ mode:'par_personne_nuit', montant:2.75, plafondNuits:7 },
+      remises:{ hebdo:10, mensuelle:20, lastMinuteJours:7, lastMinute:15 },
+      min:55, max:145, dynamique:{ actif:true, source:'PriceLabs' } },
+    sejour:{ nuitsMin:2, nuitsMax:30, preavis:1, arrivee:'15:00', arriveeMax:'22:00', depart:'11:00', arriveeFlexible:true },
+    politiqueAnnulation:'moderee',
+    acces:{ type:'boite_cles', emplacementCles:'Boîte à clés dans le hall', etage:4, ascenseur:true,
+      parking:"Parking public Ferber à 300 m, 18 €/jour",
+      instructions:"Hall d'immeuble ouvert de 7 h à 22 h ; au-delà, appelez le gardien.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'NCE07', wifi:{ ssid:'OyviaNice', pass:'promenade06' },
+    conformite:{ numeroEnregistrement:'0608800556677', plafondNuits:120, nuitsConsommees:98 },
+    notesDetail:{ proprete:4.7, precision:4.7, arrivee:4.8, communication:4.7, emplacement:5.0, qualitePrix:4.5 },
+    photos:[{ legende:'Vue mer depuis le balcon' }, { legende:'Pièce principale' }, { legende:'Kitchenette' }, { legende:'Salle d\'eau' }],
+    canaux:{
+      airbnb: { connecte:true, statut:'ok', listingId:'AB-38771902', url:'https://airbnb.fr/rooms/38771902', note:4.7, avis:129, commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true, statut:'ok', listingId:'BK-6644128',  url:'https://booking.com/hotel/fr/6644128', note:8.8, avis:29, commission:15, derniereSynchro:'2026-07-23 12:39' },
+      direct: { connecte:true, statut:'ok', listingId:'OY-L007',     url:'https://oyvia.com/l/studio-nice', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
+    },
+  }),
+
+  _logement({
+    id:'L008', nom:'Maison de pêcheur', couleur:'#6E7A5B',
+    ville:'La Rochelle', quartier:'Vieux-Port', pays:'France',
+    adresse:'9 rue des Voiliers, 17000 La Rochelle',
+    type:'maison', typeChambre:'entier',
+    capacite:5, chambres:2, lits:3, sdb:1, surface:78,
+    tarifBase:110, menageTarif:50, note:4.8, avis:73,
+    annonce:{
+      titre:"Maison de pêcheur au Vieux-Port — jardin et vélos",
+      resume:"Maison de caractère de 78 m² à deux pas du Vieux-Port, avec jardin clos et deux vélos à disposition.",
+      espace:"Deux chambres à l'étage, séjour et cuisine au rez-de-chaussée, jardin de 60 m² avec barbecue.",
+      quartierTxt:"Quartier des Voiliers, entre le Vieux-Port et les Minimes.",
+      transports:"Gare à 15 min à pied. Île de Ré à 25 min en voiture.",
+    },
+    lieu:{ rue:'9 rue des Voiliers', codePostal:'17000', region:'Nouvelle-Aquitaine', latitude:46.1558, longitude:-1.1520 },
+    couchages:[
+      { piece:'Chambre 1', lits:[{ type:'double', nb:1 }] },
+      { piece:'Chambre 2', lits:[{ type:'simple', nb:2 }] },
+      { piece:'Séjour',    lits:[{ type:'canape', nb:1 }] },
+    ],
+    equipements:['wifi','chauffage','eau_chaude','lave_linge','linge_fourni','tv','cuisine','lave_vaisselle','four','micro_ondes','cafetiere','jardin','barbecue','velos','detecteur_fumee','extincteur','trousse_secours','lit_bebe'],
+    tarifs:{ weekend:130, personnesIncluses:4, personneSup:18, caution:500,
+      taxeSejour:{ mode:'par_personne_nuit', montant:1.50, plafondNuits:7 },
+      remises:{ hebdo:12, mensuelle:25 }, min:85, max:190 },
+    sejour:{ nuitsMin:3, preavis:2, preparation:1, arrivee:'16:00', depart:'10:00' },
+    politiqueAnnulation:'moderee',
+    regles:{ animaux:true, animauxMax:1 },
+    acces:{ type:'boite_cles', emplacementCles:'Boîte à clés sur le portillon du jardin', etage:0, ascenseur:false,
+      parking:"Stationnement gratuit dans la rue, zone résidentielle",
+      instructions:"Le portillon du jardin donne sur la porte d'entrée, sur la gauche.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'LR170', wifi:{ ssid:'MaisonPecheur', pass:'larochelle17' },
+    conformite:{ numeroEnregistrement:'1730000889900', plafondNuits:120, nuitsConsommees:63 },
+    notesDetail:{ proprete:4.8, precision:4.9, arrivee:4.8, communication:4.9, emplacement:4.7, qualitePrix:4.8 },
+    photos:[{ legende:'Façade' }, { legende:'Jardin' }, { legende:'Séjour' }, { legende:'Chambre 1' }, { legende:'Cuisine' }],
+    canaux:{
+      airbnb: { connecte:true, statut:'ok', listingId:'AB-55014782', url:'https://airbnb.fr/rooms/55014782', note:4.8, avis:52, commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true, statut:'ok', listingId:'BK-7788201',  url:'https://booking.com/hotel/fr/7788201', note:9.1, avis:21, commission:15, derniereSynchro:'2026-07-23 12:39' },
+      direct: { connecte:true, statut:'ok', listingId:'OY-L008',     url:'https://oyvia.com/l/maison-pecheur', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
+    },
+  }),
+
+  _logement({
+    id:'L009', nom:'Duplex Capitole', couleur:'#9A5A6E',
+    ville:'Toulouse', quartier:'Capitole', pays:'France',
+    adresse:'2 place du Capitole, 31000 Toulouse',
+    type:'duplex', typologie:'T3', typeChambre:'entier',
+    capacite:4, chambres:2, lits:2, sdb:1, surface:70,
+    tarifBase:84, menageTarif:38, note:4.7, avis:89,
+    annonce:{
+      titre:"Duplex place du Capitole — hyper-centre",
+      resume:"Duplex de 70 m² donnant directement sur la place du Capitole.",
+      espace:"Séjour et cuisine au premier niveau, deux chambres à l'étage.",
+      quartierTxt:"Place du Capitole : marché le mercredi, commerces et restaurants au pied de l'immeuble.",
+      transports:"Métro Capitole en bas de l'immeuble. Aéroport en 30 min via la navette.",
+      aSavoir:"Place animée le week-end : les chambres donnent sur cour, mais le séjour est côté place.",
+    },
+    lieu:{ rue:'2 place du Capitole', codePostal:'31000', region:'Occitanie', latitude:43.6045, longitude:1.4442 },
+    couchages:[
+      { piece:'Chambre 1', lits:[{ type:'queen', nb:1 }] },
+      { piece:'Chambre 2', lits:[{ type:'double', nb:1 }] },
+    ],
+    equipements:['wifi','chauffage','clim','eau_chaude','lave_linge','linge_fourni','espace_travail','tv','cuisine','lave_vaisselle','micro_ondes','ascenseur','arrivee_auto','detecteur_fumee','extincteur'],
+    tarifs:{ weekend:98, personnesIncluses:2, personneSup:14, caution:300,
+      taxeSejour:{ mode:'par_personne_nuit', montant:1.95, plafondNuits:7 },
+      remises:{ hebdo:10, mensuelle:20 }, min:62, max:140 },
+    sejour:{ nuitsMin:2, preavis:1, arrivee:'15:00', depart:'11:00' },
+    politiqueAnnulation:'moderee',
+    acces:{ type:'digicode', emplacementCles:'Boîte à clés dans le hall', etage:2, ascenseur:true,
+      parking:"Parking Capitole sous la place, 22 €/jour",
+      instructions:"Digicode à la porte cochère, puis ascenseur jusqu'au 2ᵉ.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'TLS09', wifi:{ ssid:'OyviaCapitole', pass:'toulouse31' },
+    conformite:{ numeroEnregistrement:'3155500223344', plafondNuits:120, nuitsConsommees:76 },
+    notesDetail:{ proprete:4.7, precision:4.6, arrivee:4.8, communication:4.8, emplacement:5.0, qualitePrix:4.6 },
+    photos:[{ legende:'Vue sur la place' }, { legende:'Séjour' }, { legende:'Chambre 1' }, { legende:'Cuisine' }],
+    canaux:{
+      airbnb: { connecte:true,  statut:'ok',        listingId:'AB-49118023', url:'https://airbnb.fr/rooms/49118023', note:4.7, avis:66, commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true,  statut:'ok',        listingId:'BK-7290145',  url:'https://booking.com/hotel/fr/7290145', note:8.9, avis:23, commission:15, derniereSynchro:'2026-07-23 12:39' },
+      direct: { connecte:true,  statut:'attention', listingId:'OY-L009',     url:'https://oyvia.com/l/duplex-capitole', note:null, avis:0, commission:0, derniereSynchro:'2026-07-20 09:14', message:"Moteur de réservation directe en pause : aucune photo de couverture définie." },
+    },
+  }),
+
+  _logement({
+    id:'L010', nom:"T3 Presqu'île rénové", couleur:'#4A6A80',
+    ville:'Lyon', quartier:"Presqu'île", pays:'France',
+    adresse:'30 rue de la République, 69002 Lyon',
+    type:'appartement', typologie:'T3', typeChambre:'entier',
+    capacite:5, chambres:2, lits:3, sdb:1, surface:72,
+    tarifBase:98, menageTarif:45, note:4.8, avis:104,
+    annonce:{
+      titre:"T3 rénové rue de la République — Presqu'île",
+      resume:"Appartement de 72 m² entièrement rénové, dans la principale rue piétonne de Lyon.",
+      espace:"Deux chambres, séjour lumineux, cuisine équipée, salle de bain avec baignoire.",
+      quartierTxt:"Presqu'île : commerces, Opéra et place Bellecour à quelques minutes.",
+      transports:"Métro A Cordeliers à 100 m. Part-Dieu en 10 min.",
+    },
+    lieu:{ rue:'30 rue de la République', codePostal:'69002', region:'Auvergne-Rhône-Alpes', latitude:45.7640, longitude:4.8357 },
+    couchages:[
+      { piece:'Chambre 1', lits:[{ type:'queen', nb:1 }] },
+      { piece:'Chambre 2', lits:[{ type:'simple', nb:2 }] },
+      { piece:'Séjour',    lits:[{ type:'canape', nb:1 }] },
+    ],
+    equipements:['wifi_fibre','chauffage','eau_chaude','lave_linge','linge_fourni','espace_travail','tv','cuisine','lave_vaisselle','four','micro_ondes','cafetiere','ascenseur','arrivee_auto','detecteur_fumee','detecteur_co','extincteur'],
+    tarifs:{ weekend:118, personnesIncluses:2, personneSup:16, caution:350,
+      taxeSejour:{ mode:'par_personne_nuit', montant:2.30, plafondNuits:7 },
+      remises:{ hebdo:10, mensuelle:22 }, min:72, max:165 },
+    sejour:{ nuitsMin:2, preavis:1, arrivee:'15:00', depart:'11:00' },
+    politiqueAnnulation:'moderee',
+    acces:{ type:'serrure_connectee', emplacementCles:'Serrure connectée, code envoyé la veille', etage:3, ascenseur:true,
+      parking:"Parking République à 150 m, 20 €/jour",
+      instructions:"Rue piétonne : dépose-minute autorisée avant 11 h.",
+      contactUrgence:'+33 6 12 45 78 90' },
+    codeAcces:'LY102', wifi:{ ssid:'OyviaPresquile', pass:'republique69' },
+    conformite:{ numeroEnregistrement:'6938300998877', plafondNuits:120, nuitsConsommees:44 },
+    notesDetail:{ proprete:4.9, precision:4.8, arrivee:4.8, communication:4.8, emplacement:4.9, qualitePrix:4.7 },
+    photos:[{ legende:'Séjour' }, { legende:'Chambre 1' }, { legende:'Cuisine' }, { legende:'Salle de bain' }],
+    canaux:{
+      airbnb: { connecte:true, statut:'ok', listingId:'AB-58023117', url:'https://airbnb.fr/rooms/58023117', note:4.8, avis:79, commission:3,  derniereSynchro:'2026-07-23 12:40' },
+      booking:{ connecte:true, statut:'ok', listingId:'BK-8390442',  url:'https://booking.com/hotel/fr/8390442', note:9.0, avis:25, commission:15, derniereSynchro:'2026-07-23 12:39' },
+      direct: { connecte:true, statut:'ok', listingId:'OY-L010',     url:'https://oyvia.com/l/t3-presquile', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
+    },
+  }),
+];
+
+/* ---------- Accès au référentiel logement ---------- */
+function getAmenity(id) { return AMENITIES.find(a => a.id === id) || { id, label:id, cat:'essentiels' }; }
+function labelAmenities(ids) { return (ids || []).map(i => getAmenity(i).label); }
+// Équipements d'un logement regroupés par catégorie, dans l'ordre du référentiel.
+function amenitiesParCategorie(l) {
+  const groupes = {};
+  (l.equipements || []).forEach(id => {
+    const a = getAmenity(id);
+    (groupes[a.cat] = groupes[a.cat] || []).push(a);
+  });
+  return Object.keys(AMENITY_CATEGORIES)
+    .filter(c => groupes[c])
+    .map(c => ({ cat:c, label:AMENITY_CATEGORIES[c], items:groupes[c] }));
+}
+function labelTypeLogement(id) { return (TYPES_LOGEMENT.find(t => t.id === id) || {}).label || id; }
+function labelTypeChambre(id)  { return (TYPES_CHAMBRE.find(t => t.id === id)  || {}).label || id; }
+function labelTypeLit(id)      { return (TYPES_LIT.find(t => t.id === id)      || {}).label || id; }
+function labelTypeAcces(id)    { return (TYPES_ACCES.find(t => t.id === id)    || {}).label || id; }
+function labelPolitique(id)    { return (POLITIQUES_ANNULATION.find(p => p.id === id) || {}).label || id; }
+
+// Total des couchages déclarés, pour contrôler la cohérence avec la capacité.
+function placesCouchages(l) {
+  return (l.couchages || []).reduce((s, p) =>
+    s + p.lits.reduce((t, b) => t + (TYPES_LIT.find(x => x.id === b.type) || { places:0 }).places * b.nb, 0), 0);
+}
+// Canaux réellement connectés, dans l'ordre de PLATEFORMES.
+function canauxConnectes(l) {
+  return Object.entries(l.canaux || {}).filter(([, c]) => c.connecte);
+}
+// Le plafond de nuitées est une obligation légale dans les grandes villes :
+// on veut pouvoir alerter avant de le dépasser.
+function conformiteStatut(l) {
+  const c = l.conformite || {};
+  if (!c.numeroEnregistrement) return { niveau:'manquant', texte:"Numéro d'enregistrement absent" };
+  if (!c.plafondNuits)         return { niveau:'ok', texte:'Aucun plafond de nuitées' };
+  const reste = c.plafondNuits - (c.nuitsConsommees || 0);
+  if (reste <= 0)  return { niveau:'depasse', texte:`Plafond de ${c.plafondNuits} nuits atteint` };
+  if (reste <= 15) return { niveau:'alerte',  texte:`${reste} nuits restantes sur ${c.plafondNuits}` };
+  return { niveau:'ok', texte:`${reste} nuits restantes sur ${c.plafondNuits}` };
+}
 
 /* ============================================================
    RESERVATIONS (33, dont 1 blocage) — juin → sept. 2026
@@ -441,21 +1087,21 @@ const TACHES = [
                  jour_depart | j_plus_1 | j_plus_3
    ============================================================ */
 const AUTOMATISATIONS = [
-  { id:'A1', nom:'Confirmation de réservation', declencheur:'reservation', actif:true, langue:'FR', canaux:'Tous', logements:'tous', envoyes:342,
+  { id:'A1', nom:'Confirmation de réservation', declencheur:'reservation', jours:0, heure:'10:00', actif:true, langue:'FR', canaux:'Tous', logements:'tous', envoyes:342,
     modele:'Bonjour {prenom}, votre réservation au {nom_logement} est confirmée pour le {date_arrivee}. Nous avons hâte de vous accueillir ! Toutes les infos pratiques vous seront envoyées la veille de votre arrivée.' },
-  { id:'A2', nom:'Instructions d\'arrivée', declencheur:'j_moins_1', actif:true, langue:'FR', canaux:'Tous', logements:'tous', envoyes:318,
-    modele:'Bonjour {prenom}, votre séjour approche ! Adresse : {adresse}. Le code d\'accès est {code_acces}. Wifi : {wifi}. Arrivée possible à partir de 15h. Bon voyage !' },
-  { id:'A3', nom:'Message de bienvenue', declencheur:'jour_arrivee', actif:true, langue:'FR', canaux:'Tous', logements:'tous', envoyes:305,
+  { id:'A2', nom:'Instructions d\'arrivée', declencheur:'avant_arrivee', jours:1, heure:'10:00', actif:true, langue:'FR', canaux:'Tous', logements:'tous', envoyes:318,
+    modele:'Bonjour {prenom}, votre séjour au {nom_logement} commence demain ! Retrouvez tout le nécessaire sur votre page séjour : adresse exacte, code d\'accès, Wi-Fi et bonnes adresses du quartier — {lien_sejour}. Arrivée possible à partir de 15h. Bon voyage !' },
+  { id:'A3', nom:'Message de bienvenue', declencheur:'jour_arrivee', jours:0, heure:'18:00', actif:true, langue:'FR', canaux:'Tous', logements:'tous', envoyes:305,
     modele:'Bienvenue {prenom} ! Nous espérons que votre voyage s\'est bien passé. Le guide de bienvenue est dans l\'entrée. N\'hésitez pas à nous écrire pour toute question. Bon séjour !' },
-  { id:'A4', nom:'Rappel départ & checklist', declencheur:'jour_depart', actif:true, langue:'FR', canaux:'Tous', logements:'tous', envoyes:289,
+  { id:'A4', nom:'Rappel départ & checklist', declencheur:'jour_depart', jours:0, heure:'08:00', actif:true, langue:'FR', canaux:'Tous', logements:'tous', envoyes:289,
     modele:'Bonjour {prenom}, le départ est prévu avant 11h. Merci de laisser les clés dans la boîte et de fermer les fenêtres. Ce fut un plaisir de vous accueillir !' },
-  { id:'A5', nom:'Demande d\'avis', declencheur:'j_plus_1', actif:true, langue:'FR', canaux:'Airbnb, Booking', logements:'tous', envoyes:276,
+  { id:'A5', nom:'Demande d\'avis', declencheur:'apres_depart', jours:1, heure:'11:00', actif:true, langue:'FR', canaux:'Airbnb, Booking', logements:'tous', envoyes:276,
     modele:'Bonjour {prenom}, merci d\'avoir séjourné au {nom_logement} ! Si tout vous a plu, un avis nous aiderait beaucoup. Au plaisir de vous revoir bientôt.' },
-  { id:'A6', nom:'Vérification mi-séjour', declencheur:'jour_arrivee', actif:false, langue:'FR', canaux:'Direct', logements:'sélection', envoyes:47,
+  { id:'A6', nom:'Vérification mi-séjour', declencheur:'jour_arrivee', jours:0, heure:'20:00', actif:false, langue:'FR', canaux:'Direct', logements:'sélection', envoyes:47,
     modele:'Bonjour {prenom}, tout se passe bien depuis votre arrivée ? N\'hésitez pas si vous avez besoin de quoi que ce soit.' },
-  { id:'A7', nom:'Welcome message (EN)', declencheur:'jour_arrivee', actif:true, langue:'EN', canaux:'Tous', logements:'tous', envoyes:96,
-    modele:'Welcome {prenom}! We hope you had a pleasant trip. The access code is {code_acces} and the Wifi is {wifi}. Enjoy your stay and reach out anytime!' },
-  { id:'A8', nom:'Offre réservation directe', declencheur:'j_plus_3', actif:true, langue:'FR', canaux:'Airbnb, Booking', logements:'tous', envoyes:41,
+  { id:'A7', nom:'Welcome message (EN)', declencheur:'jour_arrivee', jours:0, heure:'18:00', actif:true, langue:'EN', canaux:'Tous', logements:'tous', envoyes:96,
+    modele:'Welcome {prenom}! We hope you had a pleasant trip. Everything you need is on your stay page: {lien_sejour}. Enjoy your stay and reach out anytime!' },
+  { id:'A8', nom:'Offre réservation directe', declencheur:'apres_depart', jours:3, heure:'11:00', actif:true, langue:'FR', canaux:'Airbnb, Booking', logements:'tous', envoyes:41,
     modele:'Bonjour {prenom}, merci pour votre séjour ! La prochaine fois, réservez en direct sur notre site et bénéficiez de -10% sans commission. À bientôt !' },
 ];
 
@@ -481,52 +1127,145 @@ const RECURRENTES = [
 ];
 
 /* ============================================================
-   TARIFS — modèle unique : un tarif dégressif par logement géré
-   (le nombre total de logements du parc, indépendamment du fait
-   qu'ils aient été réservés ou non dans le mois).
-   Utilisé à la fois par la landing (index.html#tarifs) et par
-   l'abonnement de l'app (app/abonnement.html), pour rester cohérents.
-   ============================================================ */
-const TRANCHES_TARIFAIRES = [
-  { min:1,   max:1,        prix:0   },
-  { min:2,   max:5,        prix:150 },
-  { min:6,   max:15,       prix:120 },
-  { min:16,  max:30,       prix:100 },
-  { min:31,  max:99,       prix:90  },
-  { min:100, max:Infinity, prix:null },
-];
-function trancheTarifaire(n) { return TRANCHES_TARIFAIRES.find(t => n >= t.min && n <= t.max); }
+   TARIFS — 3 offres. Source unique de vérité, partagée par la
+   landing (index.html#tarifs) et l'abonnement de l'app
+   (app/abonnement.html), pour qu'elles ne divergent jamais.
 
-// Option à la carte : WhatsApp, facturée AU MESSAGE (modèle inspiré de Twilio/Meta).
-// Tarifs « tout compris » par catégorie de message. La fenêtre de service de 24 h est gratuite.
-const OPTIONS_LANDING = [
+   Deux façons de facturer :
+     - unite:'essai'         → gratuit, limité dans le temps
+                               (Gratuit : 15 jours dès la création
+                               du compte)
+     - unite:'logement_mois' → prix × nombre de logements gérés
+                               (Smart, Business)
+
+   Ce qui sépare Smart de Business est UNIQUEMENT l'intelligence
+   artificielle : Smart contient tout l'opérationnel (calendrier,
+   messagerie, automatisations de règles, ménage, statistiques),
+   Business y ajoute Vivi et sa configuration. Les automatisations
+   de Smart sont des règles, pas de l'IA — la distinction est
+   volontaire et se retrouve dans toute l'interface.
+
+   Les fonctionnalités sont cumulatives (champ « herite ») et
+   regroupées par thème (champ « groupes ») pour rester lisibles
+   sur une carte : Business en compte dix.
+   ============================================================ */
+
+const PLANS = [
   {
-    id: 'whatsapp',
-    nom: 'WhatsApp voyageur',
-    desc: 'Messagerie WhatsApp centralisée dans Oyvia, facturée au message envoyé — sans abonnement mensuel.',
-    tarifs: [
-      { cat: 'Réponses & service', detail: 'Fenêtre de 24 h après un message du voyageur', prix: 0 },
-      { cat: 'Message utilitaire', detail: 'Instructions d\'arrivée, code d\'accès, rappel', prix: 0.10 },
-      { cat: 'Authentification',    detail: 'Envoi d\'un code à usage unique', prix: 0.10 },
-      { cat: 'Message marketing',   detail: 'Offre, relance, demande d\'avis', prix: 0.40 },
+    id:'gratuit', nom:'Gratuit', prix:0, unite:'essai', essaiJours:15,
+    minLog:1, maxLog:1,
+    accroche:"Créez votre compte et explorez Oyvia pendant 15 jours, sans carte bancaire. Le compteur démarre à la création du compte.",
+    idealPour:"Découvrir Oyvia avant de passer à une offre payante.",
+    herite:null,
+    groupes:[
+      { titre:null, items:[
+        { titre:'Accès complet pendant 15 jours', desc:"Toutes les fonctionnalités du socle, sur 1 logement." },
+        { titre:'Aucun engagement',               desc:"À la fin des 15 jours, vous choisissez votre offre — ou vous vous arrêtez là." },
+      ] },
     ],
+    ia:null,
+  },
+  {
+    id:'smart', nom:'Smart', prix:120, unite:'logement_mois',
+    minLog:1, maxLog:Infinity,
+    accroche:"Tout le nécessaire pour automatiser la gestion quotidienne de vos locations.",
+    idealPour:"Hôtes indépendants et petits gestionnaires (2 à 5 logements).",
+    herite:null,
+    groupes:[
+      { titre:'Inclus', items:[
+        { titre:'Calendrier unifié multi-canaux' },
+        { titre:'Messagerie centralisée',            desc:"Airbnb, Booking, e-mail et WhatsApp" },
+        { titre:'Messages automatiques',             desc:"Confirmation, avant arrivée, check-out, demande d'avis… envoyés sur les plateformes de réservation (Airbnb, Booking…)" },
+        { titre:'Réservations directes sans commission' },
+        { titre:'Gestion du ménage et des équipes' },
+        { titre:'Tableau de bord & statistiques' },
+        { titre:'Intégration WhatsApp',              desc:"Réception et réponses gratuites pendant la fenêtre de service de 24 h" },
+      ] },
+    ],
+    ia:null,
+  },
+  {
+    id:'business', nom:'Business', prix:180, unite:'logement_mois',
+    minLog:1, maxLog:Infinity, populaire:true,
+    accroche:"L'automatisation avancée grâce à l'intelligence artificielle.",
+    idealPour:"Conciergeries et gestionnaires professionnels (6 logements et plus).",
+    herite:'smart',
+    groupes:[
+      { titre:'Vivi IA Avancée', items:[
+        { titre:'Répond automatiquement aux messages', desc:"Airbnb, Booking, e-mail et WhatsApp" },
+        { titre:'Répond dans la langue du voyageur' },
+        { titre:'Détecte les incidents et crée les tâches', desc:"Ménage, maintenance, intervention…" },
+      ] },
+      { titre:'Configuration avancée de Vivi', items:[
+        { titre:'Contexte personnalisé par logement', desc:"Wi-Fi, parking, check-in, équipements, règles…" },
+        { titre:'Ton et personnalité personnalisables' },
+        { titre:'Garde-fous intelligents',            desc:"Escalade automatique pour les remboursements, réclamations et demandes sensibles" },
+        { titre:'Seuil de confiance configurable',    desc:"Réponse automatique uniquement au-dessus de 75 %, par exemple" },
+        { titre:'Heures de silence',                  desc:"Messages mis en attente entre 22 h et 8 h" },
+        { titre:"Journal d'audit complet de chaque réponse IA" },
+        { titre:'Validation obligatoire sous le seuil de confiance' },
+      ] },
+    ],
+    ia:'avancee',
   },
 ];
 
+function getPlan(id) { return PLANS.find(p => p.id === id) || PLANS[0]; }
+
+// Total mensuel d'une offre pour un parc donné.
+function planTotal(planId, nbLogements) {
+  const p = getPlan(planId);
+  if (p.unite === 'essai') return 0;
+  return p.prix * Math.max(1, nbLogements);
+}
+
+// Le prix affiché « à l'unité », tel qu'on le lit sur une carte d'offre.
+function planPrixTexte(planId) {
+  const p = getPlan(planId);
+  if (p.unite === 'essai') return { montant:'0 MAD', suffixe:`pendant ${p.essaiJours} jours` };
+  return { montant:formatMAD(p.prix), suffixe:'par logement et par mois' };
+}
+
+// Une offre est-elle proposable pour ce nombre de logements ?
+// Seul l'essai gratuit est plafonné (1 logement) ; Smart et Business
+// n'ont pas de limite haute.
+function planEligible(planId, nbLogements) {
+  const p = getPlan(planId);
+  return nbLogements >= p.minLog && nbLogements <= p.maxLog;
+}
+
+// L'offre conseillée, calée sur le « Idéal pour » de chaque offre :
+// Smart jusqu'à 5 logements, Business à partir de 6.
+function planRecommande(nbLogements) {
+  return nbLogements <= 5 ? 'smart' : 'business';
+}
+
+// Toutes les fonctionnalités d'une offre, groupe par groupe, en incluant
+// une ligne de renvoi vers l'offre héritée plutôt que d'en recopier la liste.
+function planGroupes(planId) {
+  const p = getPlan(planId);
+  const parent = p.herite ? getPlan(p.herite) : null;
+  const heritage = parent
+    ? [{ titre:null, herite:true, items:[{ titre:`Tout ce qui est inclus dans l'offre ${parent.nom}` }] }]
+    : [];
+  return [...heritage, ...p.groupes];
+}
+
 /* ============================================================
    HISTORIQUE DE FACTURATION (app/abonnement.html) — pour chaque
-   mois, le nombre total de logements gérés à cette date (le parc
-   grandit avec le temps ; le montant se déduit via trancheTarifaire,
-   pas de valeur en dur). Dernier mois = mois en cours (juillet 2026,
-   cf. AUJOURDHUI).
+   mois, l'offre souscrite et le nombre total de logements gérés à
+   cette date (le parc grandit avec le temps ; le montant se déduit
+   via planTotal, pas de valeur en dur). Dernier mois = mois en
+   cours (juillet 2026, cf. AUJOURDHUI).
+   Le compte est passé de Smart à Business en juin 2026.
    ============================================================ */
 const HISTORIQUE_FACTURATION = [
-  { mois: 'Février 2026', nbLogements: 4 },
-  { mois: 'Mars 2026',    nbLogements: 5 },
-  { mois: 'Avril 2026',   nbLogements: 6 },
-  { mois: 'Mai 2026',     nbLogements: 8 },
-  { mois: 'Juin 2026',    nbLogements: 9 },
-  { mois: 'Juillet 2026', nbLogements: 10 },
+  { mois: 'Février 2026', nbLogements: 4,  plan: 'smart'    },
+  { mois: 'Mars 2026',    nbLogements: 5,  plan: 'smart'    },
+  { mois: 'Avril 2026',   nbLogements: 6,  plan: 'smart'    },
+  { mois: 'Mai 2026',     nbLogements: 8,  plan: 'smart'    },
+  { mois: 'Juin 2026',    nbLogements: 9,  plan: 'business' },
+  { mois: 'Juillet 2026', nbLogements: 10, plan: 'business' },
 ];
 
 /* ============================================================
@@ -559,7 +1298,8 @@ const UTILISATEUR = {
 const COMPTE = {
   societe:'Conciergerie Lumia',
   nbLogements:10,             // logements gérés au total
-  optionsActives:['whatsapp'],
+  plan:'business',            // cf. PLANS — conditionne l'accès à l'IA Avancée (Vivi)
+  compteCreeLe:'2026-01-14',  // l'essai gratuit de 15 jours est terminé depuis longtemps
 };
 
 /* ============================================================
@@ -585,6 +1325,7 @@ const PERMISSIONS = [
   { id:'voyageurs',       label:'Voyageurs',         groupe:'Locations' },
   { id:'messagerie',      label:'Messagerie',        groupe:'Communication' },
   { id:'automatisations', label:'Automatisations',   groupe:'Communication' },
+  { id:'vivi',            label:'Assistant IA (Vivi)',groupe:'Communication' },
   { id:'menage',          label:'Gestion des tâches',groupe:'Équipe' },
   { id:'equipe',          label:'Équipe',            groupe:'Équipe' },
   { id:'comptabilite',    label:'Comptabilité',      groupe:'Comptabilité' },
@@ -662,6 +1403,310 @@ const PLATEFORMES = [
 ];
 
 /* ============================================================
+   VIVI — assistant IA d'Oyvia
+
+   Deux usages bien distincts, à ne pas confondre :
+
+   1. VIVI CHAT (toutes les offres) — le copilote de l'utilisateur.
+      Bouton flottant + popup : il répond aux questions sur le
+      produit, explique pourquoi une réponse IA n'est pas partie,
+      donne des chiffres d'activité, et sait escalader au support.
+
+   2. IA AVANCÉE (offre Business uniquement) — Vivi répond
+      automatiquement aux MESSAGES ENTRANTS DES VOYAGEURS.
+      L'envoi de confirmations et de rappels, lui, reste géré par
+      les automatisations de règles (cf. AUTOMATISATIONS) : ce
+      sont deux mécaniques séparées.
+
+   Smart n'inclut aucune IA voyageur : ses « automatisations » et ses
+   « messages automatiques » sont des règles déclenchées par la
+   réservation. L'IA est le seul écart entre Smart et Business.
+   ============================================================ */
+
+// Types de messages que Vivi est autorisée à traiter seule pour un logement.
+const VIVI_SUJETS = [
+  { id:'parking',      label:'Questions sur le parking' },
+  { id:'wifi',         label:'Questions sur le WiFi' },
+  { id:'acces',        label:'Accès et remise des clés' },
+  { id:'horaires',     label:'Horaires de check-in / check-out' },
+  { id:'equipements',  label:'Équipements (où est le thermostat ?)' },
+  { id:'technique',    label:'Problèmes techniques', escaladeConseillee:true },
+];
+
+// Garde-fous : cas où Vivi ne répond JAMAIS seule.
+// « libre » = la catégorie s'accompagne d'un champ texte, pour que
+// l'utilisateur étende le périmètre au-delà des cas prévus.
+const VIVI_ESCALADES = [
+  { id:'remboursement', label:"Demandes de remboursement ou d'annulation" },
+  { id:'plainte',       label:'Plaintes ou problèmes graves' },
+  { id:'legal',         label:'Demandes légales ou administratives' },
+  { id:'agressif',      label:'Messages au ton agressif ou urgent' },
+  { id:'hors_domaine',  label:'Sujets hors de votre domaine' },
+  { id:'modification',  label:'Demandes de modification de réservation' },
+  { id:'autre',         label:'Autre', libre:true, placeholder:"Ex. toute question sur la caution, les animaux, les factures…" },
+];
+
+const VIVI_TONS = [
+  { id:'formel',      label:'Très formel',            desc:'Registre hôtel 4★, vouvoiement strict.' },
+  { id:'pro_amical',  label:'Professionnel amical',   desc:'Cordial mais cadré, la valeur sûre.' },
+  { id:'decontracte', label:'Décontracté, personnalisé', desc:'Direct, chaleureux, sans formules toutes faites.' },
+];
+const VIVI_A_EVITER = [
+  { id:'jargon',  label:'Les jargons techniques' },
+  { id:'robot',   label:'Les réponses robot' },
+  { id:'blagues', label:'Les blagues' },
+  { id:'emojis',  label:'Les emojis' },
+  { id:'autre',   label:'Autre', libre:true, placeholder:"Ex. les superlatifs, le tutoiement, les abréviations…" },
+];
+const VIVI_TYPES_HOTE = [
+  { id:'particulier',  label:'Particulier' },
+  { id:'conciergerie', label:'Conciergerie' },
+  { id:'agence',       label:'Agence' },
+  { id:'autre',        label:'Autre' },
+];
+const VIVI_APPROBATEURS = [
+  { id:'moi',           label:'Moi seulement' },
+  { id:'moi_managers',  label:'Moi + mes managers' },
+  { id:'equipe',        label:"Toute l'équipe" },
+];
+const VIVI_LANGUES = [
+  { id:'fr', label:'Français' }, { id:'en', label:'Anglais' },
+  { id:'de', label:'Allemand' }, { id:'es', label:'Espagnol' },
+  { id:'it', label:'Italien' },  { id:'ar', label:'Arabe' },
+];
+
+const VIVI_CONFIG = {
+  // A — Contexte global : Vivi sait qui elle représente.
+  // Pas de zone géographique à saisir : chaque réservation porte son
+  // logement, donc sa ville et son pays. Vivi s'y adapte d'elle-même.
+  global: {
+    entreprise:'Conciergerie Lumia',
+    typeHote:'conciergerie',
+    langueTravail:'fr',
+    languesVoyageurs:['fr', 'en', 'de', 'es'],
+  },
+  // B — Personnalité & ton : Vivi écrit comme la conciergerie, pas comme un bot.
+  // « eviterAutre » complète la liste fermée par les consignes maison.
+  personnalite: {
+    perception:"On est accueillants et chaleureux, on répond vite et on n'aime pas les formalités.",
+    ton:'decontracte',
+    exemples:"Bonjour Sophie ! Le code de la porte est le 4721#, il fonctionne dès 15 h. Le parking est juste en face, place Saint-Jean. Bon voyage et à tout à l'heure !",
+    eviter:['jargon', 'robot'],
+    eviterAutre:'',
+  },
+  // C — Garde-fous & escalade : quand Vivi s'arrête et vous passe la main.
+  // silenceActif:false ⇒ Vivi répond 24 h/24, les horaires sont ignorés.
+  gardeFous: {
+    escalade:['remboursement', 'plainte', 'legal', 'agressif', 'hors_domaine', 'modification'],
+    escaladeAutre:'',
+    confianceMin:75,
+    delaiMin:30,          // secondes avant l'envoi automatique
+    silenceActif:true,
+    silenceDebut:'22:00',
+    silenceFin:'08:00',
+    approbateurs:'moi_managers',
+  },
+  // D — Contexte par logement : UNIQUEMENT ce qu'Oyvia ne sait pas déjà.
+  // L'adresse, le code d'accès, le Wi-Fi et les équipements viennent de la
+  // fiche du logement (LOGEMENTS) et les horaires des paramètres généraux :
+  // les redemander ici créerait deux sources de vérité pour la même donnée.
+  // On ne stocke donc que le contexte terrain, les règles et le périmètre
+  // que Vivi peut traiter seule.
+  logements: {
+    L001: {
+      contexte:"Immeuble ancien : la porte de la rue coince, il faut pousser en tournant la clé. Le balcon donne sur une cour intérieure, très calme malgré le quartier. Boulangerie ouverte 7 j/7 au coin de la rue.",
+      regles:"Pas de bruit après 22 h, pas de fête, interdiction de fumer à l'intérieur (balcon autorisé).",
+      contactTel:'+33 6 12 45 78 90', contactHoraires:'9 h – 19 h',
+      sujets:['parking', 'wifi', 'acces', 'horaires', 'equipements'],
+    },
+    L002: {
+      contexte:"3e étage sans ascenseur : prévenir les voyageurs qui annoncent de grosses valises. Rue en pente, taxi conseillé depuis la gare du Nord.",
+      regles:"Immeuble ancien : merci d'éviter le bruit dans les escaliers après 21 h.",
+      contactTel:'+33 6 12 45 78 90', contactHoraires:'9 h – 19 h',
+      sujets:['wifi', 'acces', 'horaires'],
+    },
+    L005: {
+      contexte:"Piscine non chauffée, ouverte d'avril à octobre. Le portail automatique se bloque de temps en temps : une clé de secours se trouve dans le boîtier à gauche de l'entrée.",
+      regles:"Piscine non surveillée : enfants sous la responsabilité des parents. Pas d'événement sans accord écrit.",
+      contactTel:'+33 6 12 45 78 90', contactHoraires:'8 h – 20 h',
+      sujets:['parking', 'wifi', 'acces', 'horaires', 'equipements'],
+    },
+  },
+};
+
+// Renvoie le contexte d'un logement, ou null s'il n'a pas encore été décrit.
+function getViviLogement(id) { return VIVI_CONFIG.logements[id] || null; }
+function viviLogementsRenseignes() { return LOGEMENTS.filter(l => !!VIVI_CONFIG.logements[l.id]); }
+function viviLogementsACompleter() { return LOGEMENTS.filter(l => !VIVI_CONFIG.logements[l.id]); }
+
+// L'offre du compte donne-t-elle accès à l'IA voyageur ?
+// 'avancee' = Vivi répond seule (Business) · null = aucune IA (Gratuit, Smart)
+function viviNiveauIA() { return getPlan(COMPTE.plan).ia; }
+
+/* ------------------------------------------------------------
+   E — Audit : les dernières réponses générées par Vivi.
+
+   Chaque entrée pointe vers une CONVERSATION réelle, et rien n'est
+   dupliqué depuis elle : le logement, le canal et le voyageur sont
+   déduits de la réservation liée. C'est ce qui garantit que l'audit
+   et la messagerie racontent exactement la même histoire.
+
+   statut :
+     envoyee   → la réponse est DÉJÀ dans la conversation, à l'index
+                 msgIndex. On ne stocke donc pas son texte.
+     attente   → confiance insuffisante ou heures de silence : la
+                 proposition vit ici (champ « reponse ») et n'a pas
+                 encore été postée. msgIndex vaut null.
+     escaladee → un garde-fou s'est déclenché ; même principe.
+   ------------------------------------------------------------ */
+const VIVI_STATUT_LABEL = { envoyee:'Envoyée auto', attente:'En attente de révision', escaladee:'Escaladée' };
+const VIVI_STATUT_BADGE = { envoyee:'badge--positive', attente:'badge--warning', escaladee:'badge--danger' };
+
+const VIVI_REPONSES = [
+  /* --- En attente de votre aval : rien n'est encore parti --- */
+  {
+    id:'V347', conversationId:'C16', msgIndex:null, statut:'attente',
+    quand:'2026-07-23 10:24', langue:'fr', confiance:58, delai:null,
+    question:"Dernière question : y a-t-il un parking à proximité ?",
+    reponse:"Bonjour Sarah ! Je vérifie les possibilités de stationnement autour du logement et je reviens vers vous très vite.",
+    raison:"Logement non décrit : Vivi n'a pas l'information du parking",
+  },
+  {
+    id:'V346', conversationId:'C01', msgIndex:null, statut:'attente',
+    quand:'2026-07-23 09:12', langue:'fr', confiance:96, delai:null,
+    question:"Et à quelle heure dois-je libérer le logement le 26 ?",
+    reponse:"Le départ se fait avant 11 h le 26. Laissez simplement les clés dans la boîte (code 7734B) et pensez à fermer les fenêtres. Bon séjour d'ici là !",
+    raison:"Une question précédente est restée sans réponse (l'ascenseur)",
+  },
+  {
+    id:'V345', conversationId:'C18', msgIndex:null, statut:'escaladee',
+    quand:'2026-07-21 16:15', langue:'fr', confiance:71, delai:null,
+    question:"Merci ! Il y aura un lit d'appoint du coup ?",
+    reponse:"Bonjour Lucas, je vérifie la configuration exacte des lits pour 3 personnes et je vous confirme dans la journée.",
+    raison:"Demande de modification de réservation",
+  },
+
+  /* --- Déjà envoyées automatiquement (texte lu dans la conversation) --- */
+  { id:'V344', conversationId:'C16', msgIndex:1, statut:'envoyee', quand:'2026-07-23 10:18', langue:'fr', confiance:91, delai:33, raison:null },
+  { id:'V343', conversationId:'C03', msgIndex:1, statut:'envoyee', quand:'2026-07-22 21:30', langue:'fr', confiance:88, delai:41, raison:null },
+  { id:'V342', conversationId:'C05', msgIndex:1, statut:'envoyee', quand:'2026-07-22 14:35', langue:'fr', confiance:94, delai:35, raison:null },
+  { id:'V341', conversationId:'C10', msgIndex:1, statut:'envoyee', quand:'2026-07-20 10:25', langue:'fr', confiance:90, delai:37, raison:null },
+  { id:'V340', conversationId:'C13', msgIndex:1, statut:'envoyee', quand:'2026-07-17 15:45', langue:'en', confiance:84, delai:44, raison:null },
+  { id:'V339', conversationId:'C12', msgIndex:1, statut:'envoyee', quand:'2026-07-18 12:30', langue:'fr', confiance:87, delai:39, raison:null },
+  { id:'V338', conversationId:'C11', msgIndex:1, statut:'envoyee', quand:'2026-07-19 17:55', langue:'fr', confiance:79, delai:52, raison:null },
+  { id:'V337', conversationId:'C15', msgIndex:1, statut:'envoyee', quand:'2026-07-15 20:20', langue:'fr', confiance:92, delai:31, raison:null },
+];
+
+/* ---------- Accès aux réponses de Vivi ---------- */
+function getViviConversation(r) { return CONVERSATIONS.find(c => c.id === r.conversationId) || null; }
+function getViviReponses(convId) { return VIVI_REPONSES.filter(r => r.conversationId === convId); }
+// Une conversation n'a qu'une proposition en attente à la fois.
+function getViviEnAttente(convId) { return VIVI_REPONSES.find(r => r.conversationId === convId && r.statut !== 'envoyee') || null; }
+function viviReponsesEnAttente() { return VIVI_REPONSES.filter(r => r.statut !== 'envoyee'); }
+// Un message de la conversation a-t-il été écrit par Vivi ? On le déduit,
+// plutôt que de marquer les messages : impossible de désynchroniser.
+function viviAEcrit(convId, index) {
+  return VIVI_REPONSES.some(r => r.conversationId === convId && r.msgIndex === index);
+}
+
+// Contexte d'une réponse (logement, canal, voyageur), déduit de la conversation.
+function viviContexte(r) {
+  const c = getViviConversation(r);
+  const resa = c ? getReservation(c.reservationId) : null;
+  return {
+    conversation: c,
+    reservation: resa,
+    logement: resa ? getLogement(resa.logementId) : null,
+    canal: c ? c.canal : null,
+    voyageur: resa ? resa.voyageur : null,
+  };
+}
+// Le texte de la question : stocké pour les propositions en attente,
+// relu dans la conversation pour les réponses déjà parties.
+function viviQuestion(r) {
+  if (r.question) return r.question;
+  const c = getViviConversation(r);
+  if (!c || r.msgIndex == null) return '';
+  for (let i = r.msgIndex - 1; i >= 0; i--) if (c.messages[i].de === 'voyageur') return c.messages[i].texte;
+  return '';
+}
+function viviTexte(r) {
+  if (r.statut !== 'envoyee') return r.reponse || '';
+  const c = getViviConversation(r);
+  return c && c.messages[r.msgIndex] ? c.messages[r.msgIndex].texte : (r.reponse || '');
+}
+
+/* ---------- Actions sur une proposition en attente ----------
+   Approuver POSTE réellement le message dans la conversation : la
+   messagerie et l'audit restent cohérents sans code de synchronisation.
+   « texteAlternatif » sert quand l'utilisateur a corrigé la réponse. */
+function viviApprouver(id, texteAlternatif) {
+  const r = VIVI_REPONSES.find(x => x.id === id);
+  if (!r || r.statut === 'envoyee') return null;
+  const c = getViviConversation(r);
+  const texte = String(texteAlternatif != null ? texteAlternatif : r.reponse || '').trim();
+  if (!c || !texte) return null;
+
+  c.messages.push({ de:'hote', texte, heure:"À l'instant" });
+  c.horodatage = "À l'instant";
+  r.msgIndex = c.messages.length - 1;
+  r.reponse = texte;
+  r.statut = 'envoyee';
+  // delai ne mesure que l'envoi automatique : ici c'est un humain qui a
+  // validé, donc il n'y a pas de délai à afficher.
+  r.delai = null;
+  r.approuvee = true;
+  r.raison = null;
+  if (texteAlternatif != null) r.corrigee = true;
+  return r;
+}
+// Le badge de statut : une réponse validée à la main n'est pas « auto ».
+function viviStatutLabel(r) {
+  if (r.statut !== 'envoyee') return VIVI_STATUT_LABEL[r.statut];
+  return (r.approuvee || r.corrigee) ? 'Envoyée après relecture' : VIVI_STATUT_LABEL.envoyee;
+}
+// Comment une réponse est partie, en une phrase courte réutilisable partout.
+function viviOrigine(r) {
+  if (r.corrigee) return 'corrigée puis envoyée par vous';
+  if (r.approuvee) return 'approuvée par vous';
+  return `envoyée automatiquement en ${r.delai} s`;
+}
+function viviRefuser(id) {
+  const i = VIVI_REPONSES.findIndex(x => x.id === id);
+  if (i > -1) VIVI_REPONSES.splice(i, 1);
+}
+
+// Agrégats du mois affichés dans l'audit. Les totaux mensuels ne sont pas
+// dérivables de VIVI_REPONSES, qui ne contient que les dernières réponses :
+// on les stocke, et l'audit affiche le détail ligne à ligne à côté.
+const VIVI_METRIQUES = {
+  mois:'Juillet 2026',
+  messagesRecus:1450,
+  reponsesGenerees:342,
+  autoEnvoyees:298,
+  heuresGagnees:28,
+  satisfaction:4.6,
+};
+
+// Ce que Vivi a mal fait, et où le corriger. Chaque suggestion pointe vers
+// la section de configuration concernée pour que l'action soit à un clic.
+const VIVI_SUGGESTIONS = [
+  { titre:"Code WiFi oublié sur 2 logements", conseil:"Renseignez le WiFi dans le contexte du logement pour que Vivi puisse le donner elle-même.", section:'logements' },
+  { titre:"Confusion sur les horaires de check-in", conseil:"Précisez si le check-in est flexible : Vivi promet parfois une arrivée plus tôt.", section:'logements' },
+  { titre:"Numéro d'urgence absent de 7 logements", conseil:"Ajoutez le contact urgent : c'est ce que Vivi propose quand elle ne sait pas répondre.", section:'logements' },
+];
+
+// FAQ rapide du chat : 3 boutons rotatifs sous la conversation.
+const VIVI_FAQ = [
+  { q:"Comment ajouter un 2e logement ?",                  intent:'ajouter_logement' },
+  { q:"Pourquoi je ne reçois pas les messages Booking ?",  intent:'diagnostic_canal' },
+  { q:"Comment configurer l'IA avancée ?",                 intent:'config_ia' },
+  { q:"Quels sont mes revenus ce mois-ci ?",               intent:'revenus' },
+  { q:"Combien de réponses attendent ma révision ?",       intent:'attente' },
+  { q:"Comment fonctionne la facturation ?",               intent:'facturation' },
+];
+
+/* ============================================================
    PARAMÈTRES GÉNÉRAUX — localisation & séjour
    (page Paramètres > Général)
    ============================================================ */
@@ -690,6 +1735,106 @@ function getLogementsSansProprietaire() { return LOGEMENTS.filter(l => !l.propri
 function getReservationsByLogement(id) { return RESERVATIONS.filter(r => r.logementId === id); }
 function getReservationsByVoyageur(id) { return RESERVATIONS.filter(r => r.voyageurId === id); }
 function getRecurrentesByLogement(id) { return RECURRENTES.filter(r => r.logementId === id); }
+
+/* ============================================================
+   LIEN DE SÉJOUR — l'URL de la page voyageur (guest.html)
+
+   Elle est envoyée au voyageur par l'automatisation J-1 via la
+   variable {lien_sejour}, sur le canal de sa réservation.
+
+   Deux précautions, parce que cette page expose le code d'accès
+   et le mot de passe Wi-Fi du logement :
+
+     1. Jeton, pas identifiant. Une URL en ?r=R07 serait
+        incrémentable : n'importe qui lirait le code de la porte
+        du voisin. Le jeton est tiré au hasard, sans lien avec la
+        réservation.
+     2. Fenêtre de validité. Le lien s'ouvre 7 jours avant
+        l'arrivée et se ferme 2 jours après le départ. Un lien
+        transmis un jour reste sinon valable indéfiniment.
+
+   Dans un vrai backend le jeton viendrait d'un générateur
+   cryptographique ; ici crypto.getRandomValues suffit et illustre
+   la même mécanique.
+   ============================================================ */
+const LIEN_SEJOUR_AVANT = 7;   // jours d'ouverture avant l'arrivée
+const LIEN_SEJOUR_APRES = 2;   // jours de validité après le départ
+
+/* ------------------------------------------------------------
+   CONTENU DE LA PAGE SÉJOUR
+
+   Ce que le voyageur voit, bloc par bloc. La configuration est
+   commune à toutes les automatisations qui envoient le lien : la
+   page est unique, seule la date d'envoi change.
+
+   « joursAvantCode » mérite une explication. Le code de porte et le
+   Wi-Fi n'apparaissent qu'à N jours de l'arrivée, même si le lien a
+   été envoyé plus tôt. Sans ce délai, programmer l'envoi à J-7
+   exposerait le code pendant une semaine. 0 = toujours visible.
+   ------------------------------------------------------------ */
+const BLOCS_PAGE_SEJOUR = [
+  { id:'accueil',      label:"Mot d'accueil",           desc:"Message personnalisé, en haut de page." },
+  { id:'fiche_police', label:'Fiche de police',         desc:"Obligatoire en France. Le voyageur la remplit en ligne avant d'arriver." },
+  { id:'acces',        label:'Accès au logement',       desc:"Code de porte, étage et Wi-Fi." },
+  { id:'instructions', label:"Instructions d'arrivée",  desc:"Les étapes, du point de rendez-vous à l'installation." },
+  { id:'guide',        label:'Guide de bienvenue',      desc:"Horaires, quartier, équipements, bonnes adresses." },
+  { id:'contact',      label:"Contacter l'hôte",        desc:"Bouton de contact direct depuis la page." },
+];
+
+const PAGE_SEJOUR = {
+  blocs: ['accueil', 'fiche_police', 'acces', 'instructions', 'guide', 'contact'],
+  messageAccueil: "Nous sommes ravis de vous accueillir. Vous trouverez ici tout ce qu'il faut savoir avant et pendant votre séjour — écrivez-nous si quoi que ce soit vous manque.",
+  joursAvantCode: 1,
+};
+
+function blocPageSejourActif(id) { return PAGE_SEJOUR.blocs.includes(id); }
+
+// Les informations sensibles sont-elles déjà visibles pour cette réservation ?
+function codeAccesVisible(r, aujourdhui = AUJOURDHUI) {
+  const seuil = PAGE_SEJOUR.joursAvantCode || 0;
+  if (!seuil) return true;
+  return Math.round((parseDate(r.arrivee) - parseDate(aujourdhui)) / 86400000) <= seuil;
+}
+
+function nouveauTokenSejour() {
+  const buf = new Uint8Array(16);
+  (self.crypto || {}).getRandomValues
+    ? self.crypto.getRandomValues(buf)
+    : buf.forEach((_, i) => { buf[i] = Math.floor(Math.random() * 256); });
+  return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Les réservations de démo n'ont pas de jeton en dur : on en attribue un au
+// premier chargement, puis il est persisté avec le reste de l'état.
+function _assurerTokensSejour() {
+  RESERVATIONS.forEach(r => { if (!r.token) r.token = nouveauTokenSejour(); });
+}
+
+function getReservationParToken(token) {
+  return token ? RESERVATIONS.find(r => r.token === token) : null;
+}
+
+// URL relative de la page voyageur, pour la navigation interne
+// (« Prévisualiser »). « depuisApp » car les écrans de l'application vivent
+// dans /app/ et doivent remonter d'un cran.
+function lienSejour(r, depuisApp = false) {
+  return `${depuisApp ? '../' : ''}guest.html?s=${r.token}`;
+}
+// URL absolue, pour tout ce qui SORT de l'app : messages aux voyageurs,
+// automatisations, presse-papiers. Un lien relatif y serait inexploitable.
+function lienSejourAbsolu(r, depuisApp = false) {
+  return new URL(lienSejour(r, depuisApp), location.href).href;
+}
+
+// Le lien est-il ouvert aujourd'hui ? Renvoie aussi le motif, pour que la
+// page voyageur explique la fermeture au lieu d'afficher une erreur brute.
+function lienSejourStatut(r, aujourdhui = AUJOURDHUI) {
+  const j = Math.round((parseDate(r.arrivee) - parseDate(aujourdhui)) / 86400000);
+  const jFin = Math.round((parseDate(aujourdhui) - parseDate(r.depart)) / 86400000);
+  if (j > LIEN_SEJOUR_AVANT) return { actif:false, motif:'trop_tot', jours:j - LIEN_SEJOUR_AVANT };
+  if (jFin > LIEN_SEJOUR_APRES) return { actif:false, motif:'expire' };
+  return { actif:true, motif:null };
+}
 
 /* ============================================================
    FICHES DE POLICE — une fiche par voyageur de la réservation.
@@ -787,6 +1932,25 @@ function getNotifications() {
       });
     }
   });
+
+  // --- Réponses de Vivi qui attendent une relecture ---
+  // Une escalade est plus urgente qu'une simple confiance insuffisante :
+  // le voyageur a écrit quelque chose que l'IA a refusé de traiter seule.
+  viviReponsesEnAttente().forEach(r => {
+    const ctx = viviContexte(r);
+    if (!ctx.reservation) return;
+    notifs.push({
+      id: `vivi-${r.id}`,
+      type: 'vivi',
+      urgence: r.statut === 'escaladee' ? 'high' : 'medium',
+      titre: r.statut === 'escaladee' ? 'Vivi a escaladé un message' : 'Réponse de Vivi à relire',
+      message: `${ctx.voyageur} · ${r.raison}`,
+      resaId: ctx.reservation.id,
+      // Ces alertes se traitent dans la conversation, pas dans la fiche résa.
+      href: `messagerie.html?conv=${r.conversationId}`,
+    });
+  });
+
   // Urgentes d'abord, puis par proximité d'arrivée
   return notifs.sort((a, b) => {
     if (a.urgence !== b.urgence) return a.urgence === 'high' ? -1 : 1;
@@ -794,10 +1958,63 @@ function getNotifications() {
   });
 }
 const TACHE_LABEL = { menage:'Ménage', checkin:'Check-in', maintenance:'Maintenance', linge:'Linge' };
-const DECLENCHEUR_LABEL = {
-  reservation:'À la réservation', j_moins_1:'J-1 avant arrivée', jour_arrivee:'Jour de l\'arrivée',
-  jour_depart:'Jour du départ', j_plus_1:'J+1 après départ', j_plus_3:'J+3 après départ',
+/* ------------------------------------------------------------
+   PLANIFICATION DES AUTOMATISATIONS
+
+   Une automatisation se programme en trois morceaux, comme chez
+   Hospitable ou Smartbnb :
+     declencheur — l'événement de référence
+     jours       — le décalage, pour les déclencheurs « décalables »
+     heure       — l'heure d'envoi ce jour-là
+
+   L'heure est indispensable : « J-1 » sans heure ne dit pas si le
+   message part à 8 h ou à 23 h, alors qu'un voyageur qui reçoit ses
+   instructions d'arrivée en pleine nuit ne les lira pas.
+   ------------------------------------------------------------ */
+const DECLENCHEURS = [
+  { id:'reservation',   label:'À la réservation',      decalable:false, immediat:true },
+  { id:'avant_arrivee', label:"Avant l'arrivée",       decalable:true  },
+  { id:'jour_arrivee',  label:"Le jour de l'arrivée",  decalable:false },
+  { id:'jour_depart',   label:'Le jour du départ',     decalable:false },
+  { id:'apres_depart',  label:'Après le départ',       decalable:true  },
+];
+
+// Anciens identifiants figés → nouveau couple (déclencheur, décalage).
+// Conservé pour que les automatisations déjà enregistrées en localStorage
+// continuent de fonctionner sans réinitialisation.
+const _DECLENCHEURS_LEGACY = {
+  j_moins_1: { declencheur:'avant_arrivee', jours:1 },
+  j_plus_1:  { declencheur:'apres_depart',  jours:1 },
+  j_plus_3:  { declencheur:'apres_depart',  jours:3 },
 };
+function _migrerDeclencheurs() {
+  AUTOMATISATIONS.forEach(a => {
+    const m = _DECLENCHEURS_LEGACY[a.declencheur];
+    if (m) { a.declencheur = m.declencheur; a.jours = m.jours; }
+    if (a.jours == null) a.jours = 0;
+    if (!a.heure) a.heure = '10:00';
+  });
+}
+
+function getDeclencheur(id) { return DECLENCHEURS.find(d => d.id === id) || DECLENCHEURS[0]; }
+
+// « 1 jour avant l'arrivée, à 10:00 » — la phrase complète, pour qu'on ne
+// relise jamais un « J-1 » dont on ignore l'heure.
+function libelleDeclencheur(a) {
+  const d = getDeclencheur(a.declencheur);
+  if (d.immediat) return 'Dès la réservation';
+  const quand = d.decalable
+    ? `${a.jours} jour${a.jours > 1 ? 's' : ''} ${a.declencheur === 'avant_arrivee' ? "avant l'arrivée" : 'après le départ'}`
+    : d.label.replace(/^Le /, '');
+  return `${quand.charAt(0).toUpperCase()}${quand.slice(1)}, à ${a.heure}`;
+}
+// Version courte, pour les badges de la liste.
+function libelleDeclencheurCourt(a) {
+  const d = getDeclencheur(a.declencheur);
+  if (d.immediat) return 'À la réservation';
+  if (!d.decalable) return d.label;
+  return a.declencheur === 'avant_arrivee' ? `J-${a.jours}` : `J+${a.jours}`;
+}
 
 /* ============================================================
    PERSISTANCE LOCALE (localStorage) — c'est un mockup sans backend :
@@ -812,10 +2029,14 @@ const DECLENCHEUR_LABEL = {
    mais les actions d'un même visiteur survivent aux rechargements et
    aux visites suivantes, tant qu'il ne vide pas les données du site).
    ============================================================ */
-const OYVIA_STATE_KEY = 'oyvia_state_v1';
+// La version fait partie de la clé : un ancien instantané écrirait par-dessus
+// le nouveau schéma logement (equipements passés de libellés à identifiants,
+// canaux passés d'une chaîne à un objet) et casserait la fiche détail.
+// Changer de clé invalide proprement le stockage précédent.
+const OYVIA_STATE_KEY = 'oyvia_state_v2';
 
 // Entités mutables à sauvegarder/restaurer. Les données purement
-// statiques (STATS, TRANCHES_TARIFAIRES, HISTORIQUE_FACTURATION…) ne
+// statiques (STATS, PLANS, HISTORIQUE_FACTURATION…) ne
 // sont jamais modifiées depuis l'UI et n'ont pas besoin d'être stockées.
 const _OYVIA_ENTITIES = {
   LOGEMENTS, RESERVATIONS, VOYAGEURS, CONVERSATIONS, TACHES,
@@ -823,6 +2044,7 @@ const _OYVIA_ENTITIES = {
   COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, TACHE_LABEL,
   PROPRIETAIRES, DEPENSES, FACTURES,
   ROLES, UTILISATEURS,
+  VIVI_CONFIG, VIVI_REPONSES, PAGE_SEJOUR,
 };
 
 (function _oyviaRestoreState() {
@@ -856,6 +2078,14 @@ const _OYVIA_ENTITIES = {
     }
   });
 })();
+
+// Après restauration : toute réservation sans jeton de séjour en reçoit un.
+// Placé ici pour couvrir aussi bien le premier chargement que les
+// réservations créées avant l'ajout de cette fonctionnalité.
+_assurerTokensSejour();
+// Automatisations enregistrées avant l'ajout de l'heure d'envoi : on les
+// complète plutôt que d'exiger une réinitialisation.
+_migrerDeclencheurs();
 
 let _oyviaResetting = false;
 function saveOyviaState() {

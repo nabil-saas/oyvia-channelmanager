@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
 </head>
 <body class="app">
   <div class="app-shell">
@@ -49,8 +50,21 @@
     </div>
   </div>
 
+  <!-- Choix du modèle de départ, à la création d'une automatisation -->
+  <div class="modal" id="auto-new-modal" role="dialog" aria-modal="true" aria-labelledby="auto-new-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="auto-new-title">Que voulez-vous envoyer&nbsp;?</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <p class="text-sm text-soft mb-4">Choisissez un point de départ. Vous réglerez ensuite le moment de l'envoi et le contenu du message.</p>
+      <div class="auto-presets" id="auto-preset-list"><!-- injecté --></div>
+    </div>
+  </div>
+
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/automatisations.js"></script>
+  <script src="../js/vivi.js"></script>
 </body>
 </html>

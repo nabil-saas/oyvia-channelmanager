@@ -205,40 +205,6 @@ Layout.init('parametres');
     });
   }
 
-  /* ---------- Options supplémentaires ---------- */
-  const OPT_IC = {
-    whatsapp: '<path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/>',
-  };
-  const optIcon = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p || '<circle cx="12" cy="12" r="9"/>'}</svg>`;
-
-  function renderOptionsSupp() {
-    document.getElementById('pf-pane-options').innerHTML = `
-      <div class="card" style="max-width:640px">
-        <div class="card__head"><span class="card__title">Options supplémentaires</span></div>
-        <div class="card__body" id="pg-options" style="padding-top:0">
-          ${OPTIONS_LANDING.map(o => {
-            const active = COMPTE.optionsActives.includes(o.id);
-            const rates = o.tarifs ? `<div class="ab-rates">${o.tarifs.map(t =>
-              `<div class="ab-rate"><span>${t.cat}<small>${t.detail}</small></span><b class="${t.prix === 0 ? 'free' : ''}">${t.prix === 0 ? 'Gratuit' : formatMAD(t.prix, 2) + ' / message'}</b></div>`).join('')}</div>` : '';
-            return `<div class="ab-optionrow">
-              <div class="ab-optionrow__ic">${optIcon(OPT_IC[o.id])}</div>
-              <div class="ab-optionrow__meta"><b>${o.nom}</b><small>${o.desc}</small></div>
-              <span class="ab-optionrow__price">à l'usage</span>
-              <label class="switch"><input type="checkbox" data-opt="${o.id}" ${active ? 'checked' : ''}><span class="switch__track"></span></label>
-            </div>${rates}`;
-          }).join('')}
-        </div>
-      </div>`;
-  }
-
-  document.getElementById('pf-pane-options').addEventListener('change', e => {
-    const t = e.target.closest('[data-opt]'); if (!t) return;
-    const id = t.dataset.opt;
-    if (t.checked) { if (!COMPTE.optionsActives.includes(id)) COMPTE.optionsActives.push(id); }
-    else { COMPTE.optionsActives = COMPTE.optionsActives.filter(x => x !== id); }
-    UI.toast(t.checked ? 'Option activée' : 'Option désactivée');
-  });
-
   /* ============================================================
      Rôles & accès : comptes utilisateurs + permissions par rôle
      ============================================================ */
@@ -519,7 +485,6 @@ Layout.init('parametres');
   renderProfil();
   renderLocalisation();
   renderSejour();
-  renderOptionsSupp();
   renderRoles();
   renderPlateformes();
 })();

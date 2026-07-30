@@ -73,7 +73,8 @@
 .app-bell__dot { position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; background: var(--c-danger); border: 2px solid var(--white); border-radius: var(--r-full); }
 .app-bell__count { position: absolute; top: 1px; right: 1px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: var(--r-full); background: var(--c-danger); color: #fff; font-size: 10px; font-weight: var(--fw-bold); line-height: 1; display: grid; place-items: center; border: 2px solid var(--c-surface); }
 .app-bell__count--medium { background: var(--amber-500); }
-.app-logement-select { min-width: 210px; }
+/* Filtre par logement, placé dans l'en-tête de page (cf. layout.js) */
+.app-logement-select { min-width: 200px; }
 
 /* Centre de notifications (dropdown ancré à la cloche) */
 .notif-dropdown { position: fixed; z-index: var(--z-modal); width: 360px; max-width: calc(100vw - 2 * var(--sp-4)); max-height: 440px; overflow-y: auto; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl); box-shadow: var(--shadow-lg); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity var(--t-fast), visibility var(--t-fast), transform var(--t-fast); }
@@ -157,15 +158,15 @@
   .app-sidebar.is-open { transform: translateX(0); }
   .app-topbar__menu { display: grid; }
   .app-topbar__search { display: none; }
-  .app-logement-select { min-width: 150px; }
-  /* Sur mobile la sidebar est un tiroir plein écran : le bouton « replier »
+    /* Sur mobile la sidebar est un tiroir plein écran : le bouton « replier »
      (pensé pour la version bureau, mini-rail) ferait doublon avec le burger. */
   #app-collapse { display: none; }
 }
 @media (max-width: 620px) {
   .app-grid--2, .app-grid--3, .app-grid--2-1 { grid-template-columns: 1fr; }
   .app-main { padding: var(--sp-4); }
-  .app-logement-select { display: none; }
+  /* En pleine largeur, le filtre logement reste utilisable au lieu d'être masqué */
+  .app-logement-select { min-width: 0; width: 100%; }
 }
 
 /* ============================================================
@@ -249,32 +250,37 @@
 .ab-hero__stat small { display: block; font-size: var(--fs-xs); opacity: 0.8; }
 .ab-hero__stat b { font-size: var(--fs-xl); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
 
-.ab-optionrow { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) 0; border-bottom: 1px solid var(--c-border); }
-.ab-optionrow:last-child { border-bottom: 0; }
-.ab-optionrow__ic { width: 40px; height: 40px; border-radius: var(--r-md); background: var(--c-accent-soft); color: var(--c-accent); display: grid; place-items: center; flex-shrink: 0; }
-.ab-optionrow__ic svg { width: 20px; height: 20px; }
-.ab-optionrow__meta { flex: 1; min-width: 0; }
-.ab-optionrow__meta b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
-.ab-optionrow__meta small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); }
-.ab-optionrow__price { font-size: var(--fs-sm); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ab-summline { display: flex; justify-content: space-between; padding: var(--sp-2) 0; font-size: var(--fs-sm); }
-.ab-summline--total { border-top: 1px solid var(--c-border); margin-top: var(--sp-2); padding-top: var(--sp-4); font-size: var(--fs-md); font-weight: var(--fw-bold); }
-.ab-summline--total b { font-size: var(--fs-xl); color: var(--blue-600); }
-
-.ab-rates { border: 1px solid var(--c-border); border-radius: var(--r-lg); overflow: hidden; margin: calc(-1 * var(--sp-2)) 0 var(--sp-4) 56px; }
-.ab-rate { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-2) var(--sp-4); border-bottom: 1px solid var(--c-border); font-size: var(--fs-sm); }
-.ab-rate:last-child { border-bottom: 0; }
-.ab-rate small { display: block; color: var(--c-text-muted); font-size: var(--fs-xs); }
-.ab-rate b { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ab-rate b.free { color: var(--green-600); }
-
-/* Historique de facturation : mois × logements réservés × montant */
-.ab-hist__row { display: grid; grid-template-columns: 1.4fr 1fr auto; align-items: center; gap: var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--c-border); font-size: var(--fs-sm); }
+/* Historique de facturation : mois × offre × logements gérés × montant */
+.ab-hist__row { display: grid; grid-template-columns: 1.4fr 0.8fr 1fr auto; align-items: center; gap: var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--c-border); font-size: var(--fs-sm); }
 .ab-hist__row:last-child { border-bottom: 0; }
 .ab-hist__row--head { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); }
 .ab-hist__row--head span:last-child, .ab-hist__amount { text-align: right; }
 .ab-hist__amount { font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
-@media (max-width: 640px) { .ab-hist__row { grid-template-columns: 1fr auto; row-gap: 2px; } .ab-hist__row span:nth-child(2) { grid-column: 1; font-size: var(--fs-xs); color: var(--c-text-muted); } }
+@media (max-width: 640px) {
+  .ab-hist__row { grid-template-columns: 1fr auto; row-gap: 2px; }
+  /* L'offre et le nombre de logements repassent sur une ligne secondaire */
+  .ab-hist__row span:nth-child(2), .ab-hist__row span:nth-child(3) { grid-column: 1; font-size: var(--fs-xs); color: var(--c-text-muted); }
+}
+
+/* Comparatif des offres (Abonnement > Changer d'offre) */
+.ab-plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); align-items: stretch; }
+.ab-plan { display: flex; flex-direction: column; border: 1px solid var(--c-border); border-radius: var(--r-xl); padding: var(--sp-4); background: var(--c-surface); }
+.ab-plan.is-current { border-color: var(--blue-600); background: var(--c-accent-soft); }
+.ab-plan__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); }
+.ab-plan__top b { font-size: var(--fs-md); font-weight: var(--fw-bold); }
+.ab-plan__top > span { text-align: right; font-size: var(--fs-sm); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; color: var(--blue-600); white-space: nowrap; }
+.ab-plan__top small { display: block; font-size: 10px; font-weight: var(--fw-regular); color: var(--c-text-muted); white-space: normal; }
+.ab-plan__total { margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--c-text-soft); }
+.ab-plan__feats { margin-top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.ab-plan__feats li { font-size: var(--fs-xs); color: var(--c-text-soft); padding-left: var(--sp-4); position: relative; }
+.ab-plan__feats li::before { content: "✓"; position: absolute; left: 0; color: var(--c-accent); font-weight: var(--fw-bold); }
+/* Intertitre de groupe : pas de coche, c'est un libellé de section */
+.ab-plan__group { font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); margin-top: var(--sp-2); }
+.ab-plan__group::before { content: none !important; }
+.ab-plan__feats em { display: block; font-style: normal; color: var(--c-text-muted); margin-top: 2px; }
+.ab-plan__action { margin-top: auto; padding-top: var(--sp-4); }
+@media (max-width: 900px) { .ab-plans { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .ab-plans { grid-template-columns: 1fr; } }
 
 /* ============================================================
    STATISTIQUES  (.st-)
@@ -370,6 +376,33 @@
   .auto-item { flex-wrap: wrap; }
   .auto-item__actions { flex-basis: 100%; padding-left: calc(44px + var(--sp-4)); }
 }
+/* Modèles de départ, à la création d'une automatisation */
+.auto-presets { display: grid; gap: var(--sp-2); }
+.auto-preset { display: flex; align-items: center; gap: var(--sp-3); width: 100%; text-align: left; padding: var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); background: var(--c-surface); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.auto-preset:hover { border-color: var(--c-accent); background: var(--c-accent-soft); }
+.auto-preset__ic { width: 38px; height: 38px; flex-shrink: 0; border-radius: var(--r-md); background: var(--c-accent-soft); color: var(--c-accent); display: grid; place-items: center; }
+.auto-preset__ic svg { width: 19px; height: 19px; }
+.auto-preset b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.auto-preset small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
+.auto-preset__quand { flex-shrink: 0; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--c-text-muted); background: var(--bg-subtle); border-radius: var(--r-full); padding: 3px var(--sp-3); }
+
+/* Blocs de la page séjour, activables un par un */
+.auto-blocs { display: grid; gap: var(--sp-2); }
+.auto-bloc { display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-3); border: 1px solid var(--c-border); border-radius: var(--r-md); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.auto-bloc.is-on { border-color: var(--c-accent); background: var(--c-accent-soft); }
+.auto-bloc input { margin-top: 3px; flex-shrink: 0; accent-color: var(--c-accent); }
+.auto-bloc b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.auto-bloc small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
+
+/* Bloc de planification : événement, décalage, heure d'envoi */
+.auto-plan { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: var(--sp-4); align-items: end; }
+.auto-plan__jours { display: flex; align-items: center; gap: var(--sp-2); }
+.auto-plan__jours .input { width: 84px; flex-shrink: 0; }
+/* Le résumé en toutes lettres évite d'avoir à recomposer « J-1 » de tête */
+.auto-plan__resume { margin-top: var(--sp-3); font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--blue-700); background: var(--c-accent-soft); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); display: inline-block; }
+.auto-item__quand { font-weight: var(--fw-medium); color: var(--c-text-soft); }
+@media (max-width: 720px) { .auto-plan { grid-template-columns: 1fr; } }
+
 .auto-vars { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .auto-var { font-family: var(--font-mono); font-size: var(--fs-sm); background: var(--blue-50); color: var(--blue-700); border: 1px solid var(--blue-100); border-radius: var(--r-sm); padding: 4px var(--sp-2); cursor: pointer; transition: background var(--t-fast); }
 .auto-var:hover { background: var(--blue-100); }
@@ -409,6 +442,60 @@
 .lg-channelrow__ic { width: 40px; height: 40px; border-radius: var(--r-md); display: grid; place-items: center; color: #fff; font-weight: var(--fw-bold); flex-shrink: 0; }
 .lg-equip { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .lg-equip span { background: var(--bg-subtle); border: 1px solid var(--c-border); border-radius: var(--r-full); padding: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); }
+
+/* --- Carte : structure et alertes --- */
+.lg-card__specs { font-size: var(--fs-xs); color: var(--c-text-soft); margin-top: 4px; }
+.lg-card__statut { position: relative; z-index: 1; margin-right: auto; }
+.lg-card__cover { justify-content: space-between; }
+/* Plafond de nuitées bientôt atteint : l'information doit sauter aux yeux
+   depuis la liste, c'est une contrainte légale et non un détail de gestion. */
+.lg-card__flag { margin-top: var(--sp-3); font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--c-warning-ink); background: var(--c-warning-soft); border-radius: var(--r-sm); padding: 4px var(--sp-2); }
+
+/* --- Fiche : blocs de description --- */
+.lg-desc + .lg-desc { margin-top: var(--sp-4); }
+.lg-desc__label { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); margin-bottom: 4px; }
+.lg-desc p { font-size: var(--fs-sm); color: var(--c-text-soft); line-height: var(--lh-base); }
+
+/* Jauge du plafond de nuitées */
+.lg-jauge__barre { height: 8px; border-radius: var(--r-full); background: var(--ink-100); overflow: hidden; }
+.lg-jauge__barre i { display: block; height: 100%; background: var(--c-accent); border-radius: var(--r-full); }
+
+/* Couchages, pièce par pièce */
+.lg-couchage { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--c-border); font-size: var(--fs-sm); }
+.lg-couchage:last-child { border-bottom: 0; }
+.lg-couchage span { color: var(--c-text-soft); text-align: right; }
+
+/* Équipements groupés par catégorie */
+.lg-amgroupe + .lg-amgroupe { margin-top: var(--sp-5); }
+.lg-amgroupe__label { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); margin-bottom: var(--sp-2); }
+
+/* Notes détaillées façon Airbnb */
+.lg-note { display: grid; grid-template-columns: 1fr 110px 34px; align-items: center; gap: var(--sp-3); padding: var(--sp-2) 0; font-size: var(--fs-sm); }
+.lg-note__barre { height: 6px; border-radius: var(--r-full); background: var(--ink-100); overflow: hidden; }
+.lg-note__barre i { display: block; height: 100%; background: var(--c-accent); }
+.lg-note b { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Jours d'arrivée / départ autorisés */
+.lg-jours { display: flex; gap: 4px; flex-wrap: wrap; }
+.lg-jour { min-width: 38px; text-align: center; padding: 5px var(--sp-2); border: 1px solid var(--c-border); border-radius: var(--r-sm); font-size: var(--fs-xs); color: var(--c-text-muted); }
+.lg-jour.is-on { background: var(--c-accent-soft); border-color: var(--c-accent); color: var(--blue-700); font-weight: var(--fw-semibold); }
+
+/* Canal connecté : en-tête + détail de la liaison */
+.lg-canal { border: 1px solid var(--c-border); border-radius: var(--r-lg); margin-bottom: var(--sp-3); overflow: hidden; }
+.lg-canal__head { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4); }
+.lg-canal__head small { display: block; font-size: var(--fs-xs); }
+.lg-canal__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--sp-4); padding: var(--sp-4); border-top: 1px solid var(--c-border); background: var(--bg-subtle); }
+.lg-canal__grid small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.lg-canal__grid span { font-size: var(--fs-sm); }
+.lg-canal__grid a { color: var(--blue-600); font-weight: var(--fw-semibold); }
+.lg-canal__alerte { margin: 0; padding: var(--sp-3) var(--sp-4); background: var(--c-warning-soft); color: var(--c-warning-ink); font-size: var(--fs-xs); }
+
+/* Photos : couverture et légende */
+.lg-photo { position: relative; overflow: hidden; }
+.lg-photo__flag { position: absolute; top: var(--sp-2); left: var(--sp-2); background: rgba(255,255,255,0.92); border-radius: var(--r-full); padding: 3px var(--sp-2); font-size: 10px; font-weight: var(--fw-bold); }
+.lg-photo__legende { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--sp-4) var(--sp-3) var(--sp-2); color: #fff; font-size: var(--fs-xs); background: linear-gradient(180deg, transparent, rgba(0,0,0,0.55)); }
+
+.font-mono { font-family: var(--font-mono); word-break: break-all; }
 
 /* Tâches récurrentes (onglet fiche logement)  (.rec-) */
 .rec-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); margin-bottom: var(--sp-4); flex-wrap: wrap; }
@@ -460,6 +547,14 @@
 .msg-conv__sub { display: flex; align-items: center; gap: var(--sp-2); margin: 3px 0; }
 .msg-conv__preview { font-size: var(--fs-sm); color: var(--c-text-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .msg-conv__unread { margin-left: auto; background: var(--c-accent); color: #fff; font-size: var(--fs-xs); font-weight: var(--fw-semibold); min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--r-full); display: grid; place-items: center; flex-shrink: 0; }
+/* Marqueur Vivi dans la liste : ✦ elle a répondu · ⏳ elle attend votre aval */
+.msg-conv__ia { font-size: 10px; font-weight: var(--fw-bold); letter-spacing: var(--tracking-wide); color: var(--blue-700); background: var(--c-accent-soft); border-radius: var(--r-full); padding: 2px var(--sp-2); flex-shrink: 0; }
+.msg-conv__ia--attente { color: var(--c-warning-ink); background: var(--c-warning-soft); }
+
+/* Filtres rapides de la boîte de réception : la colonne est étroite,
+   les 3 boutons se partagent la largeur au lieu de déborder */
+.msg-filters { display: flex; width: 100%; margin-top: var(--sp-3); }
+.msg-filters button { flex: 1; padding: 0 var(--sp-2); font-size: var(--fs-xs); white-space: nowrap; }
 
 .msg-threadhead { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--c-border); background: var(--c-surface); flex-shrink: 0; }
 .msg-threadhead__meta { min-width: 0; }
@@ -473,6 +568,31 @@
 .msg-bubble__time { font-size: var(--fs-xs); margin-top: 4px; opacity: 0.7; }
 .msg-bubble--in { align-self: flex-start; background: var(--c-surface); border: 1px solid var(--c-border); border-bottom-left-radius: var(--r-sm); }
 .msg-bubble--out { align-self: flex-end; background: var(--blue-600); color: #fff; border-bottom-right-radius: var(--r-sm); }
+/* Signature de Vivi sous une bulle qu'elle a écrite : la transparence sur
+   « qui a répondu » est la condition pour faire confiance à l'automatisation */
+.msg-bubble__vivi { font-weight: var(--fw-semibold); }
+
+/* Bloc Vivi, intercalé entre le fil et le composeur */
+.msg-vivi { flex-shrink: 0; border-top: 1px solid var(--c-border); padding: var(--sp-3) var(--sp-4); }
+.msg-vivi--attente { background: var(--c-warning-soft); border-top-color: var(--amber-500); }
+.msg-vivi--ok { background: var(--c-surface-alt); }
+.msg-vivi--promo { background: var(--c-accent-soft); }
+.msg-vivi__head { display: flex; align-items: center; gap: var(--sp-3); }
+.msg-vivi__ic { width: 32px; height: 32px; flex-shrink: 0; border-radius: var(--r-full); background: #fff; border: 1px solid var(--c-border); display: grid; place-items: center; }
+.msg-vivi__ic img { width: 24px; height: 24px; display: block; }
+.msg-vivi__head b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.msg-vivi__head small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.msg-vivi__texte { margin-top: var(--sp-3); padding: var(--sp-3) var(--sp-4); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); font-size: var(--fs-sm); line-height: var(--lh-snug); }
+.msg-vivi__edit { margin-top: var(--sp-3); width: 100%; min-height: 88px; }
+.msg-vivi__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-3); }
+/* Sur mobile, la messagerie n'a qu'une colonne : le bloc Vivi ne doit pas
+   manger tout le fil de discussion. Le badge est redondant avec la couleur
+   de fond et le titre, on le retire ; la proposition devient scrollable. */
+@media (max-width: 620px) {
+  .msg-vivi { padding: var(--sp-3); }
+  .msg-vivi__head > .badge { display: none; }
+  .msg-vivi__texte { max-height: 92px; overflow-y: auto; }
+}
 
 .msg-composer { flex-shrink: 0; border-top: 1px solid var(--c-border); background: var(--c-surface); padding: var(--sp-3) var(--sp-4); }
 .msg-composer__tools { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); flex-wrap: wrap; }

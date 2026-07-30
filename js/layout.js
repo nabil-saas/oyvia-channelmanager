@@ -21,6 +21,7 @@ const Layout = (function () {
     comptabilite:'<path d="M4 2h13l3 3v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M17 2v4h4"/><path d="M8 11h8M8 15h8M8 19h5"/>',
     abonnement:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
     parametres:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    vivi:      '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 17h4"/><path d="M2 13h2M20 13h2"/>',
     search:    '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
     bell:      '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
     menu:      '<path d="M4 6h16M4 12h16M4 18h16"/>',
@@ -37,6 +38,7 @@ const Layout = (function () {
     { id:'voyageurs',    label:'Voyageurs',       title:'Voyageurs',         href:'voyageurs.html' },
     { id:'messagerie',   label:'Messagerie',      title:'Messagerie',        href:'messagerie.html', badge:'unread' },
     { id:'automatisations', label:'Automatisations', title:'Automatisations', href:'automatisations.html' },
+    { id:'vivi',         label:'Assistant IA',    title:'Vivi — Assistant IA', href:'vivi.html' },
     { id:'menage',       label:'Gestion des tâches', title:'Gestion des tâches', href:'menage.html' },
     { id:'equipe',       label:'Équipe',          title:'Équipe',            href:'equipe.html' },
     { id:'comptabilite', label:'Comptabilité',    title:'Comptabilité',      href:'comptabilite.html' },
@@ -48,7 +50,7 @@ const Layout = (function () {
   const NAV_GROUPS = [
     { label:'Aperçu',        items:['dashboard', 'calendrier', 'statistiques'] },
     { label:'Locations',     items:['logements', 'proprietaires', 'reservations', 'voyageurs'] },
-    { label:'Communication', items:['messagerie', 'automatisations'] },
+    { label:'Communication', items:['messagerie', 'automatisations', 'vivi'] },
     { label:'Équipe',        items:['menage', 'equipe'] },
     { label:'Comptabilité',  items:['comptabilite'] },
     { label:'Compte',        items:['abonnement', 'parametres'] },
@@ -95,11 +97,18 @@ const Layout = (function () {
       LOGEMENTS.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
   }
 
+  // Le filtre par logement n'est plus dans la topbar : il occupait toute la
+  // largeur sur chaque écran, y compris ceux où filtrer par logement n'a
+  // aucun sens (Paramètres, Abonnement, Équipe…). Il vit désormais dans
+  // l'en-tête de page, en petit, comme sur Statistiques — et uniquement sur
+  // les écrans concernés : Tableau de bord, Calendrier, Logements,
+  // Réservations. Il suffit à ces pages de placer un
+  // <select id="app-logement"> dans .app-pagehead__actions : init() le
+  // remplit et le câble automatiquement.
   function topbarHTML(nav) {
     return `
       <button class="btn btn--secondary btn--icon btn--sm app-topbar__menu" id="app-menu-btn" aria-label="Menu">${svg(I.menu)}</button>
       <h1 class="app-topbar__title">${nav.title}</h1>
-      <select class="select app-logement-select" aria-label="Filtrer par logement" id="app-logement">${logementOptions()}</select>
       <div class="input-icon app-topbar__search">
         ${svg(I.search)}
         <input class="input" type="search" placeholder="Rechercher…" aria-label="Rechercher" />
@@ -138,12 +147,18 @@ const Layout = (function () {
       else { sidebar.classList.toggle('is-mini'); }
     });
 
-    // Sélecteur de logement → événement global (les écrans peuvent y réagir)
+    // Sélecteur de logement, désormais dans l'en-tête de page : présent
+    // seulement sur les écrans où il a du sens. On le remplit ici pour que
+    // les pages n'aient pas à dupliquer la liste des logements.
     const sel = document.getElementById('app-logement');
-    if (sel) sel.addEventListener('change', e => {
-      Layout.currentLogement = e.target.value;
-      document.dispatchEvent(new CustomEvent('logementChange', { detail: e.target.value }));
-    });
+    if (sel) {
+      sel.innerHTML = logementOptions();
+      sel.value = Layout.currentLogement;
+      sel.addEventListener('change', e => {
+        Layout.currentLogement = e.target.value;
+        document.dispatchEvent(new CustomEvent('logementChange', { detail: e.target.value }));
+      });
+    }
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
@@ -266,7 +281,8 @@ const UI = {
     el.classList.add('is-open');
     el.querySelectorAll('[data-notif-resa]').forEach(row => row.addEventListener('click', () => {
       UI.closeNotifDropdown();
-      UI.openResa(row.dataset.notifResa);
+      if (row.dataset.notifHref) window.location.href = row.dataset.notifHref;
+      else UI.openResa(row.dataset.notifResa);
     }));
     setTimeout(() => document.addEventListener('click', UI._notifOutsideClick, true), 0);
   },
@@ -287,13 +303,18 @@ const UI = {
     const ICONS = {
       police: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
       paiement: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+      // Même pictogramme que l'entrée de menu « Assistant IA »
+      vivi: '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 17h4"/><path d="M2 13h2M20 13h2"/>',
     };
     if (!notifs.length) {
       return `<div class="notif-dropdown__head"><b>Notifications</b></div>
         <div class="notif-empty">${UI._ic('<path d="M20 6 9 17l-5-5"/>')}<p>Aucune alerte pour le moment</p></div>`;
     }
+    // Une alerte peut se traiter ailleurs que dans la fiche réservation
+    // (les réponses de Vivi s'approuvent dans la conversation) : dans ce cas
+    // la notification porte un href et on y navigue au lieu d'ouvrir le panneau.
     const rows = notifs.map(n => `
-      <button type="button" class="notif-item" data-notif-resa="${n.resaId}">
+      <button type="button" class="notif-item" data-notif-resa="${n.resaId}"${n.href ? ` data-notif-href="${n.href}"` : ''}>
         <span class="notif-item__ic notif-item__ic--${n.urgence}">${UI._ic(ICONS[n.type] || ICONS.police)}</span>
         <span class="notif-item__body"><b>${n.titre}</b><p>${n.message}</p></span>
       </button>`).join('');
@@ -391,6 +412,13 @@ const UI = {
     UI.openPanel('ui-resa-panel');
     el.querySelectorAll('[data-fiche-view]').forEach(b => b.addEventListener('click', () => UI.viewFiche(r.id, parseInt(b.dataset.ficheView, 10))));
     el.querySelectorAll('[data-fiche-pdf]').forEach(b => b.addEventListener('click', () => UI.downloadFichePDF(r.id, parseInt(b.dataset.fichePdf, 10))));
+    el.querySelectorAll('[data-copier-lien]').forEach(b => b.addEventListener('click', () => {
+      // On copie l'URL absolue : le lien part par message, il doit être complet.
+      const abs = new URL(b.dataset.copierLien, location.href).href;
+      (navigator.clipboard ? navigator.clipboard.writeText(abs) : Promise.reject())
+        .then(() => UI.toast('Lien du séjour copié'))
+        .catch(() => UI.toast('Copie impossible depuis ce navigateur', false));
+    }));
   },
 
   // Petite icône SVG inline (style Lucide, cohérent avec le reste de l'app)
@@ -595,6 +623,23 @@ const UI = {
           <span class="badge badge--warning">En attente</span>
         </div>`;
     }).join('');
+
+    // Lien de la page séjour : l'hôte doit pouvoir le prévisualiser et le
+    // renvoyer à la main, sans attendre l'automatisation J-1.
+    const st = lienSejourStatut(r);
+    const url = lienSejour(r, true);
+    const lienRows = `
+      <div class="rp-row"><span>Statut du lien</span><span>${st.actif
+        ? '<span class="badge badge--positive">Ouvert</span>'
+        : st.motif === 'trop_tot'
+          ? `<span class="badge badge--neutral">Ouvre dans ${st.jours} j</span>`
+          : '<span class="badge badge--neutral">Expiré</span>'}</span></div>
+      <div class="rp-row"><span>Envoi automatique</span><span>Automatisation J-1</span></div>
+      <div class="row gap-2 mt-2">
+        <a class="btn btn--secondary btn--sm grow" href="${url}" target="_blank" rel="noopener">Prévisualiser</a>
+        <button type="button" class="btn btn--secondary btn--sm grow" data-copier-lien="${url}">Copier le lien</button>
+      </div>`;
+
     return `<div class="panel__head"><div><span class="chip-canal chip-canal--${r.canal}">${CANAL_LABEL[r.canal]}</span>
         <h3 style="margin-top:8px;">${r.voyageur}</h3><p class="text-soft text-sm">${l.nom} · ${l.ville}</p></div>${close}</div>
       <div class="panel__body">
@@ -609,6 +654,7 @@ const UI = {
         <div class="rp-section"><p class="eyebrow mb-2">Voyageur</p>${guestRows}</div>
         <div class="rp-section"><p class="eyebrow mb-2">Fiches de police (${ficheDone}/${totalVoy})</p>${ficheRows}</div>
         <div class="rp-section"><p class="eyebrow mb-2">Tâches liées</p>${tacheRows}</div>
+        <div class="rp-section"><p class="eyebrow mb-2">Page séjour du voyageur</p>${lienRows}</div>
       </div>
       <div class="panel__foot"><div class="row gap-2">
         <a class="btn btn--secondary grow" href="messagerie.html">${conv ? 'Ouvrir la conversation' : 'Écrire au voyageur'}</a>

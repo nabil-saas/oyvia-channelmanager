@@ -1,6 +1,15 @@
 /* ============================================================
    OYVIA — Messagerie unifiée (3 colonnes)
    Liste des conversations · fil de discussion · contexte résa.
+
+   Intégration de Vivi (cf. js/data.js) :
+     - une conversation dont Vivi a une proposition en attente est
+       signalée dans la liste et filtrable (« IA à relire ») ;
+     - les messages écrits par Vivi sont identifiés comme tels ;
+     - la proposition en attente s'affiche au-dessus du composeur,
+       avec Approuver / Éditer / Refuser.
+   Approuver poste réellement le message (viviApprouver), donc la
+   page Vivi > Audit et cette page ne peuvent pas se contredire.
    ============================================================ */
 Layout.init('messagerie');
 
@@ -10,7 +19,8 @@ Layout.init('messagerie');
   const initiales = nom => nom.split(' ').map(m => m[0]).slice(0, 2).join('').toUpperCase();
 
   const MODELES = [
-    { nom: 'Instructions d\'arrivée', texte: 'Bonjour {prenom}, voici les informations pour votre arrivée au {nom_logement} : {adresse}. Code d\'accès : {code_acces}. Wifi : {wifi}. Arrivée possible à partir de 15h. Bon voyage !' },
+    { nom: 'Lien de la page séjour', texte: 'Bonjour {prenom}, retrouvez toutes les informations de votre séjour au {nom_logement} ici : {lien_sejour} — adresse, code d\'accès, Wi-Fi et guide du quartier.' },
+    { nom: 'Instructions d\'arrivée (détaillées)', texte: 'Bonjour {prenom}, voici les informations pour votre arrivée au {nom_logement} : {adresse}. Code d\'accès : {code_acces}. Wifi : {wifi}. Arrivée possible à partir de 15h. Bon voyage !' },
     { nom: 'Message de bienvenue', texte: 'Bienvenue {prenom} ! Nous espérons que votre voyage s\'est bien passé. N\'hésitez pas à nous écrire pour toute question. Bon séjour !' },
     { nom: 'Parking à proximité', texte: 'Bonjour {prenom}, un parking public se trouve à proximité (environ 18 €/jour). Je vous communique l\'adresse exacte si besoin.' },
     { nom: 'Arrivée tardive', texte: 'Bonjour {prenom}, aucun souci pour une arrivée tardive : l\'accès est autonome par boîte à clés, à toute heure.' },
@@ -39,7 +49,20 @@ Layout.init('messagerie');
   const conversationsVisibles = () => CONVERSATIONS.filter(c => canalActif(c.canal));
 
   const visibles = conversationsVisibles();
+  let filtre = 'tout';
   let activeId = (visibles.find(c => c.nonLu > 0) || visibles[0] || CONVERSATIONS[0]).id;
+  let editionIA = null;   // id de la réponse Vivi en cours d'édition
+
+  // Liens entrants : ?conv=C05 (depuis l'audit de Vivi) ou ?filtre=ia
+  // (depuis le chat de Vivi, « les réponses qui vous attendent »).
+  const params = new URLSearchParams(location.search);
+  if (params.get('filtre') === 'ia') filtre = 'ia';
+  const convParam = params.get('conv');
+  if (convParam && CONVERSATIONS.some(c => c.id === convParam)) activeId = convParam;
+  else if (filtre === 'ia') {
+    const premiere = viviReponsesEnAttente().find(r => visibles.some(c => c.id === r.conversationId));
+    if (premiere) activeId = premiere.conversationId;
+  }
 
   const ctxOf = c => { const r = getReservation(c.reservationId); return { r, l: getLogement(r.logementId), v: r.voyageurId ? getVoyageur(r.voyageurId) : null }; };
 
@@ -50,7 +73,9 @@ Layout.init('messagerie');
       .replace(/{adresse}/g, l.adresse)
       .replace(/{code_acces}/g, l.codeAcces)
       .replace(/{wifi}/g, `${l.wifi.ssid} / ${l.wifi.pass}`)
-      .replace(/{date_arrivee}/g, formatDate(r.arrivee));
+      .replace(/{date_arrivee}/g, formatDate(r.arrivee))
+      // URL absolue : ce texte part chez le voyageur, hors du site.
+      .replace(/{lien_sejour}/g, lienSejourAbsolu(r, true));
   }
 
   /* ---------- Liste des conversations ---------- */
@@ -58,23 +83,46 @@ Layout.init('messagerie');
     const q = elSearch.value.trim().toLowerCase();
     const list = conversationsVisibles().filter(c => {
       const { l } = ctxOf(c);
-      return !q || `${c.voyageur || getReservation(c.reservationId).voyageur} ${l.nom}`.toLowerCase().includes(q);
+      if (q && !`${c.voyageur || getReservation(c.reservationId).voyageur} ${l.nom}`.toLowerCase().includes(q)) return false;
+      if (filtre === 'nonlu' && !c.nonLu) return false;
+      if (filtre === 'ia' && !getViviEnAttente(c.id)) return false;
+      return true;
     });
+
+    const vides = {
+      tout:  'Aucune conversation',
+      nonlu: 'Tout est lu 🎉',
+      ia:    'Aucune réponse de Vivi à relire',
+    };
+
     elConvs.innerHTML = list.map((c, i) => {
       const { r, l } = ctxOf(c);
       const nom = r.voyageur;
       const last = c.messages[c.messages.length - 1];
-      const canalTxt = CANAL_LABEL[c.canal];
-      const dotClass = `badge-canal--${c.canal}`;
+      const attente = getViviEnAttente(c.id);
+      // Un pictogramme discret suffit : ⏳ Vivi attend votre aval,
+      // ✦ Vivi a déjà répondu seule sur ce fil.
+      const marque = attente
+        ? `<span class="msg-conv__ia msg-conv__ia--attente" title="Réponse de Vivi à relire — ${attente.raison}">⏳ IA</span>`
+        : getViviReponses(c.id).length
+          ? `<span class="msg-conv__ia" title="Vivi a répondu automatiquement sur cette conversation">✦ IA</span>`
+          : '';
       return `<div class="msg-conv ${c.id === activeId ? 'is-active' : ''}" data-id="${c.id}">
         <span class="avatar ${AVA[i % 4]}">${initiales(nom)}</span>
         <div class="msg-conv__body">
           <div class="msg-conv__top"><span class="msg-conv__name">${nom}</span><span class="msg-conv__time">${c.horodatage}</span></div>
-          <div class="msg-conv__sub"><span class="badge-canal ${dotClass}" style="font-size:var(--fs-xs)"><span class="dot"></span>${canalTxt}</span></div>
+          <div class="msg-conv__sub"><span class="badge-canal badge-canal--${c.canal}" style="font-size:var(--fs-xs)"><span class="dot"></span>${CANAL_LABEL[c.canal]}</span>${marque}</div>
           <div class="msg-conv__top"><span class="msg-conv__preview">${last.texte}</span>${c.nonLu ? `<span class="msg-conv__unread">${c.nonLu}</span>` : ''}</div>
         </div>
       </div>`;
-    }).join('') || '<div class="empty"><h4>Aucune conversation</h4></div>';
+    }).join('') || `<div class="empty"><h4>${vides[filtre]}</h4></div>`;
+
+    // Le compteur du filtre IA rend le travail restant visible sans cliquer.
+    const btnIA = document.querySelector('#msg-filters [data-filtre="ia"]');
+    if (btnIA) {
+      const n = viviReponsesEnAttente().filter(r => canalActif((CONVERSATIONS.find(c => c.id === r.conversationId) || {}).canal)).length;
+      btnIA.textContent = n ? `IA à relire · ${n}` : 'IA à relire';
+    }
   }
 
   /* ---------- Fil de discussion ---------- */
@@ -99,12 +147,98 @@ Layout.init('messagerie');
     if (backBtn) backBtn.addEventListener('click', () => elLayout.classList.remove('is-thread-open'));
 
     elThread.innerHTML = `<div class="msg-daysep">Séjour du ${formatPlage(r.arrivee, r.depart)}</div>` +
-      c.messages.map(m => `<div class="msg-bubble msg-bubble--${m.de === 'hote' ? 'out' : 'in'}">
-        ${m.texte}<div class="msg-bubble__time">${m.heure}</div></div>`).join('');
+      c.messages.map((m, i) => {
+        // Un message signé Vivi doit être identifiable : c'est la condition
+        // pour faire confiance à l'automatisation.
+        const parVivi = m.de === 'hote' && viviAEcrit(c.id, i);
+        const rep = parVivi ? getViviReponses(c.id).find(x => x.msgIndex === i) : null;
+        return `<div class="msg-bubble msg-bubble--${m.de === 'hote' ? 'out' : 'in'}">
+          ${m.texte}
+          <div class="msg-bubble__time">${parVivi
+            ? `<span class="msg-bubble__vivi" title="Vivi · confiance ${rep.confiance} % · ${viviOrigine(rep)}">✦ ${rep.corrigee ? 'Vivi, corrigée par vous' : rep.approuvee ? 'Vivi, approuvée par vous' : 'Envoyé par Vivi'}</span> · ${m.heure}`
+            : m.heure}</div>
+        </div>`;
+      }).join('');
     elThread.scrollTop = elThread.scrollHeight;
 
+    renderVivi(c);
     renderCtx(c, r, l, v);
     renderList();
+  }
+
+  /* ---------- Bloc Vivi au-dessus du composeur ---------- */
+  // Trois états possibles, et un seul affiché à la fois :
+  //   1. une proposition attend votre aval → Approuver / Éditer / Refuser
+  //   2. Vivi a déjà répondu seule sur ce fil → rappel discret
+  //   3. l'offre n'inclut pas l'IA → invitation à en savoir plus, une seule
+  //      fois par conversation et seulement si le voyageur attend une réponse
+  function renderVivi(c) {
+    const zone = document.getElementById('msg-vivi');
+    if (!zone) return;
+
+    const attente = getViviEnAttente(c.id);
+    const niveau = viviNiveauIA();
+
+    if (attente) {
+      const enEdition = editionIA === attente.id;
+      zone.className = 'msg-vivi msg-vivi--attente';
+      zone.innerHTML = `
+        <div class="msg-vivi__head">
+          <span class="msg-vivi__ic"><img src="../assets/vivi.svg" alt="" aria-hidden="true" /></span>
+          <div class="grow">
+            <b>${attente.statut === 'escaladee' ? 'Vivi a escaladé ce message' : 'Réponse proposée par Vivi'}</b>
+            <small>${attente.raison} · confiance ${attente.confiance} %</small>
+          </div>
+          <span class="badge ${VIVI_STATUT_BADGE[attente.statut]}">${VIVI_STATUT_LABEL[attente.statut]}</span>
+        </div>
+        ${enEdition
+          ? `<textarea class="textarea msg-vivi__edit" id="msg-vivi-txt">${attente.reponse.replace(/</g, '&lt;')}</textarea>`
+          : `<p class="msg-vivi__texte">${attente.reponse}</p>`}
+        <div class="msg-vivi__actions">
+          ${enEdition
+            ? `<button type="button" class="btn btn--primary btn--sm" data-ia-save="${attente.id}">Envoyer ma version</button>
+               <button type="button" class="btn btn--ghost btn--sm" data-ia-cancel>Annuler</button>`
+            : `<button type="button" class="btn btn--primary btn--sm" data-ia-ok="${attente.id}">Approuver et envoyer</button>
+               <button type="button" class="btn btn--secondary btn--sm" data-ia-edit="${attente.id}">Éditer</button>
+               <button type="button" class="btn btn--ghost btn--sm" data-ia-no="${attente.id}">Refuser</button>`}
+        </div>`;
+      return;
+    }
+
+    const deja = getViviReponses(c.id);
+    if (deja.length) {
+      // La plus récente = celle qui porte le msgIndex le plus élevé.
+      const derniere = deja.reduce((a, b) => (b.msgIndex > a.msgIndex ? b : a));
+      const auto = deja.filter(r => !r.approuvee).length;
+      zone.className = 'msg-vivi msg-vivi--ok';
+      zone.innerHTML = `
+        <div class="msg-vivi__head">
+          <span class="msg-vivi__ic"><img src="../assets/vivi.svg" alt="" aria-hidden="true" /></span>
+          <div class="grow">
+            <b>${auto ? 'Vivi a répondu automatiquement' : 'Réponse de Vivi validée'}</b>
+            <small>${deja.length} réponse${deja.length > 1 ? 's' : ''} sur ce fil · la dernière ${viviOrigine(derniere)}</small>
+          </div>
+          <a class="btn btn--ghost btn--sm" href="vivi.html#audit">Voir l'audit</a>
+        </div>`;
+      return;
+    }
+
+    if (niveau !== 'avancee' && c.nonLu > 0) {
+      zone.className = 'msg-vivi msg-vivi--promo';
+      zone.innerHTML = `
+        <div class="msg-vivi__head">
+          <span class="msg-vivi__ic"><img src="../assets/vivi.svg" alt="" aria-hidden="true" /></span>
+          <div class="grow">
+            <b>Vivi pourrait répondre à ce message</b>
+            <small>L'IA Avancée répond seule aux questions simples, dans la langue du voyageur.</small>
+          </div>
+          <a class="btn btn--secondary btn--sm" href="vivi.html">En savoir plus</a>
+        </div>`;
+      return;
+    }
+
+    zone.className = 'msg-vivi hidden';
+    zone.innerHTML = '';
   }
 
   /* ---------- Contexte réservation ---------- */
@@ -133,10 +267,73 @@ Layout.init('messagerie');
   elConvs.addEventListener('click', e => {
     const el = e.target.closest('.msg-conv'); if (!el) return;
     activeId = el.dataset.id;
+    editionIA = null;
     renderThread();
     elLayout.classList.add('is-thread-open'); // bascule vers le fil sur mobile (une seule colonne visible à la fois)
   });
   elSearch.addEventListener('input', renderList);
+
+  document.getElementById('msg-filters').addEventListener('click', e => {
+    const b = e.target.closest('button[data-filtre]'); if (!b) return;
+    filtre = b.dataset.filtre;
+    document.querySelectorAll('#msg-filters button').forEach(x => x.classList.toggle('is-active', x === b));
+    renderList();
+  });
+
+  /* ---------- Actions sur la proposition de Vivi ---------- */
+  document.getElementById('msg-vivi').addEventListener('click', e => {
+    const ok = e.target.closest('[data-ia-ok]');
+    if (ok) {
+      viviApprouver(ok.dataset.iaOk);
+      editionIA = null;
+      if (typeof saveOyviaState === 'function') saveOyviaState();
+      renderThread();
+      UI.toast('Réponse de Vivi envoyée au voyageur');
+      return;
+    }
+    const ed = e.target.closest('[data-ia-edit]');
+    if (ed) {
+      editionIA = ed.dataset.iaEdit;
+      renderVivi(CONVERSATIONS.find(x => x.id === activeId));
+      const ta = document.getElementById('msg-vivi-txt');
+      if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+      return;
+    }
+    if (e.target.closest('[data-ia-cancel]')) {
+      editionIA = null;
+      renderVivi(CONVERSATIONS.find(x => x.id === activeId));
+      return;
+    }
+    const sv = e.target.closest('[data-ia-save]');
+    if (sv) {
+      const txt = document.getElementById('msg-vivi-txt').value.trim();
+      if (!txt) { UI.toast('La réponse ne peut pas être vide', false); return; }
+      viviApprouver(sv.dataset.iaSave, txt);
+      editionIA = null;
+      if (typeof saveOyviaState === 'function') saveOyviaState();
+      renderThread();
+      UI.toast('Votre version a été envoyée — Vivi en tiendra compte');
+      return;
+    }
+    const no = e.target.closest('[data-ia-no]');
+    if (no) {
+      const id = no.dataset.iaNo;
+      UI.confirm({
+        title: 'Refuser cette réponse ?',
+        message: "La proposition de Vivi sera supprimée. Le message du voyageur reste ici, mais il n'aura pas de réponse tant que vous n'aurez pas écrit vous-même.",
+        confirmText: 'Refuser la réponse',
+        cancelText: 'Annuler',
+        danger: true,
+        onConfirm() {
+          viviRefuser(id);
+          editionIA = null;
+          if (typeof saveOyviaState === 'function') saveOyviaState();
+          renderThread();
+          UI.toast('Réponse refusée');
+        },
+      });
+    }
+  });
 
   elTemplate.addEventListener('change', () => {
     const i = elTemplate.value; if (i === '') return;
@@ -159,5 +356,8 @@ Layout.init('messagerie');
   elInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
   elInput.addEventListener('input', () => { elInput.style.height = 'auto'; elInput.style.height = Math.min(elInput.scrollHeight, 140) + 'px'; });
 
+  // Le filtre peut venir de l'URL (?filtre=ia) : on aligne le bouton actif sur
+  // l'état réel, sinon la barre annoncerait « Toutes » sur une liste filtrée.
+  document.querySelectorAll('#msg-filters button').forEach(b => b.classList.toggle('is-active', b.dataset.filtre === filtre));
   renderThread();
 })();

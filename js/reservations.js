@@ -9,15 +9,16 @@ Layout.init('reservations');
   const tbody = document.getElementById('resa-tbody');
   const today = parseDate(AUJOURDHUI);
 
+  // Le filtre par logement n'est plus dupliqué dans la barre de filtres :
+  // c'est le sélecteur partagé de l'en-tête de page (#app-logement), rempli
+  // et câblé par layout.js.
   const F = {
     q: document.getElementById('resa-search'),
     canal: document.getElementById('resa-canal'),
-    logement: document.getElementById('resa-logement'),
+    logement: document.getElementById('app-logement'),
     paiement: document.getElementById('resa-paiement'),
     periode: document.getElementById('resa-periode'),
   };
-  F.logement.innerHTML = '<option value="all">Tous les logements</option>' +
-    LOGEMENTS.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
 
   function matchPeriode(r, p) {
     const a = parseDate(r.arrivee), d = parseDate(r.depart);
@@ -112,8 +113,10 @@ Layout.init('reservations');
   });
 
   tbody.addEventListener('click', e => { const tr = e.target.closest('tr[data-res]'); if (tr) UI.openResa(tr.dataset.res); });
-  Object.values(F).forEach(el => el.addEventListener('input', render));
-  document.addEventListener('logementChange', e => { F.logement.value = e.detail; render(); });
+  // F.logement est exclu : layout.js émet déjà logementChange à sa place,
+  // l'écouter deux fois provoquerait un double rendu.
+  Object.entries(F).forEach(([k, el]) => { if (k !== 'logement') el.addEventListener('input', render); });
+  document.addEventListener('logementChange', render);
   document.addEventListener('resaChanged', render);
 
   render();

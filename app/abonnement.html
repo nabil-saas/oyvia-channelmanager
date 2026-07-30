@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
 </head>
 <body class="app">
   <div class="app-shell">
@@ -23,7 +24,7 @@
         <div class="app-pagehead">
           <div>
             <h1>Abonnement &amp; Facturation</h1>
-            <p>Vos logements gérés, vos options et votre facturation.</p>
+            <p>Votre offre, vos logements gérés et votre facturation.</p>
           </div>
         </div>
 
@@ -36,8 +37,14 @@
             <p class="eyebrow mb-4">Facturation</p>
             <div id="ab-summary"><!-- injecté --></div>
             <button class="btn btn--primary btn--block" style="margin-top:var(--sp-5)" onclick="UI.toast('Facture PDF téléchargée')">Télécharger la dernière facture</button>
-            <a class="btn btn--secondary btn--block" style="margin-top:var(--sp-2)" href="../index.html#tarifs">Voir les tranches tarifaires</a>
+            <a class="btn btn--secondary btn--block" style="margin-top:var(--sp-2)" href="../index.html#tarifs">Comparer les offres publiques</a>
           </div>
+        </div>
+
+        <!-- Comparatif des 4 offres + changement d'offre -->
+        <div class="card card--pad mt-4">
+          <p class="eyebrow mb-4">Changer d'offre</p>
+          <div class="ab-plans" id="ab-plans"><!-- injecté --></div>
         </div>
 
         <!-- Historique de facturation -->
@@ -53,5 +60,6 @@
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/abonnement.js"></script>
+  <script src="../js/vivi.js"></script>
 </body>
 </html>

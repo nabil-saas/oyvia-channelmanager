@@ -1,71 +1,129 @@
 /* ============================================================
-   OYVIA — Abonnement : mois en cours, options, historique
-   Modèle : un tarif dégressif s'applique au nombre TOTAL de
-   logements gérés (COMPTE.nbLogements), qu'ils aient été réservés
-   ou non dans le mois — mêmes tranches (TRANCHES_TARIFAIRES) que
-   la landing page, pour rester cohérent.
+   OYVIA — Abonnement : offre en cours, comparatif, options, historique
+   Modèle : 3 offres (PLANS dans js/data.js), les mêmes que la landing.
+     · Gratuit → essai de 15 jours
+     · Smart / Business → prix × nombre de logements gérés
+   L'offre du compte est COMPTE.plan ; on peut en changer depuis cette
+   page (le changement est immédiat dans la démo et déverrouille /
+   verrouille l'IA Avancée de Vivi).
    ============================================================ */
 Layout.init('abonnement');
 
 (function () {
   const nbLog = COMPTE.nbLogements;
   const moisCourant = HISTORIQUE_FACTURATION[HISTORIQUE_FACTURATION.length - 1];
-  const trancheCourante = trancheTarifaire(nbLog);
-  const baseCourante = trancheCourante.prix === null ? null : trancheCourante.prix * nbLog;
-
-  // WhatsApp est facturé à l'usage → estimation mensuelle sur un volume type,
-  // proportionnelle à l'ensemble du parc géré.
-  function whatsappEstimate() {
-    const wa = OPTIONS_LANDING.find(o => o.id === 'whatsapp');
-    const rate = c => (wa.tarifs.find(t => t.cat.toLowerCase().includes(c)) || {}).prix || 0;
-    const nUtil = nbLog * 25, nMkt = nbLog * 6, nService = nbLog * 30;
-    return { messages: nUtil + nMkt + nService, cost: nUtil * rate('utilitaire') + nMkt * rate('marketing') };
-  }
 
   function renderHero() {
+    const p = getPlan(COMPTE.plan);
+    const prix = planPrixTexte(p.id);
     document.getElementById('ab-hero').innerHTML = `
       <span class="ab-hero__badge">Mois en cours — ${moisCourant.mois}</span>
-      <div class="ab-hero__plan">${formatMAD(baseCourante)}</div>
-      <p style="opacity:.85;font-size:var(--fs-sm);position:relative">Facturation simple : un tarif dégressif par logement géré, chaque mois.</p>
+      <div class="ab-hero__plan">${formatMAD(planTotal(p.id, nbLog))}</div>
+      <p style="opacity:.85;font-size:var(--fs-sm);position:relative">Offre <b>${p.nom}</b> — ${prix.montant} ${prix.suffixe}.</p>
       <div class="ab-hero__row">
         <div class="ab-hero__stat"><small>Logements gérés</small><b>${nbLog}</b></div>
-        <div class="ab-hero__stat"><small>Tarif appliqué</small><b>${trancheCourante.prix === null ? 'Sur devis' : formatMAD(trancheCourante.prix) + ' /logement'}</b></div>
+        <div class="ab-hero__stat"><small>Offre</small><b>${p.nom}</b></div>
+        <div class="ab-hero__stat"><small>Assistant IA</small><b>${p.ia === 'avancee' ? 'Vivi IA Avancée' : 'Non inclus'}</b></div>
       </div>`;
   }
 
   function renderSummary() {
-    const waActive = COMPTE.optionsActives.includes('whatsapp');
-    const est = whatsappEstimate();
-    const waLine = waActive
-      ? `<div class="ab-summline"><span>WhatsApp voyageur <span class="text-muted">(à l'usage)</span></span><span>≈ ${formatMAD(est.cost)}</span></div>`
-      : '';
-    const total = (baseCourante || 0) + (waActive ? est.cost : 0);
+    const p = getPlan(COMPTE.plan);
+    const base = planTotal(p.id, nbLog);
+    const ligneBase = `${nbLog} logement${nbLog > 1 ? 's' : ''} × ${formatMAD(p.prix)} (${p.nom}) · ${moisCourant.mois}`;
 
     document.getElementById('ab-summary').innerHTML = `
-      <div class="ab-summline"><span>${nbLog} logement${nbLog > 1 ? 's' : ''} géré${nbLog > 1 ? 's' : ''} · ${moisCourant.mois}</span><span>${formatMAD(baseCourante)}</span></div>
-      ${waLine}
-      <div class="ab-summline--total ab-summline"><span>Total mensuel${waActive ? ' estimé' : ''}</span><b>${baseCourante === null ? 'Sur devis' : formatMAD(total)}</b></div>
-      ${waActive
-        ? `<p class="text-xs text-muted" style="margin-top:var(--sp-2)">Estimation WhatsApp sur ~${est.messages} messages/mois ; les réponses en fenêtre de 24 h sont gratuites.</p>`
-        : `<p class="text-xs text-muted" style="margin-top:var(--sp-2)">Sans engagement, résiliable à tout moment. Facturation basée sur le nombre total de logements gérés.</p>`}`;
+      <div class="ab-summline"><span>${ligneBase}</span><span>${formatMAD(base)}</span></div>
+      <div class="ab-summline--total ab-summline"><span>Total mensuel</span><b>${formatMAD(base)}</b></div>
+      <p class="text-xs text-muted" style="margin-top:var(--sp-2)">Sans engagement, résiliable à tout moment. Aucune option facturée en plus : l'intégration WhatsApp est comprise dans votre offre.</p>`;
+  }
+
+  /* ---------- Comparatif des offres, avec changement d'offre ---------- */
+  function renderPlans() {
+    const zone = document.getElementById('ab-plans');
+    if (!zone) return;
+    const actuel = COMPTE.plan;
+
+    zone.innerHTML = PLANS.map(p => {
+      const prix = planPrixTexte(p.id);
+      const isActuel = p.id === actuel;
+
+      // Même découpage par groupes que la landing, mais sans les descriptions :
+      // la carte est deux fois plus étroite ici.
+      const feats = planGroupes(p.id).map(g => `
+        ${g.titre ? `<li class="ab-plan__group">${g.titre}</li>` : ''}
+        ${g.items.map(f => `<li>${f.titre}</li>`).join('')}`).join('');
+
+      let action;
+      if (isActuel) action = `<span class="badge badge--positive">Offre actuelle</span>`;
+      else if (p.unite === 'essai') action = `<span class="text-xs text-muted">Essai consommé</span>`;
+      else action = `<button type="button" class="btn btn--secondary btn--sm btn--block" data-choisir="${p.id}">Passer en ${p.nom}</button>`;
+
+      return `
+        <article class="ab-plan ${isActuel ? 'is-current' : ''}">
+          <div class="ab-plan__top">
+            <b>${p.nom}</b>
+            <span>${prix.montant}<small>${prix.suffixe}</small></span>
+          </div>
+          <p class="ab-plan__total">${p.unite === 'essai'
+            ? `Gratuit ${p.essaiJours} jours`
+            : `soit ${formatMAD(planTotal(p.id, nbLog))} / mois pour ${nbLog} logement${nbLog > 1 ? 's' : ''}`}</p>
+          <ul class="ab-plan__feats">${feats}</ul>
+          <div class="ab-plan__action">${action}</div>
+        </article>`;
+    }).join('');
   }
 
   function renderHistorique() {
     const rows = HISTORIQUE_FACTURATION.map(m => {
-      const t = trancheTarifaire(m.nbLogements);
-      const montant = t.prix === null ? 'Sur devis' : formatMAD(t.prix * m.nbLogements);
+      // Le mois en cours suit l'offre réellement souscrite (COMPTE.plan),
+      // qui peut avoir été changée depuis cette page. HISTORIQUE_FACTURATION
+      // n'est pas persisté, donc on ne le mute pas.
+      const planId = m === moisCourant ? COMPTE.plan : m.plan;
+      const p = getPlan(planId);
       return `<div class="ab-hist__row">
         <span>${m.mois}</span>
+        <span>${p.nom}</span>
         <span>${m.nbLogements} logement${m.nbLogements > 1 ? 's' : ''}</span>
-        <span class="ab-hist__amount">${montant}</span>
+        <span class="ab-hist__amount">${formatMAD(planTotal(planId, m.nbLogements))}</span>
       </div>`;
     }).join('');
     document.getElementById('ab-historique').innerHTML = `
-      <div class="ab-hist__row ab-hist__row--head"><span>Mois</span><span>Logements gérés</span><span>Montant</span></div>
+      <div class="ab-hist__row ab-hist__row--head"><span>Mois</span><span>Offre</span><span>Logements gérés</span><span>Montant</span></div>
       ${rows}`;
   }
 
-  function renderAll() { renderHero(); renderSummary(); renderHistorique(); }
+  function renderAll() { renderHero(); renderSummary(); renderPlans(); renderHistorique(); }
+
+  /* ---------- Changement d'offre ---------- */
+  // Quitter Business coupe l'IA Avancée : on prévient explicitement, car
+  // Vivi cesse de répondre aux voyageurs et sa configuration devient inactive.
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-choisir]');
+    if (!btn) return;
+    const cible = getPlan(btn.dataset.choisir);
+    const perdIA = getPlan(COMPTE.plan).ia && !cible.ia;
+
+    const appliquer = () => {
+      COMPTE.plan = cible.id;
+      if (typeof saveOyviaState === 'function') saveOyviaState();
+      renderAll();
+      UI.toast(`Offre ${cible.nom} activée`);
+    };
+
+    if (perdIA) {
+      UI.confirm({
+        title: `Passer en ${cible.nom} ?`,
+        message: `Vivi cessera de répondre aux messages entrants de vos voyageurs, et les réponses en attente de relecture ne partiront plus.\n\nVos automatisations de règles (confirmation, rappels, demande d'avis) continuent de fonctionner, et la configuration de Vivi est conservée : elle redeviendra active si vous repassez en Business.`,
+        confirmText: `Passer en ${cible.nom}`,
+        cancelText: 'Annuler',
+        danger: true,
+        onConfirm: appliquer,
+      });
+    } else {
+      appliquer();
+    }
+  });
 
   renderAll();
 })();

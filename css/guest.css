@@ -60,6 +60,18 @@
 .g-cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
 .g-cta svg { width: 20px; height: 20px; }
 
+/* Code d'accès pas encore révélé : on explique quand il apparaîtra */
+.g-masque { text-align: center; color: var(--c-text-muted); }
+.g-masque svg { width: 30px; height: 30px; margin-bottom: var(--sp-3); }
+.g-masque p { font-size: var(--fs-sm); }
+
+/* Lien pas encore ouvert, expiré ou invalide : on explique plutôt que
+   d'afficher une page vide ou une erreur technique. */
+.g-closed { text-align: center; padding: var(--sp-16) var(--sp-4); }
+.g-closed svg { width: 44px; height: 44px; color: var(--c-text-muted); margin-bottom: var(--sp-5); }
+.g-closed h1 { font-size: var(--fs-xl); letter-spacing: var(--tracking-tight); }
+.g-closed p { margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--c-text-soft); max-width: 420px; margin-inline: auto; }
+
 .g-foot { text-align: center; margin-top: var(--sp-8); font-size: var(--fs-xs); color: var(--c-text-muted); }
 .g-foot a { color: var(--blue-600); font-weight: var(--fw-medium); }
 

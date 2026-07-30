@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
 </head>
 <body class="app">
   <div class="app-shell">
@@ -28,6 +29,8 @@
               <p id="lg-count">— logements connectés</p>
             </div>
             <div class="app-pagehead__actions">
+              <!-- Filtre par logement — rempli et câblé par layout.js -->
+              <select class="select app-logement-select" id="app-logement" aria-label="Filtrer par logement"></select>
               <button class="btn btn--primary" id="lg-add">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                 Ajouter un logement
@@ -59,13 +62,21 @@
       <div class="field mb-4"><label class="field__label" for="lg-f-nom">Nom du logement</label><input class="input" id="lg-f-nom" placeholder="Ex. T2 Vieux-Lyon avec balcon" /></div>
       <div class="app-grid app-grid--2">
         <div class="field"><label class="field__label" for="lg-f-ville">Ville</label><input class="input" id="lg-f-ville" placeholder="Lyon" /></div>
-        <div class="field"><label class="field__label" for="lg-f-type">Type</label>
-          <select class="select" id="lg-f-type"><option>Studio</option><option>T2</option><option>T3</option><option>Loft</option><option>Duplex</option><option>Maison</option><option>Villa</option><option>Chalet</option></select></div>
+        <!-- Options remplies depuis TYPES_LOGEMENT (js/data.js) -->
+        <div class="field"><label class="field__label" for="lg-f-type">Type de bien</label>
+          <select class="select" id="lg-f-type"></select></div>
       </div>
       <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
+        <!-- room_type : champ obligatoire côté Airbnb, il conditionne le reste -->
+        <div class="field"><label class="field__label" for="lg-f-typechambre">Type de location</label>
+          <select class="select" id="lg-f-typechambre"></select></div>
         <div class="field"><label class="field__label" for="lg-f-cap">Capacité (voyageurs)</label><input class="input" id="lg-f-cap" type="number" min="1" value="2" /></div>
-        <div class="field"><label class="field__label" for="lg-f-tarif">Tarif de base (€ / nuit)</label><input class="input" id="lg-f-tarif" type="number" min="0" value="80" /></div>
       </div>
+      <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
+        <div class="field"><label class="field__label" for="lg-f-tarif">Tarif de base (€ / nuit)</label><input class="input" id="lg-f-tarif" type="number" min="0" value="80" /></div>
+        <div class="field"><label class="field__label" for="lg-f-surface">Surface (m²)</label><input class="input" id="lg-f-surface" type="number" min="0" placeholder="48" /></div>
+      </div>
+      <p class="text-xs text-muted" style="margin-top:var(--sp-4)">Le reste de la fiche (annonce, équipements, restrictions, canaux) se complète depuis le détail du logement, une fois créé.</p>
     </div>
     <div class="modal__foot">
       <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
@@ -131,5 +142,6 @@
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/logements.js"></script>
+  <script src="../js/vivi.js"></script>
 </body>
 </html>

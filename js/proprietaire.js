@@ -54,7 +54,7 @@
       const ca = caBien(l), comm = Math.round(ca * o.commission);
       return `<tr>
         <td><div class="row gap-3"><span class="op-thumb" style="background:${l.couleur}">${l.ville.slice(0, 2).toUpperCase()}</span>
-          <div><b class="fw-semibold">${l.nom}</b><br><small class="text-muted">${l.ville} · ${l.type}</small></div></div></td>
+          <div><b class="fw-semibold">${l.nom}</b><br><small class="text-muted">${l.ville} · ${labelTypeLogement(l.type)}</small></div></div></td>
         <td class="num">${occBien(l)} %</td>
         <td class="num money">${formatEuro(ca)}</td>
         <td class="num text-soft">− ${formatEuro(comm)}</td>

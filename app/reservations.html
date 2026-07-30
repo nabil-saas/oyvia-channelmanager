@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
 </head>
 <body class="app">
   <div class="app-shell">
@@ -26,6 +27,8 @@
             <p id="resa-count">— réservations</p>
           </div>
           <div class="app-pagehead__actions">
+            <!-- Filtre par logement — rempli et câblé par layout.js -->
+            <select class="select app-logement-select" id="app-logement" aria-label="Filtrer par logement"></select>
             <button class="btn btn--secondary" id="resa-export">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
               Exporter (CSV)
@@ -48,7 +51,6 @@
             <option value="booking">Booking.com</option>
             <option value="direct">Direct</option>
           </select>
-          <select class="select" id="resa-logement"><option value="all">Tous les logements</option></select>
           <select class="select" id="resa-paiement">
             <option value="all">Tous les paiements</option>
             <option value="paye">Payé</option>
@@ -109,5 +111,6 @@
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/reservations.js"></script>
+  <script src="../js/vivi.js"></script>
 </body>
 </html>
