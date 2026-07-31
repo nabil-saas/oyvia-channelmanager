@@ -95,6 +95,36 @@ Layout.init('reservations');
     if (n > 0) RF.montant.value = l.tarifBase * n + l.menageTarif;
   }
   [RF.log, RF.arrivee, RF.depart].forEach(el => el.addEventListener('change', suggestMontant));
+
+  /* ---------- Dates réellement réservables ----------
+     Deux règles, et elles diffèrent entre l'arrivée et le départ :
+
+     · ARRIVÉE — toute nuit déjà vendue est impossible. Le jour de départ
+       d'un autre séjour reste libre : c'est la rotation du même jour.
+     · DÉPART  — il doit suivre l'arrivée, et surtout ne pas ENJAMBER la
+       réservation suivante. La borne haute est donc la première nuit
+       occupée après l'arrivée : on peut partir le jour où l'autre arrive,
+       pas après. Sans cette borne, on créerait un séjour à cheval sur un
+       autre sans qu'aucun jour cliqué ne paraisse fautif. */
+  DatePicker.range(RF.arrivee, RF.depart, () => ({
+    labels: { debut: "l'arrivée", fin: 'le départ' },
+    indispo: d => occupantNuit(RF.log.value, d),
+    note: d => occupationLogement(RF.log.value, d),
+    // La borne de fin ne peut être calculée qu'une fois l'arrivée posée :
+    // c'est la première nuit vendue après elle. On peut partir LE jour où
+    // le voyageur suivant arrive, pas au-delà.
+    maxFin: debut => prochaineNuitOccupee(RF.log.value, debut),
+    msgMax: 'Chevaucherait la réservation suivante',
+    legende: [{ classe: 'off', texte: 'Nuit déjà vendue' }, { classe: 'note', texte: 'Arrivée ou départ ce jour-là' }],
+  }));
+  // Changer de logement invalide des dates choisies pour l'ancien.
+  RF.log.addEventListener('change', () => {
+    if (RF.arrivee.value && occupantNuit(RF.log.value, RF.arrivee.value)) {
+      RF.arrivee.value = ''; RF.depart.value = '';
+      UI.toast('Dates réinitialisées : elles ne sont pas libres sur ce logement', false);
+    }
+  });
+
   function openResaModal() { RF.nom.value = ''; suggestMontant(); UI.openPanel('resa-modal'); }
   document.getElementById('resa-new').addEventListener('click', openResaModal);
   document.getElementById('rf-create').addEventListener('click', () => {

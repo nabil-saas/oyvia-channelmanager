@@ -72,8 +72,11 @@ Layout.init('automatisations');
           <span class="badge ${a.actif ? 'badge--positive' : 'badge--neutral'}">${a.actif ? 'Actif' : 'Inactif'}</span>
           <label class="switch" title="Activer/désactiver"><input type="checkbox" ${a.actif ? 'checked' : ''} data-toggle="${a.id}"><span class="switch__track"></span></label>
           <button class="btn btn--secondary btn--sm" data-edit="${a.id}">Modifier</button>
+          <button class="icon-btn icon-btn--danger" data-del="${a.id}" title="Supprimer cette automatisation" aria-label="Supprimer ${a.nom}">
+            ${icon('<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6"/><path d="M10 11v6M14 11v6"/>')}
+          </button>
         </div>
-      </div>`).join('');
+      </div>`).join('') || `<div class="empty"><h4>Aucune automatisation</h4><p>Créez-en une pour envoyer vos messages sans y penser.</p></div>`;
   }
 
   // Aperçu sur une réservation de démonstration : toutes les variables sont
@@ -275,6 +278,30 @@ Layout.init('automatisations');
 
   listEl.addEventListener('click', e => {
     const edit = e.target.closest('[data-edit]'); if (edit) { showEdit(edit.dataset.edit); return; }
+
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const a = AUTOMATISATIONS.find(x => x.id === del.dataset.del);
+      if (!a) return;
+      // On rappelle le volume déjà traité : supprimer une automatisation qui
+      // tourne depuis des mois n'a pas le même poids qu'en supprimer une
+      // créée par erreur cinq minutes plus tôt.
+      const historique = a.envoyes
+        ? `\n\nElle a déjà envoyé ${a.envoyes} messages. L'historique des envois passés est conservé, mais plus aucun message ne partira.`
+        : '';
+      UI.confirm({
+        title: `Supprimer « ${a.nom} » ?`,
+        message: `Cette automatisation sera définitivement retirée.${historique}\n\nPour l'interrompre sans la perdre, désactivez-la plutôt avec l'interrupteur.`,
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler',
+        danger: true,
+        onConfirm() {
+          supprimerEntite('AUTOMATISATIONS', a.id);
+          renderList();
+          UI.toast(`« ${a.nom} » supprimée`);
+        },
+      });
+    }
   });
   listEl.addEventListener('change', e => {
     const t = e.target.closest('[data-toggle]'); if (t) {

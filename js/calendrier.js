@@ -167,6 +167,29 @@ Layout.init('calendrier');
       ${p.nom}
       <small>${p.role} · ${p.zone}</small>
     </label>`).join('');
+  /* ---------- Dates réellement blocables ----------
+     Un blocage est une réservation comme une autre dans le modèle : il
+     occupe les mêmes nuits et obéit donc aux mêmes règles. Bloquer une
+     nuit déjà vendue reviendrait à surréserver le logement. */
+  const blkLog = document.getElementById('blk-log');
+  const blkFrom = document.getElementById('blk-from');
+  const blkTo = document.getElementById('blk-to');
+  DatePicker.range(blkFrom, blkTo, () => ({
+    labels: { debut: 'la date de début', fin: 'la date de fin' },
+    indispo: d => occupantNuit(blkLog.value, d),
+    note: d => occupationLogement(blkLog.value, d),
+    maxFin: debut => prochaineNuitOccupee(blkLog.value, debut),
+    msgMax: 'Chevaucherait une réservation existante',
+    uniteDuree: 'jours bloqués',
+    legende: [{ classe: 'off', texte: 'Nuit déjà occupée' }, { classe: 'note', texte: 'Arrivée ou départ' }],
+  }));
+  blkLog.addEventListener('change', () => {
+    if (blkFrom.value && occupantNuit(blkLog.value, blkFrom.value)) {
+      blkFrom.value = ''; blkTo.value = '';
+      UI.toast('Dates réinitialisées : elles sont occupées sur ce logement', false);
+    }
+  });
+
   document.getElementById('cal-block').addEventListener('click', () => {
     document.getElementById('blk-motif').value = '';
     document.querySelectorAll('#blk-prest-list input:checked').forEach(c => { c.checked = false; });

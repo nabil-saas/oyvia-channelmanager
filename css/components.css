@@ -249,3 +249,72 @@
 .toast { background: var(--bg-ink); color: #fff; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-full); font-size: var(--fs-sm); box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: var(--sp-2); animation: toast-in var(--t) both; }
 .toast svg { width: 16px; height: 16px; color: var(--green-500); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================================
+   Sélecteur de date contextuel (js/datepicker.js)
+   Au-dessus des modales : il s'ouvre depuis un champ qui s'y trouve.
+   ============================================================ */
+.dp-input { cursor: pointer; }
+/* L'icône native ouvrirait le calendrier du navigateur, qui ignore nos
+   contraintes : on la masque et le champ entier devient la zone cliquable. */
+.dp-input::-webkit-calendar-picker-indicator { display: none; }
+
+.dp { position: absolute; z-index: calc(var(--z-modal) + 5); width: 300px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl); box-shadow: var(--shadow-lg); padding: var(--sp-3); opacity: 0; visibility: hidden; transition: opacity var(--t-fast), visibility var(--t-fast); }
+.dp.is-open { opacity: 1; visibility: visible; }
+.dp__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); }
+.dp__head b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); text-transform: capitalize; }
+.dp__nav { width: 30px; height: 30px; border-radius: var(--r-full); font-size: var(--fs-lg); line-height: 1; color: var(--c-text-soft); }
+.dp__nav:hover { background: var(--c-surface-alt); color: var(--c-text); }
+/* minmax(0, 1fr) et non 1fr : par défaut une colonne de grille ne descend
+   pas sous la taille minimale de son contenu. Le bouton-jour mesurant 32 px
+   de pastille + 12 px de padding, les colonnes se figeaient à 44 px, soit
+   308 px pour sept — dans un panneau qui n'en offre que 274. La dernière
+   colonne sortait donc du cadre, et l'en-tête (des <span> sans contrainte)
+   ne s'alignait plus sur la grille. */
+.dp__dows, .dp__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.dp__dows span { text-align: center; font-size: 10px; font-weight: var(--fw-semibold); color: var(--c-text-muted); padding-bottom: var(--sp-1); }
+
+/* Aucune gouttière entre les jours : la traînée d'une plage doit être
+   continue d'un jour au suivant. L'espacement visuel vient de la pastille
+   ronde à l'intérieur, plus petite que sa case. */
+.dp__vide { height: 38px; }
+.dp__jour { height: 38px; padding: 0; display: grid; place-items: center; position: relative; }
+.dp__pip { width: min(32px, 100%); height: 32px; aspect-ratio: 1; display: grid; place-items: center; border-radius: var(--r-full); font-size: var(--fs-sm); color: var(--c-text); transition: background var(--t-fast), color var(--t-fast); }
+.dp__jour:hover:not(:disabled) .dp__pip { background: var(--c-accent-soft); }
+.dp__jour.is-today .dp__pip { font-weight: var(--fw-bold); color: var(--blue-600); }
+.dp__jour.is-sel .dp__pip { background: var(--blue-600); color: #fff; }
+
+/* Désactivé = impossible. Barré plutôt que simplement pâle : la nuance
+   avec « signalé » doit rester lisible en un coup d'œil. */
+.dp__jour.is-off .dp__pip { color: var(--c-text-muted); opacity: .45; text-decoration: line-through; }
+.dp__jour.is-off { cursor: not-allowed; }
+.dp__jour.is-off:hover .dp__pip { background: none; }
+/* Signalé = possible, mais il se passe quelque chose ce jour-là. */
+.dp__jour.is-note::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: var(--r-full); background: var(--amber-500); }
+
+/* --- Plage sélectionnée (Airbnb / Booking) ---
+   La bande passe sur la CASE, la pastille bleue sur le jour lui-même.
+   Les extrémités n'ont qu'un demi-fond, sinon la bande dépasserait du
+   cercle et la plage semblerait déborder d'un jour de chaque côté. */
+.dp__jour.is-in { background: var(--c-accent-soft); }
+.dp__jour.is-start { background: linear-gradient(to right, transparent 50%, var(--c-accent-soft) 50%); }
+.dp__jour.is-end { background: linear-gradient(to left, transparent 50%, var(--c-accent-soft) 50%); }
+/* Tant que la fin n'est pas posée, le début est seul : pas de bande. */
+.dp__jour.is-start.is-seul { background: none; }
+.dp__jour.is-start .dp__pip, .dp__jour.is-end .dp__pip { background: var(--blue-600); color: #fff; }
+.dp__jour.is-in .dp__pip { color: var(--blue-700); }
+.dp__jour.is-in:hover .dp__pip { background: transparent; }
+.dp__jour.is-note.is-start::after, .dp__jour.is-note.is-end::after { background: #fff; }
+
+/* Pied : rappel de la plage en cours et de l'étape attendue */
+.dp__pied { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--c-border); display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-xs); min-height: 34px; }
+.dp__pied b { font-weight: var(--fw-semibold); }
+.dp__pied span { color: var(--c-text-muted); }
+.dp__reset { margin-left: auto; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--blue-600); flex-shrink: 0; }
+.dp__reset:hover { text-decoration: underline; }
+
+.dp__legende { margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--c-border); display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); font-size: 11px; color: var(--c-text-muted); }
+.dp__leg { display: inline-flex; align-items: center; gap: 5px; }
+.dp__leg i { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.dp__leg i.off { background: var(--c-border-strong); }
+.dp__leg i.note { background: var(--amber-500); border-radius: var(--r-full); }

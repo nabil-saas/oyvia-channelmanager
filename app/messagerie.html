@@ -31,11 +31,13 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
                 <input class="input" type="search" id="msg-search" placeholder="Rechercher un voyageur…" />
               </div>
-              <!-- Filtres rapides ; « IA à relire » est la cible du lien de Vivi -->
+              <!-- Filtres rapides ; « IA - À valider » est la cible du lien de Vivi.
+                   Ce filtre regroupe TOUT ce que Vivi attend de vous : les
+                   réponses proposées et les tâches déduites des messages. -->
               <div class="seg seg--sm msg-filters" id="msg-filters">
                 <button type="button" data-filtre="tout" class="is-active">Toutes</button>
                 <button type="button" data-filtre="nonlu">Non lues</button>
-                <button type="button" data-filtre="ia">IA à relire</button>
+                <button type="button" data-filtre="ia">IA - À valider</button>
               </div>
             </div>
             <div class="msg-convs" id="msg-convs"><!-- injecté --></div>
@@ -45,6 +47,8 @@
           <section class="msg-col msg-col--thread" aria-label="Discussion">
             <div class="msg-threadhead" id="msg-threadhead"><!-- injecté --></div>
             <div class="msg-thread" id="msg-thread"><!-- injecté --></div>
+            <!-- Tâche déduite du message par Vivi (injectée par messagerie.js) -->
+            <div class="msg-vivi hidden" id="msg-vivi-tache"></div>
             <!-- Proposition de réponse de Vivi (injectée par messagerie.js) -->
             <div class="msg-vivi hidden" id="msg-vivi"></div>
             <div class="msg-composer">
@@ -74,6 +78,7 @@
 
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
+  <script src="../js/datepicker.js"></script>
   <script src="../js/messagerie.js"></script>
   <script src="../js/vivi.js"></script>
 </body>

@@ -957,16 +957,25 @@ const CONVERSATIONS = [
     { de:'voyageur', texte:'Super ! Et le linge de lit est fourni ?', heure:'10:22' },
     { de:'voyageur', texte:'Dernière question : y a-t-il un parking à proximité ?', heure:'10:24' },
   ]},
-  { id:'C01', reservationId:'R07', canal:'airbnb', nonLu:2, horodatage:'09:12', messages:[
+  { id:'C01', reservationId:'R07', canal:'airbnb', nonLu:3, horodatage:'09:41', messages:[
     { de:'voyageur', texte:'Bonjour ! J\'arrive aujourd\'hui vers 15h. Comment récupérer les clés ?', heure:'08:40' },
     { de:'hote',     texte:'Bonjour Nina, bienvenue ! L\'accès se fait par boîte à clés, code 7734B à droite de la porte.', heure:'08:52' },
     { de:'voyageur', texte:'Parfait, merci. Y a-t-il un ascenseur ? J\'ai une grosse valise.', heure:'09:10' },
     { de:'voyageur', texte:'Et à quelle heure dois-je libérer le logement le 26 ?', heure:'09:12' },
+    { de:'voyageur', texte:'Je viens d\'entrer : la salle de bain n\'a pas été faite, il y a des cheveux dans la douche et la poubelle est pleine. C\'est dommage.', heure:'09:41' },
+  ]},
+  { id:'C19', reservationId:'R10', canal:'airbnb', nonLu:1, horodatage:'11:20', messages:[
+    { de:'voyageur', texte:'Bonjour, tout se passe très bien, merci pour l\'accueil !', heure:'09:30' },
+    { de:'hote',     texte:'Merci David, ravi que le séjour vous plaise ! N\'hésitez pas si besoin.', heure:'09:52' },
+    { de:'voyageur', texte:'Petit souci en revanche : la serrure de la porte d\'entrée est bloquée, on n\'arrive plus à fermer à clé.', heure:'11:20' },
   ]},
   { id:'C02', reservationId:'R32', canal:'email', nonLu:1, horodatage:'08:55', messages:[
     { de:'voyageur', texte:'Bonjour, nous arrivons en voiture ce soir. Y a-t-il un parking à proximité ?', heure:'08:30' },
     { de:'hote',     texte:'Bonjour Antoine, oui, le parking République est à 100m (payant, environ 18€/jour).', heure:'08:48' },
     { de:'voyageur', texte:'Super, merci. On sera là vers 19h.', heure:'08:55' },
+  ]},
+  { id:'C20', reservationId:'R06', canal:'booking', nonLu:1, horodatage:'07:45', messages:[
+    { de:'voyageur', texte:'Bonjour, il n\'y a plus d\'eau chaude depuis ce matin, le chauffe-eau ne redémarre pas.', heure:'07:45' },
   ]},
   { id:'C17', reservationId:'R08', canal:'whatsapp', nonLu:0, horodatage:'Hier', messages:[
     { de:'voyageur', texte:'Bonsoir, je viens de régler l\'acompte. Vous confirmez la réservation du 1er au 4 août ?', heure:'Hier 20:10' },
@@ -978,15 +987,17 @@ const CONVERSATIONS = [
     { de:'hote',     texte:'Bonjour Lucas, aucun souci, le duplex accueille jusqu\'à 4 personnes. Je mets à jour la réservation.', heure:'21 juil. 16:02' },
     { de:'voyageur', texte:'Merci ! Il y aura un lit d\'appoint du coup ?', heure:'21 juil. 16:15' },
   ]},
-  { id:'C03', reservationId:'R23', canal:'airbnb', nonLu:1, horodatage:'Hier', messages:[
+  { id:'C03', reservationId:'R23', canal:'airbnb', nonLu:1, horodatage:'09:05', messages:[
     { de:'voyageur', texte:'Bonjour, le wifi ne fonctionne pas très bien dans la chambre. Une solution ?', heure:'Hier 21:15' },
     { de:'hote',     texte:'Désolé pour la gêne Marie. Pouvez-vous redémarrer la box (bouton à l\'arrière, 30s) ?', heure:'Hier 21:30' },
     { de:'voyageur', texte:'Ça remarche, merci beaucoup !', heure:'Hier 21:48' },
+    { de:'voyageur', texte:'Rebonjour ! Il ne reste plus de papier toilette ni de capsules pour la machine à café. Possible d\'en avoir ?', heure:'09:05' },
   ]},
-  { id:'C04', reservationId:'R17', canal:'airbnb', nonLu:0, horodatage:'Hier', messages:[
+  { id:'C04', reservationId:'R17', canal:'airbnb', nonLu:1, horodatage:'08:12', messages:[
     { de:'voyageur', texte:'Hi! Could you recommend a good seafood restaurant nearby?', heure:'Hier 18:20' },
     { de:'hote',     texte:'Bonjour James ! Essayez « Chez Albert » sur le port, à 10 min à pied. Réservez le soir.', heure:'Hier 18:40' },
     { de:'voyageur', texte:'Perfect, thank you!', heure:'Hier 19:02' },
+    { de:'voyageur', texte:'Hi again — the air conditioning in the master bedroom is not working, it only blows warm air since last night. Could someone take a look?', heure:'08:12' },
   ]},
   { id:'C05', reservationId:'R03', canal:'airbnb', nonLu:0, horodatage:'22 juil.', messages:[
     { de:'voyageur', texte:'Bonjour, est-il possible de se garer facilement dans le Vieux-Lyon ?', heure:'22 juil. 14:10' },
@@ -1002,15 +1013,17 @@ const CONVERSATIONS = [
     { de:'hote',     texte:'Bonjour Lukas, bien sûr, un lit parapluie et une chaise haute seront installés.', heure:'21 juil. 16:22' },
     { de:'voyageur', texte:'Merci infiniment, c\'est parfait.', heure:'21 juil. 16:30' },
   ]},
-  { id:'C08', reservationId:'R15', canal:'booking', nonLu:1, horodatage:'21 juil.', messages:[
+  { id:'C08', reservationId:'R15', canal:'booking', nonLu:2, horodatage:'Hier', messages:[
     { de:'voyageur', texte:'Bonjour, je n\'ai pas encore réglé le solde. Puis-je payer à l\'arrivée ?', heure:'21 juil. 09:30' },
     { de:'hote',     texte:'Bonjour Elena, le solde doit être réglé 7 jours avant l\'arrivée via le lien envoyé.', heure:'21 juil. 10:00' },
     { de:'voyageur', texte:'D\'accord, je m\'en occupe cette semaine.', heure:'21 juil. 10:15' },
+    { de:'voyageur', texte:'Autre chose : nous restons une semaine complète, serait-il possible d\'avoir un ménage à mi-séjour ? Nous le paierons volontiers.', heure:'Hier 18:05' },
   ]},
-  { id:'C09', reservationId:'R29', canal:'booking', nonLu:0, horodatage:'20 juil.', messages:[
+  { id:'C09', reservationId:'R29', canal:'booking', nonLu:1, horodatage:'Hier', messages:[
     { de:'voyageur', texte:'Bonjour, les animaux sont-ils acceptés ? Nous avons un petit chien.', heure:'20 juil. 13:12' },
     { de:'hote',     texte:'Bonjour Zoé, oui les animaux calmes sont les bienvenus, sans supplément.', heure:'20 juil. 13:40' },
     { de:'voyageur', texte:'Génial, merci !', heure:'20 juil. 13:45' },
+    { de:'voyageur', texte:'Dernière chose : nous restons 5 nuits, serait-il possible d\'avoir un passage de ménage pendant le séjour ?', heure:'Hier 17:20' },
   ]},
   { id:'C10', reservationId:'R26', canal:'airbnb', nonLu:0, horodatage:'20 juil.', messages:[
     { de:'voyageur', texte:'Bonjour, j\'arrive en train à La Rochelle. Le logement est-il loin de la gare ?', heure:'20 juil. 10:05' },
@@ -1039,6 +1052,62 @@ const CONVERSATIONS = [
     { de:'hote',     texte:'Merci Paolo ! La caution est libérée sous 5 jours après le départ, tout est parfait.', heure:'15 juil. 20:20' },
   ]},
 ];
+
+/* ============================================================
+   DISPONIBILITÉ — ce qui alimente les sélecteurs de date
+
+   Convention hôtelière : une réservation du 3 au 6 occupe les NUITS
+   du 3, 4 et 5. Le 6 est un jour de départ, il reste donc disponible
+   à l'arrivée d'un autre voyageur (rotation le jour même). Compter le
+   jour de départ comme occupé interdirait à tort une nuit sur deux.
+   ============================================================ */
+
+// Map « date de nuit » → réservation qui l'occupe, pour un logement.
+function nuitsOccupees(logementId, ignorerReservationId) {
+  const occ = new Map();
+  RESERVATIONS.forEach(r => {
+    if (r.logementId !== logementId) return;
+    if (ignorerReservationId && r.id === ignorerReservationId) return;
+    for (let d = r.arrivee; d < r.depart; d = addDays(d, 1)) occ.set(d, r);
+  });
+  return occ;
+}
+
+// Libellé de l'occupant d'une nuit, pour l'infobulle du jour désactivé.
+function occupantNuit(logementId, date, ignorerReservationId) {
+  const r = nuitsOccupees(logementId, ignorerReservationId).get(date);
+  if (!r) return null;
+  return r.canal === 'bloque'
+    ? `Bloqué — ${r.voyageur}`
+    : `Réservé — ${r.voyageur} (${formatPlage(r.arrivee, r.depart)})`;
+}
+
+// Première nuit occupée à partir d'une date : borne haute d'un départ.
+// Un séjour peut se terminer LE jour où le suivant commence, d'où le
+// fait que cette date soit une borne inclusive côté départ.
+function prochaineNuitOccupee(logementId, depuis, ignorerReservationId) {
+  const occ = nuitsOccupees(logementId, ignorerReservationId);
+  const futures = [...occ.keys()].filter(d => d >= depuis).sort();
+  return futures.length ? futures[0] : null;
+}
+
+// Le voyageur est-il sur place ce jour-là ? Sert à SIGNALER, pas à
+// interdire : un ménage de mi-séjour se fait justement pendant le séjour.
+function occupationLogement(logementId, date) {
+  const r = RESERVATIONS.find(x => x.logementId === logementId
+    && x.canal !== 'bloque' && date >= x.arrivee && date <= x.depart);
+  if (!r) return null;
+  if (date === r.arrivee) return `Arrivée de ${r.voyageur}`;
+  if (date === r.depart)  return `Départ de ${r.voyageur}`;
+  return `${r.voyageur} sur place`;
+}
+
+// Charge d'un prestataire un jour donné. On signale, on n'interdit pas :
+// une femme de ménage enchaîne plusieurs logements dans la journée.
+function chargePrestataire(prestataireId, date, ignorerTacheId) {
+  return TACHES.filter(t => t.prestataireId === prestataireId
+    && t.date === date && t.statut !== 'termine' && t.id !== ignorerTacheId);
+}
 
 /* ============================================================
    PRESTATAIRES (5) — équipe ménage / maintenance
@@ -1506,7 +1575,25 @@ const VIVI_CONFIG = {
     silenceFin:'08:00',
     approbateurs:'moi_managers',
   },
-  // D — Contexte par logement : UNIQUEMENT ce qu'Oyvia ne sait pas déjà.
+  // D — Tâches ménagères déduites des messages.
+  //
+  // Déroulé standard, en deux temps :
+  //   1. Vivi RÉPOND au voyageur — envoi automatique ou mise en attente,
+  //      selon les garde-fous et le seuil de confiance ci-dessus ;
+  //   2. la TÂCHE vous est proposée et attend votre validation.
+  //
+  // La validation est donc le défaut sur toutes les catégories : engager un
+  // prestataire coûte un déplacement, alors qu'un accusé de réception n'engage
+  // qu'une phrase. « Créer seule » reste disponible pour les sujets où vous
+  // jugez le risque nul (typiquement le réapprovisionnement).
+  //   auto    → Vivi crée la tâche immédiatement et vous notifie
+  //   valider → Vivi prépare la tâche, vous la créez d'un clic
+  //   ignorer → Vivi ne propose rien sur ce sujet
+  taches: {
+    actif:true,
+    modes: { panne:'valider', proprete:'valider', consommables:'valider', menage_sejour:'valider' },
+  },
+  // E — Contexte par logement : UNIQUEMENT ce qu'Oyvia ne sait pas déjà.
   // L'adresse, le code d'accès, le Wi-Fi et les équipements viennent de la
   // fiche du logement (LOGEMENTS) et les horaires des paramètres généraux :
   // les redemander ici créerait deux sources de vérité pour la même donnée.
@@ -1667,6 +1754,9 @@ function viviStatutLabel(r) {
 }
 // Comment une réponse est partie, en une phrase courte réutilisable partout.
 function viviOrigine(r) {
+  // Une confirmation de créneau n'est ni « approuvée » ni « automatique » :
+  // c'est la suite directe de la tâche que vous venez de créer.
+  if (r.confirmationCreneau) return 'envoyée à la création de la tâche';
   if (r.corrigee) return 'corrigée puis envoyée par vous';
   if (r.approuvee) return 'approuvée par vous';
   return `envoyée automatiquement en ${r.delai} s`;
@@ -1674,6 +1764,593 @@ function viviOrigine(r) {
 function viviRefuser(id) {
   const i = VIVI_REPONSES.findIndex(x => x.id === id);
   if (i > -1) VIVI_REPONSES.splice(i, 1);
+}
+
+/* ---------- Pourquoi cette réponse attend-elle ? ----------
+   Le seuil de confiance n'est qu'UNE des trois conditions d'envoi
+   automatique. Une réponse peut donc très bien afficher 96 % et
+   attendre quand même, parce qu'un garde-fou s'est déclenché ou que
+   le message est arrivé pendant les heures de silence.
+
+   Afficher côte à côte « en attente » et « confiance 96 % » sans
+   expliciter le lien laissait croire à une incohérence. On qualifie
+   donc la confiance PAR RAPPORT AU SEUIL, et on nomme le vrai
+   bloquant.
+     type : 'gardefou'  → l'escalade prime, la confiance n'entre pas en jeu
+            'confiance' → c'est bien le seuil qui n'est pas atteint
+            'autre'     → seuil atteint, mais une autre règle retient l'envoi */
+function viviMotifAttente(r) {
+  if (!r || r.statut === 'envoyee') return null;
+  const seuil = (VIVI_CONFIG.gardeFous && VIVI_CONFIG.gardeFous.confianceMin) || 0;
+  const atteint = r.confiance >= seuil;
+  const type = r.statut === 'escaladee' ? 'gardefou' : (atteint ? 'autre' : 'confiance');
+  return {
+    type, seuil, atteint, confiance: r.confiance, cause: r.raison || '',
+    // Étiquette courte affichée à côté du statut.
+    etiquette: type === 'gardefou'
+      ? 'Garde-fou'
+      : `${r.confiance} % ${atteint ? '≥' : '<'} seuil ${seuil} %`,
+    // Phrase complète, pour les infobulles et l'audit.
+    phrase: type === 'gardefou'
+      ? `Garde-fou déclenché — ${r.raison}. L'escalade prime sur la confiance (${r.confiance} %).`
+      : type === 'confiance'
+        ? `Confiance ${r.confiance} %, sous votre seuil de ${seuil} % — ${r.raison}.`
+        : `Confiance ${r.confiance} %, votre seuil de ${seuil} % est atteint. C'est une autre règle qui retient l'envoi — ${r.raison}.`,
+  };
+}
+
+/* ============================================================
+   VIVI — TÂCHES DÉDUITES DES MESSAGES
+
+   Quand un voyageur signale un besoin d'intervention, le déroulé est
+   en DEUX TEMPS, dans cet ordre :
+
+     1. Vivi RÉPOND au voyageur. Cette réponse passe par les mêmes
+        règles que toutes ses réponses — garde-fous, seuil de confiance,
+        heures de silence — donc elle part seule ou attend votre aval.
+        Un voyageur qui signale une fuite ne doit pas rester sans
+        nouvelles pendant qu'on organise l'intervention.
+
+     2. La TÂCHE vous est proposée et attend votre validation. Créer
+        une tâche engage un prestataire et un déplacement : c'est une
+        décision, pas un accusé de réception.
+
+   L'unité persistée est le SIGNALEMENT (VIVI_SIGNALEMENTS), pas la
+   proposition. C'est nécessaire : l'étape 1 poste un message dans la
+   conversation, qui cesse donc d'être « restée sans réponse ». Si la
+   tâche était recalculée depuis les messages ouverts, elle
+   disparaîtrait à l'instant précis où Vivi répond.
+
+   Le balayage initial, lui, ne regarde que les messages restés sans
+   réponse : un problème que vous avez déjà traité à la main ne
+   redéclenche pas de signalement.
+   ============================================================ */
+
+const VIVI_URGENCES = {
+  haute:   { label:'Urgent',  badge:'badge--danger'  },
+  normale: { label:'Normal',  badge:'badge--neutral' },
+};
+
+// Les mots-clés simulent ici ce qu'un modèle de langue ferait en
+// production. L'ordre du tableau fait la priorité : une fuite d'eau
+// prime sur un manque de serviettes si le message parle des deux.
+//
+// Les « exemples » ne sont pas décoratifs : ce sont de vrais messages que
+// le détecteur ci-dessous classe dans cette catégorie. viviVerifierExemples()
+// le contrôle — si un exemple cesse d'être reconnu après une modification
+// des mots-clés, on le voit au lieu d'afficher une promesse fausse.
+const VIVI_CATEGORIES_TACHE = [
+  {
+    id:'panne', label:'Panne ou dégât', type:'maintenance', urgence:'haute',
+    desc:"Fuite, chauffe-eau, serrure, électroménager, climatisation, Wi-Fi.",
+    heureDefaut:'16:00', montant:0,
+    reponses:{
+      fr:"Bonjour {prenom}, merci de nous avoir signalé ce problème, et désolés pour la gêne. Nous prévenons notre intervenant dès maintenant et nous revenons vers vous dès que le passage est calé.",
+      en:"Hello {prenom}, thank you for reporting this, and sorry for the inconvenience. We're contacting our technician right away and will get back to you as soon as a visit is scheduled.",
+    },
+    confirmations:{
+      fr:"Bonjour {prenom}, c'est confirmé : notre intervenant passera {quand} pour régler le problème. Merci de votre patience !",
+      en:"Hello {prenom}, it's confirmed: our technician will come {quand} to fix the issue. Thank you for your patience!",
+    },
+    exemples:[
+      "Bonjour, il y a une fuite sous l'évier de la cuisine, ça coule depuis ce matin.",
+      "Plus d'eau chaude depuis hier soir, le chauffe-eau ne redémarre pas.",
+      "Hi, the air conditioning is not working in the bedroom.",
+    ],
+    mots:['fuite','fuit','panne','ne fonctionne pas','ne marche pas','plus d\'eau chaude','chauffe-eau','chaudière',
+          'climatisation','la clim','radiateur','serrure','bloqué','bloquée','cassé','cassée','bouché','bouchée',
+          'coupure','disjoncte','not working','is not working','doesn\'t work','broken','leak','no hot water',
+          'air conditioning'],
+  },
+  {
+    id:'proprete', label:'Problème de propreté', type:'menage', urgence:'haute',
+    desc:"Logement sale à l'arrivée, poubelles pleines, draps ou serviettes tachés.",
+    heureDefaut:'14:00', montant:0,
+    reponses:{
+      fr:"Bonjour {prenom}, je suis vraiment désolée, ce n'est pas le standard que nous voulons vous offrir. Nous programmons un passage de ménage au plus vite et nous vous confirmons l'horaire très rapidement.",
+      en:"Hello {prenom}, I'm truly sorry — this is not the standard we aim for. We're arranging a cleaning visit as soon as possible and will confirm the time shortly.",
+    },
+    confirmations:{
+      fr:"Bonjour {prenom}, c'est confirmé : une équipe de ménage passera {quand}. Encore désolés pour ce désagrément, et merci de nous l'avoir signalé.",
+      en:"Hello {prenom}, it's confirmed: a cleaning team will come {quand}. Again, sorry for the inconvenience, and thank you for letting us know.",
+    },
+    exemples:[
+      "Nous venons d'arriver et la salle de bain n'est pas propre, il y a des cheveux dans la douche.",
+      "La cuisine n'a pas été nettoyée et il reste de la poussière partout.",
+      "Les draps sales du séjour précédent sont encore sur le lit.",
+    ],
+    mots:['pas propre','pas très propre','sale','saleté','poubelle est pleine','poubelles pleines','cheveux',
+          'poussière','taché','tachés','tachée','draps sales','pas nettoyé','pas été nettoyé','pas été fait',
+          'ménage pas fait','moisi','mauvaise odeur','dirty','not clean','stains'],
+  },
+  {
+    id:'consommables', label:'Linge et consommables', type:'linge', urgence:'normale',
+    desc:"Serviettes, draps, papier toilette, capsules, produits d'entretien.",
+    heureDefaut:'09:00', montant:15,
+    reponses:{
+      fr:"Bonjour {prenom}, merci de nous avoir prévenus ! Nous organisons un réapprovisionnement et vous recevrez le nécessaire très vite.",
+      en:"Hello {prenom}, thanks for letting us know! We're arranging a restock and you'll receive everything shortly.",
+    },
+    confirmations:{
+      fr:"Bonjour {prenom}, c'est noté : le réapprovisionnement vous sera livré {quand}. Bonne journée !",
+      en:"Hello {prenom}, all set: your restock will be delivered {quand}. Have a great day!",
+    },
+    exemples:[
+      "Il ne reste plus de papier toilette ni de capsules pour la machine à café.",
+      "Serait-il possible d'avoir deux serviettes supplémentaires ?",
+      "Il n'y a plus de liquide vaisselle sous l'évier.",
+    ],
+    mots:['papier toilette','serviette','serviettes','draps','capsule','capsules','savon','shampoing',
+          'liquide vaisselle','il ne reste plus','il n\'y a plus','manque de','running out','towels','toilet paper'],
+  },
+  {
+    id:'menage_sejour', label:'Ménage en cours de séjour', type:'menage', urgence:'normale',
+    desc:"Séjour long : ménage intermédiaire demandé par le voyageur.",
+    heureDefaut:'11:00', montant:0,
+    reponses:{
+      fr:"Bonjour {prenom}, oui, c'est tout à fait possible. Nous regardons les disponibilités de notre équipe et nous revenons vers vous avec une proposition d'horaire.",
+      en:"Hello {prenom}, yes, that's absolutely possible. We're checking our team's availability and will come back to you with a suggested time.",
+    },
+    confirmations:{
+      fr:"Bonjour {prenom}, c'est confirmé : le ménage de mi-séjour est programmé {quand}. Merci de laisser l'accès possible à cette heure-là.",
+      en:"Hello {prenom}, it's confirmed: your mid-stay cleaning is scheduled {quand}. Please make sure access is possible at that time.",
+    },
+    exemples:[
+      "Nous restons deux semaines, un ménage à mi-séjour est-il possible ?",
+      "Pourrait-on avoir un passage de ménage pendant le séjour ? Nous le paierons.",
+      "Could we book a mid-stay cleaning for next Wednesday?",
+    ],
+    mots:['ménage à mi-séjour','ménage mi-séjour','mi-séjour','ménage intermédiaire','ménage pendant le séjour',
+          'passage de ménage','un ménage en cours','mid-stay clean','cleaning during'],
+  },
+];
+
+function getCategorieTache(id) { return VIVI_CATEGORIES_TACHE.find(c => c.id === id) || null; }
+function viviModeTache(catId) {
+  const m = (VIVI_CONFIG.taches && VIVI_CONFIG.taches.modes) || {};
+  return m[catId] || 'valider';
+}
+
+/* Un SIGNALEMENT = un message de voyageur qui appelle une intervention.
+   C'est l'unité persistée : une fois créé, il survit à la réponse que Vivi
+   envoie juste après (sinon la tâche disparaîtrait au moment même où elle
+   devient nécessaire).
+     statut  : ouvert (tâche à valider) | creee | refusee
+     reponseId : la réponse d'accusé de réception envoyée au voyageur */
+const VIVI_SIGNALEMENTS = [];
+
+/* ---------- Détection ---------- */
+// Renvoie { categorie, mots } ou null. Le score est le nombre de
+// mots-clés distincts trouvés ; à égalité, l'ordre du tableau tranche.
+function viviDetecterTache(texte) {
+  const t = ' ' + String(texte || '').toLowerCase() + ' ';
+  let best = null;
+  VIVI_CATEGORIES_TACHE.forEach(cat => {
+    const trouves = cat.mots.filter(m => t.includes(m));
+    if (!trouves.length) return;
+    if (!best || trouves.length > best.mots.length) best = { categorie:cat, mots:trouves };
+  });
+  return best;
+}
+
+// Auto-contrôle : chaque exemple affiché dans la configuration doit être
+// réellement classé dans sa catégorie. Renvoie la liste des exemples qui
+// ne le sont pas — vide en temps normal.
+function viviVerifierExemples() {
+  const ecarts = [];
+  VIVI_CATEGORIES_TACHE.forEach(cat => {
+    (cat.exemples || []).forEach(texte => {
+      const d = viviDetecterTache(texte);
+      if (!d || d.categorie.id !== cat.id) {
+        ecarts.push({ attendu: cat.id, obtenu: d ? d.categorie.id : null, texte });
+      }
+    });
+  });
+  return ecarts;
+}
+// Exemples effectivement reconnus : l'interface n'affiche que ceux-là, pour
+// ne jamais promettre une détection qui n'aurait pas lieu.
+function viviExemplesVerifies(catId) {
+  const cat = getCategorieTache(catId);
+  if (!cat) return [];
+  return (cat.exemples || []).filter(t => {
+    const d = viviDetecterTache(t);
+    return d && d.categorie.id === catId;
+  });
+}
+
+// Index des messages du voyageur restés sans réponse de l'hôte.
+function messagesSansReponse(c) {
+  let dernierHote = -1;
+  c.messages.forEach((m, i) => { if (m.de === 'hote') dernierHote = i; });
+  const out = [];
+  for (let i = dernierHote + 1; i < c.messages.length; i++) if (c.messages[i].de === 'voyageur') out.push(i);
+  return out;
+}
+
+/* ---------- Assignation : le prestataire habituel du logement ----------
+   On ne devine pas : on lit ce qui existe déjà, dans cet ordre.
+     1. une tâche récurrente active du même type sur ce logement
+     2. le prestataire le plus souvent intervenu sur ce logement pour ce type
+     3. n'importe quelle tâche récurrente active du logement
+     4. un prestataire dont le rôle correspond au type de tâche
+   Renvoie null si le parc n'a personne : la tâche part alors « à assigner »
+   plutôt que d'atterrir chez quelqu'un au hasard. */
+function prestataireHabituel(logementId, type) {
+  const rc = RECURRENTES.find(r => r.logementId === logementId && r.actif && r.type === type && r.prestataireId);
+  if (rc) return rc.prestataireId;
+
+  const compte = {};
+  TACHES.filter(t => t.logementId === logementId && t.type === type && t.prestataireId)
+        .forEach(t => { compte[t.prestataireId] = (compte[t.prestataireId] || 0) + 1; });
+  const top = Object.keys(compte).sort((a, b) => compte[b] - compte[a])[0];
+  if (top) return top;
+
+  const rcAny = RECURRENTES.find(r => r.logementId === logementId && r.actif && r.prestataireId);
+  if (rcAny) return rcAny.prestataireId;
+
+  const roles = { menage:'Ménage', linge:'Ménage', maintenance:'Maintenance' };
+  const p = PRESTATAIRES.find(x => x.role === roles[type]) || PRESTATAIRES.find(x => x.role === 'Polyvalent');
+  return p ? p.id : null;
+}
+function getPrestataire(id) { return PRESTATAIRES.find(p => p.id === id) || null; }
+
+/* ---------- Montant proposé ----------
+   Le tarif d'un ménage dépend surtout du logement (un chalet de 5 pièces
+   n'est pas un studio) : on reprend donc le montant des ménages déjà
+   facturés sur ce bien, et on ne retombe sur le tarif générique du
+   prestataire que si le logement n'a pas d'historique. */
+function montantHabituel(logementId, type, prestataireId) {
+  const passees = TACHES.filter(t => t.logementId === logementId && t.type === type && t.montant > 0);
+  if (passees.length) return passees[passees.length - 1].montant;
+  const p = getPrestataire(prestataireId);
+  return type === 'menage' && p ? p.tarifMenage : 0;
+}
+
+/* ---------- Date proposée ----------
+   Urgent → aujourd'hui, sinon demain ; jamais avant l'arrivée du
+   voyageur, et un ménage de mi-séjour tombe au milieu du séjour. */
+function _viviDateTache(cat, resa) {
+  if (!resa) return AUJOURDHUI;
+  if (cat.id === 'menage_sejour') {
+    const milieu = Math.max(1, Math.floor(nuitsEntre(resa.arrivee, resa.depart) / 2));
+    return addDays(resa.arrivee, milieu);
+  }
+  const base = cat.urgence === 'haute' ? AUJOURDHUI : addDays(AUJOURDHUI, 1);
+  return parseDate(base) < parseDate(resa.arrivee) ? resa.arrivee : base;
+}
+
+/* ---------- Construction d'une proposition ---------- */
+function _viviProposition(c, msgIndex, detection) {
+  const cat = detection.categorie;
+  const resa = getReservation(c.reservationId);
+  if (!resa) return null;
+  const prestataireId = prestataireHabituel(resa.logementId, cat.type);
+  return {
+    id: `VT-${c.id}-${msgIndex}`,
+    conversationId: c.id, msgIndex,
+    categorieId: cat.id, categorie: cat,
+    extrait: c.messages[msgIndex].texte,
+    // La confiance suit le nombre d'indices trouvés dans le message.
+    confiance: Math.min(96, 68 + detection.mots.length * 9),
+    tache: {
+      type: cat.type,
+      logementId: resa.logementId,
+      reservationId: resa.id,
+      date: _viviDateTache(cat, resa),
+      heure: cat.heureDefaut,
+      prestataireId,
+      montant: cat.montant || montantHabituel(resa.logementId, cat.type, prestataireId),
+      note: `Signalé par ${resa.voyageur} — ${cat.label.toLowerCase()}`,
+    },
+  };
+}
+
+function getSignalement(convId, msgIndex) {
+  return VIVI_SIGNALEMENTS.find(s => s.conversationId === convId && s.msgIndex === msgIndex) || null;
+}
+
+/* ---------- Étape 1 : la réponse au voyageur ----------
+   Un voyageur qui signale une fuite attend d'abord qu'on lui réponde.
+   Cette réponse suit EXACTEMENT les mêmes règles que les autres réponses
+   de Vivi (garde-fous, seuil de confiance, heures de silence) : il n'y a
+   pas de second circuit de décision, sinon les deux divergeraient.
+
+   La confiance part de la détection, puis chute de 25 points si le
+   logement n'a pas de contexte renseigné : Vivi promet une intervention
+   sur un bien qu'elle ne connaît pas, mieux vaut vous la faire relire.
+   C'est le même raisonnement que le « Logement non décrit » existant. */
+const _PENALITE_LOGEMENT_NON_DECRIT = 25;
+
+// Marqueurs d'escalade. On ne teste QUE les garde-fous que vous avez
+// activés dans la configuration — cocher/décocher se voit immédiatement.
+const VIVI_GF_MARQUEURS = {
+  remboursement: ['remboursement', 'rembourser', 'annuler ma réservation', 'refund', 'compensation'],
+  plainte:       ['inacceptable', 'scandaleux', 'honteux', 'porter plainte', 'inadmissible', 'unacceptable'],
+  agressif:      ['!!!', 'ras-le-bol', 'en colère', 'furieux', 'immédiatement et sans'],
+};
+function _viviGardeFouDeclenche(texte) {
+  const t = ' ' + String(texte || '').toLowerCase() + ' ';
+  const actifs = (VIVI_CONFIG.gardeFous && VIVI_CONFIG.gardeFous.escalade) || [];
+  for (const id of Object.keys(VIVI_GF_MARQUEURS)) {
+    if (!actifs.includes(id)) continue;
+    if (VIVI_GF_MARQUEURS[id].some(m => t.includes(m))) return id;
+  }
+  return null;
+}
+
+// L'heure figure dans le libellé du message (« 09:41 », « Hier 17:20 »).
+function _viviMinutes(s) {
+  const m = String(s || '').match(/(\d{1,2}):(\d{2})/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+function _viviDansSilence(heureLibelle) {
+  const g = VIVI_CONFIG.gardeFous;
+  if (!g || !g.silenceActif) return false;
+  const t = _viviMinutes(heureLibelle);
+  const debut = _viviMinutes(g.silenceDebut), fin = _viviMinutes(g.silenceFin);
+  if (t == null || debut == null || fin == null) return false;
+  // La plage traverse minuit (22 h → 8 h) dans le cas courant.
+  return debut > fin ? (t >= debut || t < fin) : (t >= debut && t < fin);
+}
+
+// Détection de langue volontairement grossière : elle sert seulement à
+// choisir le modèle de réponse. Un vrai modèle ferait mieux.
+const _VIVI_MOTS_EN = [' the ', ' is ', ' are ', ' we ', ' our ', ' could ', ' would ', ' please ',
+                       ' thank ', ' hello ', ' hi ', ' not ', ' working ', ' room ', ' there '];
+function viviLangueMessage(texte) {
+  const t = ' ' + String(texte || '').toLowerCase().replace(/[^a-zà-ÿ\s]/g, ' ').replace(/\s+/g, ' ') + ' ';
+  return _VIVI_MOTS_EN.filter(m => t.includes(m)).length >= 3 ? 'en' : 'fr';
+}
+
+// Construit et route la réponse d'accusé de réception. Renvoie l'entrée
+// ajoutée à VIVI_REPONSES, pour que l'audit et la messagerie la voient.
+function _viviRepondreAuSignalement(c, msgIndex, cat) {
+  const resa = getReservation(c.reservationId);
+  if (!resa || !cat.reponses) return null;
+  const msg = c.messages[msgIndex];
+  const langue = viviLangueMessage(msg.texte);
+  const prenom = String(resa.voyageur || '').split(' ')[0];
+  const texte = (cat.reponses[langue] || cat.reponses.fr).replace(/{prenom}/g, prenom);
+
+  const contexteConnu = !!getViviLogement(resa.logementId);
+  const base = Math.min(96, 68 + (viviDetecterTache(msg.texte) || { mots: [] }).mots.length * 9);
+  const confiance = Math.max(0, base - (contexteConnu ? 0 : _PENALITE_LOGEMENT_NON_DECRIT));
+
+  const g = VIVI_CONFIG.gardeFous;
+  const gf = _viviGardeFouDeclenche(msg.texte);
+  const silence = _viviDansSilence(msg.heure);
+
+  const rep = {
+    id: `V-${c.id}-${msgIndex}`,
+    conversationId: c.id, msgIndex: null,
+    quand: `${AUJOURDHUI} ${String(msg.heure || '').slice(-5)}`,
+    langue, confiance, delai: null,
+    question: msg.texte,
+    reponse: texte,
+    origineTache: cat.id,   // trace : cette réponse accompagne un signalement
+    statut: 'attente', raison: '',
+  };
+
+  if (gf) {
+    rep.statut = 'escaladee';
+    rep.raison = (VIVI_ESCALADES.find(e => e.id === gf) || {}).label || 'Garde-fou déclenché';
+  } else if (confiance < g.confianceMin) {
+    // La carte affiche déjà « confiance X % » : on donne ici la CAUSE,
+    // pas une seconde fois le chiffre.
+    rep.raison = contexteConnu
+      ? `Sujet sensible : confiance sous votre seuil de ${g.confianceMin} %`
+      : `Logement non décrit dans le contexte de Vivi`;
+  } else if (silence) {
+    rep.raison = `Reçu pendant les heures de silence (${g.silenceDebut} – ${g.silenceFin})`;
+  } else {
+    // Envoi automatique : le message part réellement dans la conversation.
+    c.messages.push({ de: 'hote', texte, heure: "À l'instant" });
+    c.horodatage = "À l'instant";
+    rep.msgIndex = c.messages.length - 1;
+    rep.statut = 'envoyee';
+    rep.delai = g.delaiMin || 30;
+    rep.raison = null;
+  }
+
+  VIVI_REPONSES.unshift(rep);
+  return rep;
+}
+
+/* ---------- Étape 2 : la tâche ----------
+   Les propositions sont construites à partir des SIGNALEMENTS ouverts, et
+   non plus des messages restés sans réponse : Vivi vient précisément de
+   répondre, la tâche ne doit pas disparaître pour autant. */
+function viviTachesProposees(convId) {
+  if (!VIVI_CONFIG.taches || !VIVI_CONFIG.taches.actif) return [];
+  if (viviNiveauIA() !== 'avancee') return [];
+  const out = [];
+  VIVI_SIGNALEMENTS.forEach(s => {
+    if (s.statut !== 'ouvert') return;
+    if (convId && s.conversationId !== convId) return;
+    if (viviModeTache(s.categorieId) === 'ignorer') return;
+    const c = CONVERSATIONS.find(x => x.id === s.conversationId);
+    const cat = getCategorieTache(s.categorieId);
+    if (!c || !cat || !c.messages[s.msgIndex]) return;
+    const p = _viviProposition(c, s.msgIndex, { categorie: cat, mots: s.mots || [] });
+    if (p) out.push(p);
+  });
+  return out;
+}
+// Une conversation n'affiche qu'une proposition à la fois : la plus récente.
+function viviTacheEnAttente(convId) {
+  const l = viviTachesProposees(convId);
+  return l.length ? l[l.length - 1] : null;
+}
+// Signalements d'une conversation, quel que soit leur état.
+function viviSignalements(convId) {
+  return VIVI_SIGNALEMENTS.filter(s => s.conversationId === convId);
+}
+// La réponse que Vivi a produite pour un signalement donné.
+function viviReponseDuSignalement(s) {
+  return s && s.reponseId ? VIVI_REPONSES.find(r => r.id === s.reponseId) || null : null;
+}
+
+/* ---------- Étape 3 : confirmer le créneau au voyageur ----------
+   Sans elle, le voyageur reçoit « nous revenons vers vous » et plus rien :
+   la promesse de l'étape 1 reste en l'air. Cette confirmation ne passe PAS
+   par les garde-fous — elle ne fait que reprendre une date et une heure que
+   vous venez vous-même de valider, et c'est votre clic qui l'envoie. */
+function quandTache(date, heure, langue) {
+  const en = langue === 'en';
+  const jour = date === AUJOURDHUI ? (en ? 'today' : "aujourd'hui")
+    : date === addDays(AUJOURDHUI, 1) ? (en ? 'tomorrow' : 'demain')
+    : en ? `on ${date.split('-').reverse().slice(0, 2).join('/')}`
+         : `le ${formatDate(date, { jourSemaine: true, moisLong: true })}`;
+  return `${jour} ${en ? 'at' : 'à'} ${heure}`;
+}
+
+function viviTexteConfirmation(cat, resa, tache, langue) {
+  if (!cat || !cat.confirmations) return '';
+  return (cat.confirmations[langue] || cat.confirmations.fr)
+    .replace(/{prenom}/g, String(resa.voyageur || '').split(' ')[0])
+    .replace(/{quand}/g, quandTache(tache.date, tache.heure, langue));
+}
+
+/* ---------- Créer / refuser ----------
+   Créer POUSSE réellement la tâche dans TACHES : elle apparaît dans
+   la section Ménage et dans le planning du prestataire, exactement
+   comme une tâche saisie à la main.
+   « prevenir » (vrai par défaut) envoie en plus la confirmation du créneau. */
+function viviTacheCreer(propositionId, overrides, auto, prevenir) {
+  const [, convId, idx] = propositionId.split('-');
+  const msgIndex = Number(idx);
+  const s = getSignalement(convId, msgIndex);
+  const c = CONVERSATIONS.find(x => x.id === convId);
+  const cat = s ? getCategorieTache(s.categorieId) : null;
+  if (!s || s.statut !== 'ouvert' || !c || !cat) return null;
+  const p = _viviProposition(c, msgIndex, { categorie: cat, mots: s.mots || [] });
+  if (!p) return null;
+
+  const t = Object.assign({}, p.tache, overrides || {}, {
+    id: 'T' + Date.now() + Math.floor(Math.random() * 100),
+    statut: 'a_faire',
+    origine: 'vivi',                 // affiché dans la section Ménage
+    origineConversation: convId,
+  });
+  TACHES.push(t);
+  s.statut = 'creee';
+  s.tacheId = t.id;
+  s.auto = !!auto;
+  s.quand = AUJOURDHUI;
+
+  if (prevenir !== false) {
+    const resa = getReservation(c.reservationId);
+    const langue = viviLangueMessage(c.messages[msgIndex].texte);
+    const texte = viviTexteConfirmation(cat, resa, t, langue);
+    if (texte) {
+      // L'accusé de réception encore en attente devient sans objet : il
+      // annonçait « on revient vers vous », or on revient précisément.
+      // L'envoyer après la confirmation inverserait la chronologie.
+      const ack = viviReponseDuSignalement(s);
+      if (ack && ack.statut !== 'envoyee') {
+        viviRefuser(ack.id);
+        s.reponseId = null;
+        s.ackRemplace = true;
+      }
+      c.messages.push({ de: 'hote', texte, heure: "À l'instant" });
+      c.horodatage = "À l'instant";
+      const conf = {
+        id: `VC-${convId}-${msgIndex}`,
+        conversationId: convId, msgIndex: c.messages.length - 1,
+        statut: 'envoyee', quand: `${AUJOURDHUI} ${t.heure}`,
+        langue, confiance: 100, delai: null, approuvee: true,
+        reponse: texte, question: c.messages[msgIndex].texte,
+        origineTache: cat.id, confirmationCreneau: true, raison: null,
+      };
+      VIVI_REPONSES.unshift(conf);
+      s.confirmationId = conf.id;
+    }
+  }
+  return t;
+}
+function viviTacheRefuser(propositionId) {
+  const [, convId, idx] = propositionId.split('-');
+  const s = getSignalement(convId, Number(idx));
+  if (!s || s.statut !== 'ouvert') return;
+  s.statut = 'refusee';
+  s.quand = AUJOURDHUI;
+}
+// Annuler une création : la tâche disparaît de la section Ménage et la
+// proposition redevient disponible. La réponse déjà envoyée au voyageur,
+// elle, n'est pas rétractable — on ne touche pas à la conversation.
+function viviTacheAnnuler(convId, msgIndex) {
+  const s = getSignalement(convId, Number(msgIndex));
+  if (!s) return;
+  if (s.tacheId) {
+    const j = TACHES.findIndex(t => t.id === s.tacheId);
+    if (j > -1) TACHES.splice(j, 1);
+  }
+  s.tacheId = null;
+  s.auto = false;
+  s.statut = 'ouvert';
+}
+
+/* ---------- Le déroulé complet, au chargement ----------
+   1. on repère les messages qui appellent une intervention ;
+   2. Vivi RÉPOND (envoi auto ou mise en attente selon les garde-fous) ;
+   3. la tâche reste à valider — sauf catégorie réglée sur « Créer seule ».
+
+   L'étape 2 poste parfois un message dans la conversation, ce qui change
+   la liste des messages « sans réponse » : c'est pourquoi le balayage se
+   fait sur un instantané des index, avant toute écriture. */
+function _viviTraiterSignalements() {
+  if (!VIVI_CONFIG.taches || !VIVI_CONFIG.taches.actif) return;
+  if (viviNiveauIA() !== 'avancee') return;
+
+  CONVERSATIONS.forEach(c => {
+    messagesSansReponse(c).slice().forEach(i => {
+      if (getSignalement(c.id, i)) return;                 // déjà connu
+      const det = viviDetecterTache(c.messages[i].texte);
+      if (!det) return;
+      if (viviModeTache(det.categorie.id) === 'ignorer') return;
+
+      const rep = _viviRepondreAuSignalement(c, i, det.categorie);
+      VIVI_SIGNALEMENTS.push({
+        id: `VS-${c.id}-${i}`,
+        conversationId: c.id, msgIndex: i,
+        categorieId: det.categorie.id,
+        mots: det.mots,
+        statut: 'ouvert', tacheId: null, auto: false,
+        reponseId: rep ? rep.id : null,
+        quand: AUJOURDHUI,
+      });
+    });
+  });
+
+  // Étape 3 : les catégories que vous avez réglées sur « Créer seule ».
+  _viviAppliquerTachesAuto();
+}
+
+function _viviAppliquerTachesAuto() {
+  viviTachesProposees().forEach(p => {
+    if (viviModeTache(p.categorieId) === 'auto') viviTacheCreer(p.id, null, true);
+  });
 }
 
 // Agrégats du mois affichés dans l'audit. Les totaux mensuels ne sont pas
@@ -1933,7 +2610,7 @@ function getNotifications() {
     }
   });
 
-  // --- Réponses de Vivi qui attendent une relecture ---
+  // --- Réponses de Vivi qui attendent votre validation ---
   // Une escalade est plus urgente qu'une simple confiance insuffisante :
   // le voyageur a écrit quelque chose que l'IA a refusé de traiter seule.
   viviReponsesEnAttente().forEach(r => {
@@ -1943,13 +2620,35 @@ function getNotifications() {
       id: `vivi-${r.id}`,
       type: 'vivi',
       urgence: r.statut === 'escaladee' ? 'high' : 'medium',
-      titre: r.statut === 'escaladee' ? 'Vivi a escaladé un message' : 'Réponse de Vivi à relire',
+      titre: r.statut === 'escaladee' ? 'Vivi a escaladé un message' : 'Réponse de Vivi à valider',
       message: `${ctx.voyageur} · ${r.raison}`,
       resaId: ctx.reservation.id,
       // Ces alertes se traitent dans la conversation, pas dans la fiche résa.
       href: `messagerie.html?conv=${r.conversationId}`,
     });
   });
+
+  // --- Tâches déduites d'un message qui attendent votre validation ---
+  // Même traitement que les réponses : elles vivent dans la conversation et
+  // relèvent du même geste. Les omettre ici laisserait le centre de
+  // notifications en retard sur le compteur « IA - À valider ».
+  if (typeof viviTachesProposees === 'function') {
+    viviTachesProposees().forEach(p => {
+      const conv = CONVERSATIONS.find(c => c.id === p.conversationId);
+      const resa = conv ? getReservation(conv.reservationId) : null;
+      if (!resa) return;
+      const l = getLogement(p.tache.logementId);
+      notifs.push({
+        id: `vivi-tache-${p.id}`,
+        type: 'vivi',
+        urgence: p.categorie.urgence === 'haute' ? 'high' : 'medium',
+        titre: `Tâche proposée par Vivi · ${p.categorie.label}`,
+        message: `${resa.voyageur}${l ? ' · ' + l.nom : ''}`,
+        resaId: resa.id,
+        href: `messagerie.html?conv=${p.conversationId}`,
+      });
+    });
+  }
 
   // Urgentes d'abord, puis par proximité d'arrivée
   return notifs.sort((a, b) => {
@@ -2044,13 +2743,56 @@ const _OYVIA_ENTITIES = {
   COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, TACHE_LABEL,
   PROPRIETAIRES, DEPENSES, FACTURES,
   ROLES, UTILISATEURS,
-  VIVI_CONFIG, VIVI_REPONSES, PAGE_SEJOUR,
+  VIVI_CONFIG, VIVI_REPONSES, VIVI_SIGNALEMENTS, PAGE_SEJOUR,
 };
+
+/* Identifiants supprimés depuis l'interface, par entité.
+
+   Sans cette liste, « Supprimer » ne supprimerait rien de durable : la
+   restauration repart des tableaux définis plus haut dans ce fichier et ne
+   fait que superposer l'instantané. Un élément de démonstration effacé
+   réapparaîtrait donc au rechargement suivant. On mémorise donc aussi ce
+   qui a été retiré, pas seulement ce qui reste. */
+const OYVIA_SUPPRIMES = {};
+
+// Retire l'élément du tableau ET note sa disparition. Renvoie false si
+// l'identifiant n'existe pas, pour que l'appelant ne mente pas à l'écran.
+function supprimerEntite(nom, id) {
+  const ref = _OYVIA_ENTITIES[nom];
+  if (!Array.isArray(ref)) return false;
+  const i = ref.findIndex(x => x && x.id === id);
+  if (i < 0) return false;
+  ref.splice(i, 1);
+  const liste = OYVIA_SUPPRIMES[nom] = OYVIA_SUPPRIMES[nom] || [];
+  if (!liste.includes(id)) liste.push(id);
+  if (typeof saveOyviaState === 'function') saveOyviaState();
+  return true;
+}
+
+// Supprimer une tâche née d'un signalement Vivi doit rendre la main à Vivi :
+// sinon le signalement resterait « créée » en pointant une tâche disparue, et
+// l'intervention ne serait jamais reproposée.
+function supprimerTache(id) {
+  const s = VIVI_SIGNALEMENTS.find(x => x.tacheId === id);
+  if (s) { s.tacheId = null; s.auto = false; s.statut = 'ouvert'; }
+  return supprimerEntite('TACHES', id);
+}
 
 (function _oyviaRestoreState() {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(OYVIA_STATE_KEY)); } catch { saved = null; }
   if (!saved) return;
+
+  // Les suppressions s'appliquent AVANT la fusion : on retire des tableaux
+  // « frais » ce qui a été effacé, faute de quoi la fusion le réintroduirait.
+  Object.assign(OYVIA_SUPPRIMES, saved.__supprimes || {});
+  Object.keys(OYVIA_SUPPRIMES).forEach(nom => {
+    const ref = _OYVIA_ENTITIES[nom];
+    if (!Array.isArray(ref)) return;
+    const morts = new Set(OYVIA_SUPPRIMES[nom] || []);
+    for (let i = ref.length - 1; i >= 0; i--) if (ref[i] && morts.has(ref[i].id)) ref.splice(i, 1);
+  });
+
   Object.keys(_OYVIA_ENTITIES).forEach(name => {
     const ref = _OYVIA_ENTITIES[name];
     const data = saved[name];
@@ -2086,6 +2828,11 @@ _assurerTokensSejour();
 // Automatisations enregistrées avant l'ajout de l'heure d'envoi : on les
 // complète plutôt que d'exiger une réinitialisation.
 _migrerDeclencheurs();
+// Déroulé complet sur les messages qui signalent un besoin d'intervention :
+// Vivi répond, puis prépare la tâche. Appelé APRÈS la restauration, pour que
+// les signalements déjà traités soient connus — un rechargement ne renvoie
+// pas un second message au voyageur et ne recrée pas une tâche annulée.
+_viviTraiterSignalements();
 
 let _oyviaResetting = false;
 function saveOyviaState() {
@@ -2093,6 +2840,8 @@ function saveOyviaState() {
   try {
     const snapshot = {};
     Object.keys(_OYVIA_ENTITIES).forEach(name => { snapshot[name] = _OYVIA_ENTITIES[name]; });
+    // Ce qui a disparu compte autant que ce qui reste (cf. OYVIA_SUPPRIMES).
+    snapshot.__supprimes = OYVIA_SUPPRIMES;
     localStorage.setItem(OYVIA_STATE_KEY, JSON.stringify(snapshot));
   } catch (e) { /* quota dépassé, navigation privée… on ignore silencieusement */ }
 }

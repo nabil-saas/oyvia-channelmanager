@@ -1,17 +1,19 @@
 /* ============================================================
    OYVIA — Configuration de l'IA Avancée de Vivi (offre Business)
 
-   Cinq sections, dans l'ordre où on les règle réellement :
+   Six sections, dans l'ordre où on les règle réellement :
      A. Contexte global        — qui vous êtes, dans quelles langues
      B. Personnalité & ton     — pour que Vivi écrive comme vous
      C. Garde-fous & escalade  — quand elle s'arrête et vous passe la main
-     D. Contexte par logement  — le réglage qui change tout
-     E. Audit & apprentissage  — relire, corriger, améliorer
+     D. Tâches ménagères       — ce qu'elle déclenche sur le terrain
+     E. Contexte par logement  — le réglage qui change tout
+     F. Audit & apprentissage  — relire, corriger, améliorer
 
    Rappel important, matérialisé dans l'interface : ce qui est
-   configuré ici ne concerne QUE les réponses aux messages entrants
-   des voyageurs. Les confirmations et rappels sortants restent
-   pilotés par les automatisations de règles.
+   configuré ici ne concerne QUE les messages entrants des voyageurs
+   — les réponses écrites, et les tâches qui en découlent. Les
+   confirmations et rappels sortants restent pilotés par les
+   automatisations de règles.
 
    Les offres sans IA Avancée voient un écran d'explication au lieu
    du formulaire : on n'affiche pas des réglages qui n'auraient
@@ -291,7 +293,108 @@ Layout.init('vivi');
   }
 
   /* ------------------------------------------------------------
-     D — Contexte par logement
+     D — Tâches ménagères déduites des messages
+
+     Le réglage est PAR CATÉGORIE, parce que le risque d'une erreur
+     n'est pas le même : réapprovisionner en serviettes pour rien coûte
+     un passage du prestataire déjà prévu, envoyer un plombier pour rien
+     coûte un déplacement facturé. On affiche donc explicitement la
+     conséquence de chaque mode plutôt qu'un simple interrupteur.
+     ------------------------------------------------------------ */
+  const VC_MODES = [
+    { id:'auto',    label:'Créer seule',   desc:'Vivi crée la tâche dès réception du message et vous notifie.' },
+    { id:'valider', label:'Me proposer',   desc:'La tâche est préparée, vous la créez d\'un clic depuis la conversation.' },
+    { id:'ignorer', label:'Ne rien faire', desc:'Vivi ne propose aucune tâche sur ce sujet.' },
+  ];
+
+  function renderTaches() {
+    const T = C.taches;
+    const enAttente = viviTachesProposees();
+    const creees = VIVI_SIGNALEMENTS.filter(d => d.statut === 'creee');
+    const auto = creees.filter(d => d.auto).length;
+
+    document.getElementById('vc-pane-taches').innerHTML = `
+      <div class="vc-intro">
+        Quand un voyageur signale un problème, Vivi procède en deux temps.
+        <br><br>
+        <b>1. Elle répond au voyageur.</b> Cette réponse suit vos garde-fous et votre seuil de
+        confiance, réglés dans l'onglet précédent : elle part seule si tout est vert, sinon elle
+        vous attend. Personne ne reste sans nouvelles pendant qu'on organise l'intervention.
+        <br><br>
+        <b>2. Elle vous propose la tâche.</b> Catégorie, logement, date et
+        <b>prestataire habituel du logement</b> — elle n'invente pas d'intervenant, elle reprend
+        celui qui travaille déjà sur ce bien. Engager un déplacement est une décision : la tâche
+        attend votre validation, sauf si vous en décidez autrement ci-dessous.
+      </div>
+
+      <div class="card card--pad">
+        <label class="vc-check ${T.actif ? 'is-on' : ''}">
+          <input type="checkbox" id="vc-t-actif" ${T.actif ? 'checked' : ''} />
+          <span class="vc-check__txt">Déduire des tâches des messages reçus<small>Décochez pour que Vivi se limite aux réponses écrites.</small></span>
+        </label>
+      </div>
+
+      <div class="card card--pad mt-4 ${T.actif ? '' : 'is-muted'}">
+        <p class="eyebrow mb-4">Que fait Vivi selon le sujet détecté ?</p>
+        <div class="vc-tcats">
+          ${VIVI_CATEGORIES_TACHE.map(cat => {
+            const mode = viviModeTache(cat.id);
+            return `<div class="vc-tcat">
+              <div class="vc-tcat__head">
+                <div class="grow">
+                  <b>${cat.label}</b>
+                  <small>${cat.desc}</small>
+                </div>
+                <span class="badge ${VIVI_URGENCES[cat.urgence].badge}">${VIVI_URGENCES[cat.urgence].label}</span>
+              </div>
+              <div class="vc-tcat__modes">
+                ${VC_MODES.map(m => `
+                  <label class="vc-check ${mode === m.id ? 'is-on' : ''}">
+                    <input type="radio" name="vc-mode-${cat.id}" data-tmode="${cat.id}" value="${m.id}" ${mode === m.id ? 'checked' : ''} ${T.actif ? '' : 'disabled'} />
+                    <span class="vc-check__txt">${m.label}<small>${m.desc}</small></span>
+                  </label>`).join('')}
+              </div>
+              ${(() => {
+                // Exemples réels : ce sont des messages que le détecteur
+                // classe effectivement ici (viviExemplesVerifies le garantit).
+                const ex = viviExemplesVerifies(cat.id);
+                return ex.length ? `
+                  <div class="vc-tex">
+                    <p class="vc-tex__label">Vivi déclenche sur des messages comme :</p>
+                    ${ex.map(t => `<p class="vc-tex__msg">« ${esc(t)} »</p>`).join('')}
+                  </div>` : '';
+              })()}
+              <p class="vc-tcat__foot">Tâche générée : <b>${TACHE_LABEL[cat.type] || cat.type}</b>, à ${cat.heureDefaut}${cat.urgence === 'haute' ? ', le jour même' : ', le lendemain'}.</p>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="card card--pad mt-4">
+        <p class="eyebrow mb-4">Ce que ça donne aujourd'hui</p>
+        <div class="vc-stats">
+          <div class="vc-stat"><b>${enAttente.length}</b><small>proposition${enAttente.length > 1 ? 's' : ''} en attente</small></div>
+          <div class="vc-stat"><b>${creees.length}</b><small>tâche${creees.length > 1 ? 's' : ''} créée${creees.length > 1 ? 's' : ''}</small></div>
+          <div class="vc-stat"><b>${auto}</b><small>sans validation</small></div>
+        </div>
+        ${enAttente.length ? `
+          <div class="vc-tlist mt-4">
+            ${enAttente.map(p => {
+              const l = getLogement(p.tache.logementId);
+              const prest = getPrestataire(p.tache.prestataireId);
+              return `<a class="vc-titem" href="messagerie.html?conv=${p.conversationId}">
+                <span class="badge ${VIVI_URGENCES[p.categorie.urgence].badge}">${p.categorie.label}</span>
+                <span class="vc-titem__txt">« ${esc(p.extrait.slice(0, 90))}${p.extrait.length > 90 ? '…' : ''} »</span>
+                <small>${l.nom} · ${formatDate(p.tache.date)} à ${p.tache.heure}${prest ? ` · ${prest.nom}` : ''}</small>
+              </a>`;
+            }).join('')}
+          </div>`
+          : `<p class="text-sm text-muted mt-4">Aucun message en attente ne réclame d'intervention.</p>`}
+      </div>`;
+  }
+
+  /* ------------------------------------------------------------
+     E — Contexte par logement
      ------------------------------------------------------------ */
   let logOuvert = null;
 
@@ -433,6 +536,7 @@ Layout.init('vivi');
     // aucune information n'est recopiée, donc rien ne peut se contredire.
     const ctx = viviContexte(r);
     const enAttente = r.statut !== 'envoyee';
+    const motif = viviMotifAttente(r);
     const langue = (VIVI_LANGUES.find(x => x.id === r.langue) || {}).label || r.langue;
 
     const actions = enAttente
@@ -463,10 +567,15 @@ Layout.init('vivi');
         </div>
         <p class="vc-rep__q">« ${esc(viviQuestion(r))} »</p>
         <p class="vc-rep__a">${esc(viviTexte(r))}</p>
-        ${r.raison ? `<span class="vc-rep__why">Raison : ${esc(r.raison)}</span>` : ''}
+        ${motif ? `<span class="vc-rep__why">${esc(motif.phrase)}</span>` : ''}
         ${edition}
         <div class="vc-rep__foot">
-          <span class="vc-rep__conf">Confiance ${r.confiance} %</span>
+          <!-- Pour une réponse partie, la confiance suffit. Pour une réponse
+               retenue, on précise si le seuil est atteint : c'est la seule
+               façon de comprendre qu'une réponse à 96 % puisse attendre. -->
+          <span class="vc-rep__conf">${motif
+            ? `Confiance ${r.confiance} % ${motif.type === 'gardefou' ? '· garde-fou' : (motif.atteint ? `· seuil ${motif.seuil} % atteint` : `· sous le seuil de ${motif.seuil} %`)}`
+            : `Confiance ${r.confiance} %`}</span>
           ${actions}
         </div>
       </article>`;
@@ -542,7 +651,7 @@ Layout.init('vivi');
   if (niveau !== 'avancee') { renderLocked(); return; }
 
   document.getElementById('vc-app').classList.remove('hidden');
-  renderGlobal(); renderTon(); renderGardeFous(); renderLogements(); renderAudit();
+  renderGlobal(); renderTon(); renderGardeFous(); renderTaches(); renderLogements(); renderAudit();
   activate(location.hash ? location.hash.slice(1) : 'global');
 
   document.getElementById('vc-nav').addEventListener('click', e => {
@@ -616,7 +725,20 @@ Layout.init('vivi');
       majVisuel(); majHintsGardeFous(); save(); return;
     }
 
-    // D — contexte par logement
+    // D — tâches ménagères
+    if (t.id === 'vc-t-actif') {
+      C.taches.actif = t.checked;
+      majVisuel(); save(); renderTaches(); return;
+    }
+    if (t.dataset.tmode) {
+      C.taches.modes[t.dataset.tmode] = t.value;
+      // Passer une catégorie en « Créer seule » doit produire son effet tout
+      // de suite : sinon l'utilisateur ne voit rien changer et doute du réglage.
+      if (t.value === 'auto') _viviAppliquerTachesAuto();
+      save(); renderTaches(); return;
+    }
+
+    // E — contexte par logement
     const ctx = C.logements[t.dataset.log];
     if (t.dataset.sujet && ctx) {
       ctx.sujets = ctx.sujets || [];

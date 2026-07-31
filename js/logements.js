@@ -643,6 +643,15 @@ Layout.init('logements');
     recNofin.checked = nofin;
     document.getElementById('rec-f-end').value = r && r.dateFin ? r.dateFin : '2026-12-31';
     document.getElementById('rec-f-end').disabled = nofin;
+    // Une récurrence n'a pas de notion d'occupation : la seule règle est
+    // qu'elle ne peut pas se terminer avant d'avoir commencé.
+    // Période d'activité de la récurrence : aucune notion d'occupation,
+    // seulement l'ordre des deux bornes — que le mode plage garantit.
+    DatePicker.range(
+      document.getElementById('rec-f-start'),
+      document.getElementById('rec-f-end'),
+      () => ({ labels: { debut: 'la date de début', fin: 'la date de fin' }, uniteDuree: 'jours' })
+    );
     recActive.checked = r ? r.actif : true;
     document.getElementById('rec-f-active-label').textContent = recActive.checked ? 'Active' : 'Désactivée';
     document.getElementById('rec-modal-title').textContent = recId ? 'Modifier la tâche récurrente' : 'Nouvelle tâche récurrente';

@@ -70,17 +70,36 @@ const Vivi = (function () {
     },
     {
       id: 'attente',
-      mots: ['en attente', 'révision', 'revision', 'à relire', 'a relire', 'approuver', 'valider les réponses'],
+      mots: ['en attente', 'révision', 'revision', 'à relire', 'a relire', 'à valider', 'a valider', 'approuver', 'valider les réponses'],
       repond() {
+        // Deux natures de propositions attendent votre aval : les réponses
+        // écrites et les tâches déduites des messages. Ne compter que les
+        // réponses contredirait le filtre « IA - À valider », qui réunit les
+        // deux — Vivi annoncerait « rien ne vous attend » alors que des
+        // tâches dorment.
         const list = enAttente();
-        if (!list.length) return { texte: `Rien ne vous attend : toutes les réponses de Vivi sont parties automatiquement. 🎉` };
-        const lignes = list.slice(0, 4).map(r => {
+        const taches = typeof viviTachesProposees === 'function' ? viviTachesProposees() : [];
+        const total = list.length + taches.length;
+        if (!total) return { texte: `Rien à valider : les réponses de Vivi sont toutes parties automatiquement, et aucune tâche n'attend votre aval. 🎉` };
+
+        const lignes = list.slice(0, 3).map(r => {
           const c = viviContexte(r);
-          return `<li><b>${c.voyageur || '—'}</b> — « ${viviQuestion(r)} »<br><small>${c.logement ? c.logement.nom + ' · ' : ''}${r.raison} · confiance ${r.confiance} %</small></li>`;
+          return `<li><b>${c.voyageur || '—'}</b> — « ${viviQuestion(r)} »<br><small>Réponse · ${c.logement ? c.logement.nom + ' · ' : ''}${r.raison} · confiance ${r.confiance} %</small></li>`;
         }).join('');
+        const lignesT = taches.slice(0, 3).map(p => {
+          const l = getLogement(p.tache.logementId);
+          return `<li><b>${p.categorie.label}</b> — « ${p.extrait.slice(0, 70)}${p.extrait.length > 70 ? '…' : ''} »<br><small>Tâche · ${l ? l.nom + ' · ' : ''}${formatDate(p.tache.date)} à ${p.tache.heure}</small></li>`;
+        }).join('');
+        const reste = total - Math.min(list.length, 3) - Math.min(taches.length, 3);
+
+        const detail = [
+          list.length ? `${list.length} réponse${list.length > 1 ? 's' : ''}` : '',
+          taches.length ? `${taches.length} tâche${taches.length > 1 ? 's' : ''}` : '',
+        ].filter(Boolean).join(' et ');
+
         return {
-          texte: `Vous avez <b>${list.length} réponse${list.length > 1 ? 's' : ''}</b> en attente de votre révision :<ul>${lignes}</ul>
-            ${list.length > 4 ? `<br>… et ${list.length - 4} autre${list.length - 4 > 1 ? 's' : ''}.` : ''}`,
+          texte: `Vous avez <b>${total} élément${total > 1 ? 's' : ''}</b> à valider — ${detail} :<ul>${lignes}${lignesT}</ul>
+            ${reste > 0 ? `<br>… et ${reste} autre${reste > 1 ? 's' : ''}.` : ''}`,
           actions: btn('Ouvrir la messagerie', lien('messagerie.html?filtre=ia')) + btn("Voir l'audit", lien('vivi.html#audit')),
         };
       },
@@ -328,7 +347,9 @@ const Vivi = (function () {
   function build() {
     if (document.getElementById('vivi-fab')) return;
 
-    const nb = enAttente().length;
+    // La pastille compte tout ce qui attend votre aval — réponses ET tâches —
+    // pour coller au compteur « IA - À valider » de la messagerie.
+    const nb = enAttente().length + (typeof viviTachesProposees === 'function' ? viviTachesProposees().length : 0);
     fab = document.createElement('button');
     fab.type = 'button';
     fab.className = 'vivi-fab';

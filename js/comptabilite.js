@@ -44,6 +44,19 @@ Layout.init('comptabilite');
   ownerSel.innerHTML = '<option value="all">Tous les propriétaires</option>' +
     PROPRIETAIRES.map(o => `<option value="${o.id}">${o.societe}</option>`).join('');
 
+  /* ---------- Période de synthèse ----------
+     Une plage inversée ne renvoie rien et ressemble à un bug de l'app :
+     on l'empêche à la source plutôt que d'afficher un tableau vide.
+     Rien au-delà d'aujourd'hui non plus — la comptabilité ne porte que
+     sur des mouvements déjà survenus. */
+  DatePicker.range(fromField, toField, () => ({
+    labels: { debut: 'la date de début', fin: 'la date de fin' },
+    max: AUJOURDHUI,
+    indispo: d => d > AUJOURDHUI ? 'À venir' : null,
+    indispoFin: d => d > AUJOURDHUI ? 'À venir' : null,
+    uniteDuree: 'jours',
+  }));
+
   function premierJourMois(dateStr) {
     const d = parseDate(dateStr);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
@@ -532,6 +545,12 @@ Layout.init('comptabilite');
   function fillDepModal() {
     document.getElementById('cp-f-logement').innerHTML = LOGEMENTS.map(l => `<option value="${l.id}">${l.nom} — ${l.ville}</option>`).join('');
     document.getElementById('cp-f-date').value = AUJOURDHUI;
+    // Une dépense constate un paiement déjà fait : elle ne peut pas être
+    // datée de demain. On borne donc au jour même.
+    DatePicker.attach(document.getElementById('cp-f-date'), () => ({
+      max: AUJOURDHUI,
+      indispo: d => d > AUJOURDHUI ? "Une dépense ne peut pas être datée dans le futur" : null,
+    }));
     document.getElementById('cp-f-montant').value = '';
     document.getElementById('cp-f-libelle').value = '';
     document.getElementById('cp-f-facture').value = '';

@@ -68,6 +68,15 @@ Layout.init('menage');
     document.getElementById('mn-planning').innerHTML = html;
   }
 
+  // Une tâche déduite d'un message par Vivi doit être identifiable, et
+  // ramener au message d'origine : c'est là qu'est le contexte (« il y a
+  // des cheveux dans la douche »), pas dans la ligne de planning.
+  function origineTag(t) {
+    if (t.origine !== 'vivi') return '';
+    const href = t.origineConversation ? `messagerie.html?conv=${t.origineConversation}` : 'messagerie.html';
+    return ` <a class="mn-task__vivi" href="${href}" title="Créée par Vivi à partir d'un message du voyageur — voir la conversation">✦ Vivi</a>`;
+  }
+
   function taskRow(t, isStart) {
     const l = getLogement(t.logementId);
     const options = PRESTATAIRES.map(p => `<option value="${p.id}" ${p.id === t.prestataireId ? 'selected' : ''}>${p.nom}</option>`).join('');
@@ -85,13 +94,16 @@ Layout.init('menage');
       ${timeCell}
       <span class="mn-task__ic mn-task__ic--${t.type}">${icon(TYPE_IC[t.type] || 'M12 2 2 7v10l10 5 10-5V7z')}</span>
       <div class="mn-task__meta">
-        <b>${TACHE_LABEL[t.type]} · ${l.nom} ${continuationTag}</b>
+        <b>${TACHE_LABEL[t.type]} · ${l.nom} ${continuationTag}${origineTag(t)}</b>
         <small>${l.ville}${t.note ? ' · ' + t.note : ''}</small>
         ${spanBadge}
       </div>
       <div class="mn-task__prest"><select class="select" data-assign="${t.id}">${options}</select></div>
       <span class="mn-task__amount">${t.montant ? formatEuro(t.montant) : '—'}</span>
       <div class="mn-task__status"><span class="badge ${STATUT_BADGE[t.statut]} mn-statusbtn" data-status="${t.id}" title="Cliquer pour changer">${STATUT_TXT[t.statut]}</span></div>
+      <button class="icon-btn icon-btn--danger" data-del="${t.id}" title="Supprimer cette tâche" aria-label="Supprimer la tâche ${TACHE_LABEL[t.type]} du ${formatDate(t.date)}">
+        ${icon('<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6"/><path d="M10 11v6M14 11v6"/>')}
+      </button>
     </div>`;
   }
 
@@ -107,6 +119,36 @@ Layout.init('menage');
     const b = e.target.closest('[data-status]'); if (b) {
       const t = TACHES.find(x => x.id === b.dataset.status);
       t.statut = NEXT[t.statut]; render();
+      return;
+    }
+
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const t = TACHES.find(x => x.id === del.dataset.del);
+      if (!t) return;
+      const l = getLogement(t.logementId);
+      const p = PRESTATAIRES.find(x => x.id === t.prestataireId);
+
+      // Deux conséquences valent d'être annoncées : le prestataire perd la
+      // ligne de son planning, et une tâche née d'un signalement de Vivi
+      // fait revenir la proposition (le besoin du voyageur, lui, demeure).
+      const extra = [
+        p ? `${p.nom} ne la verra plus dans son planning.` : '',
+        t.origine === 'vivi' ? `Elle vient d'un message de voyageur : Vivi vous la reproposera dans la conversation.` : '',
+      ].filter(Boolean).join('\n');
+
+      UI.confirm({
+        title: 'Supprimer cette tâche ?',
+        message: `${TACHE_LABEL[t.type] || t.type} · ${l ? l.nom : ''} · ${formatDate(t.date)} à ${t.heure}.${extra ? '\n\n' + extra : ''}`,
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler',
+        danger: true,
+        onConfirm() {
+          supprimerTache(t.id);
+          render();
+          UI.toast('Tâche supprimée');
+        },
+      });
     }
   });
   Object.values(F).forEach(el => el.addEventListener('change', render));
@@ -151,6 +193,36 @@ Layout.init('menage');
     document.getElementById('mn-f-heure').value = '11:00';
     updateDerived();
   }
+  /* ---------- Dates planifiables pour une intervention ----------
+     Ici la frontière n'est pas la même que pour une réservation, et c'est
+     volontaire :
+
+     · IMPOSSIBLE — planifier dans le passé. Rien d'autre : une équipe peut
+       enchaîner plusieurs logements dans la journée, et un ménage de
+       mi-séjour se fait justement pendant l'occupation. Griser ces cas
+       interdirait des situations parfaitement légitimes.
+
+     · SIGNALÉ — le voyageur est sur place, c'est un jour d'arrivée ou de
+       départ, ou le prestataire a déjà des interventions ce jour-là. On
+       donne l'information, la décision reste à vous. */
+  const prestSel = document.getElementById('mn-f-prest');
+  DatePicker.attach(dateField, () => ({
+    min: AUJOURDHUI,
+    indispo: d => d < AUJOURDHUI ? 'Date passée' : null,
+    note: d => {
+      const bouts = [];
+      const occ = occupationLogement(logementSel.value, d);
+      if (occ) bouts.push(occ);
+      const charge = chargePrestataire(prestSel.value, d);
+      if (charge.length) {
+        const p = PRESTATAIRES.find(x => x.id === prestSel.value);
+        bouts.push(`${p ? p.nom : 'Le prestataire'} : ${charge.length} intervention${charge.length > 1 ? 's' : ''} déjà prévue${charge.length > 1 ? 's' : ''}`);
+      }
+      return bouts.length ? bouts.join(' · ') : null;
+    },
+    legende: [{ classe: 'off', texte: 'Passé' }, { classe: 'note', texte: 'Voyageur sur place ou prestataire chargé' }],
+  }));
+
   logementSel.addEventListener('change', updateDerived);
   typeSel.addEventListener('change', () => { newtypeWrap.classList.toggle('hidden', typeSel.value !== '__new'); updateDerived(); });
   document.getElementById('mn-add').addEventListener('click', () => { fillTaskModal(); UI.openPanel('mn-modal'); });

@@ -171,6 +171,40 @@
 .vc-check__txt small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
 .vc-checks--inline { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 
+/* Tâches ménagères déduites des messages : une carte par catégorie, avec
+   les trois modes côte à côte pour que le choix se lise d'un coup d'œil. */
+.vc-tcats { display: grid; gap: var(--sp-4); }
+.vc-tcat { border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-4); background: var(--c-surface); }
+.vc-tcat__head { display: flex; align-items: flex-start; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.vc-tcat__head b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.vc-tcat__head small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
+.vc-tcat__modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
+/* Exemples de messages déclencheurs : présentés comme des citations du
+   voyageur, pour qu'on les lise comme des messages et non comme des règles. */
+.vc-tex { margin-top: var(--sp-3); padding: var(--sp-3) var(--sp-4); background: var(--bg-subtle); border-radius: var(--r-md); }
+.vc-tex__label { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--c-text-muted); margin-bottom: var(--sp-2); }
+.vc-tex__msg { font-size: var(--fs-xs); color: var(--c-text-soft); font-style: italic; line-height: var(--lh-snug); }
+.vc-tex__msg + .vc-tex__msg { margin-top: var(--sp-2); }
+
+.vc-tcat__foot { margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--c-text-muted); }
+.vc-tcat__foot b { color: var(--c-text); font-weight: var(--fw-semibold); }
+@media (max-width: 860px) { .vc-tcat__modes { grid-template-columns: 1fr; } }
+
+/* Réglages laissés visibles mais en retrait quand la déduction est coupée :
+   les masquer donnerait l'impression qu'ils ont été perdus. */
+.is-muted { opacity: .55; }
+
+.vc-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
+.vc-stat { border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-4); text-align: center; background: var(--bg-subtle); }
+.vc-stat b { display: block; font-size: var(--fs-xl); font-weight: var(--fw-bold); }
+.vc-stat small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
+
+.vc-tlist { display: grid; gap: var(--sp-2); }
+.vc-titem { display: block; border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-3) var(--sp-4); background: var(--c-surface); color: inherit; text-decoration: none; transition: border-color var(--t-fast); }
+.vc-titem:hover { border-color: var(--blue-600); }
+.vc-titem__txt { display: block; font-size: var(--fs-sm); margin: var(--sp-2) 0 2px; }
+.vc-titem small { font-size: var(--fs-xs); color: var(--c-text-muted); }
+
 /* Liste des logements à décrire */
 /* minmax(0,1fr) et non 1fr : par défaut un enfant de grille a min-width:auto
    et refuse de descendre sous sa largeur de contenu — la fiche dépliée
