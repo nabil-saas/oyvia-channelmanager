@@ -605,58 +605,6 @@
     </div>
   </section>
 
-  <!-- TARIFS -->
-  <section class="lp-section lp-section--tint" id="tarifs">
-    <div class="lp-shell">
-      <div class="lp-head">
-        <span class="eyebrow">Tarifs</span>
-        <h2>Quatre offres, une progression naturelle</h2>
-        <p>Créez votre compte gratuitement et explorez Oyvia pendant 15 jours. Ensuite, vous choisissez l'offre qui correspond à votre parc — et vous en changez quand vous voulez.</p>
-      </div>
-
-      <!-- Simulateur : on demande d'abord la taille du parc, les offres qui
-           suivent se recalculent en conséquence -->
-      <div class="lp-sim">
-        <div class="lp-sim__head">
-          <div class="lp-sim__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></div>
-          <div>
-            <h3>Combien de logements gérez-vous ?</h3>
-            <p class="text-soft text-sm">Ajustez le curseur : les tarifs ci-dessous se mettent à jour.</p>
-          </div>
-        </div>
-
-        <div class="lp-sim__row">
-          <div class="lp-sim__count">
-            <input type="number" id="sim-count" class="lp-sim__input" min="1" max="500" value="8" inputmode="numeric" aria-label="Nombre de logements" />
-            <span class="u">logements</span>
-          </div>
-          <div class="lp-sim__result">
-            <div class="lp-sim__total" id="sim-total">960 MAD</div>
-            <div class="lp-sim__sub" id="sim-sub">par mois, pour l'ensemble de vos logements gérés</div>
-          </div>
-        </div>
-        <input type="range" min="1" max="100" value="8" class="lp-range" id="sim-range" aria-label="Nombre de logements (curseur)" />
-
-        <!-- Niveau d'assistant IA souhaité : c'est lui qui détermine l'offre -->
-        <div class="lp-simia">
-          <p class="lp-simia__label">Avec quel assistant IA ?</p>
-          <div class="lp-simseg" id="sim-ia" role="group" aria-label="Niveau d'assistant IA"><!-- injecté --></div>
-        </div>
-
-        <p class="lp-sim__plan" id="sim-plan"></p>
-
-        <div class="lp-sim__cta">
-          <a class="btn btn--primary btn--lg" href="app/dashboard.html">Commencer gratuitement — 15 jours offerts</a>
-          <p class="lp-sim__cta-note">Sans carte bancaire · Configuration en quelques minutes</p>
-        </div>
-      </div>
-
-      <!-- Les 4 offres, générées depuis PLANS (js/data.js) : une seule source de vérité -->
-      <div class="lp-plans" id="lp-plans"><!-- injecté par js/simulateur.js --></div>
-
-    </div>
-  </section>
-
   <!-- FAQ -->
   <section class="lp-section" id="faq">
     <div class="lp-shell">
