@@ -78,6 +78,7 @@ h4 { font-size: var(--fs-lg); }
 .text-soft  { color: var(--c-text-soft); }
 .text-muted { color: var(--c-text-muted); }
 .text-accent{ color: var(--c-accent); }
+.text-danger{ color: var(--c-danger-ink); }
 .fw-medium  { font-weight: var(--fw-medium); }
 .fw-semibold{ font-weight: var(--fw-semibold); }
 .fw-bold    { font-weight: var(--fw-bold); }
@@ -89,8 +90,9 @@ h4 { font-size: var(--fs-lg); }
 .eyebrow { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-accent); }
 
 /* Divers */
-.mt-2 { margin-top: var(--sp-2); } .mt-4 { margin-top: var(--sp-4); } .mt-6 { margin-top: var(--sp-6); }
-.mb-2 { margin-bottom: var(--sp-2); } .mb-4 { margin-bottom: var(--sp-4); }
+.mt-2 { margin-top: var(--sp-2); } .mt-3 { margin-top: var(--sp-3); } .mt-4 { margin-top: var(--sp-4); }
+.mt-5 { margin-top: var(--sp-5); } .mt-6 { margin-top: var(--sp-6); }
+.mb-2 { margin-bottom: var(--sp-2); } .mb-3 { margin-bottom: var(--sp-3); } .mb-4 { margin-bottom: var(--sp-4); }
 .hidden { display: none !important; }
 .divider { height: 1px; background: var(--c-border); border: 0; width: 100%; }
 

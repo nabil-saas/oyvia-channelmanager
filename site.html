@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Site de démonstration — Oyvia</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/site.css" />
+</head>
+<body class="pub">
+  <!-- Bandeau d'aperçu : on ne fait pas croire à un vrai site en production -->
+  <div class="pub-apercu">
+    Aperçu du site — les réservations créées ici apparaissent réellement dans votre calendrier Oyvia.
+    <a href="app/site.html">Revenir aux réglages</a>
+  </div>
+
+  <header class="pub-head" id="pub-head"><!-- injecté --></header>
+  <main id="pub-main"><!-- injecté --></main>
+  <footer class="pub-foot" id="pub-foot"><!-- injecté --></footer>
+
+  <!-- Modale de réservation -->
+  <div class="overlay" id="pub-overlay"></div>
+  <div class="modal" id="pub-modal">
+    <div class="modal__head">
+      <b id="pub-modal-titre">Réserver</b>
+      <button class="icon-btn" id="pub-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal__body" id="pub-modal-body"><!-- injecté --></div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/datepicker.js"></script>
+  <script src="js/site-public.js"></script>
+</body>
+</html>

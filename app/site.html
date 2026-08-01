@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Site web &amp; réservations directes</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <!-- Assistant de création, 5 étapes. Masqué une fois terminé. -->
+        <div id="sw-wizard" class="hidden"><!-- injecté --></div>
+
+        <!-- Réglages détaillés, une fois le site créé -->
+        <div id="sw-reglages" class="hidden">
+        <div class="app-pagehead">
+          <div>
+            <h1>Site web</h1>
+            <p>Votre vitrine et son moteur de réservation directe, sans commission.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <a class="btn btn--secondary" id="sw-preview" href="../site.html" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+              Voir le site
+            </a>
+            <button class="btn btn--primary" id="sw-publier">Publier les modifications</button>
+          </div>
+        </div>
+
+        <!-- Bandeau d'état : en ligne, adresse, gains -->
+        <div id="sw-hero"><!-- injecté --></div>
+
+        <div class="tabs mt-6" id="sw-tabs">
+          <button type="button" data-tab="vitrine" class="is-active">Vitrine</button>
+          <button type="button" data-tab="logements">Logements publiés</button>
+          <button type="button" data-tab="resa">Réservation directe</button>
+          <button type="button" data-tab="domaine">Domaine</button>
+        </div>
+
+        <div class="mt-4">
+          <section class="tabpane is-active" data-pane="vitrine" id="sw-pane-vitrine"><!-- injecté --></section>
+          <section class="tabpane" data-pane="logements" id="sw-pane-logements"><!-- injecté --></section>
+          <section class="tabpane" data-pane="resa" id="sw-pane-resa"><!-- injecté --></section>
+          <section class="tabpane" data-pane="domaine" id="sw-pane-domaine"><!-- injecté --></section>
+        </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/site.js"></script>
+  <script src="../js/vivi.js"></script>
+</body>
+</html>

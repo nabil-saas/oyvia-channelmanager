@@ -605,6 +605,47 @@
     </div>
   </section>
 
+  <!-- TARIFS -->
+  <section class="lp-section lp-section--tint" id="tarifs">
+    <div class="lp-shell">
+      <div class="lp-head">
+        <span class="eyebrow">Tarifs</span>
+        <h2>Trois offres, une progression naturelle</h2>
+        <p>Choisissez votre devise et la taille de votre parc : les tarifs ci-dessous se recalculent. Créez votre compte gratuitement et explorez Oyvia pendant 15 jours.</p>
+      </div>
+
+      <!-- Barre de réglage : devise, taille du parc, périodicité. Les cartes
+           qui suivent se recalculent à chaque changement. -->
+      <div class="lp-bar" id="lp-bar">
+        <div class="lp-bar__champ">
+          <span class="lp-bar__label">Devise</span>
+          <div class="lp-seg" id="lp-devise" role="group" aria-label="Devise"><!-- injecté --></div>
+        </div>
+
+        <div class="lp-bar__champ">
+          <span class="lp-bar__label">Nombre de logements</span>
+          <div class="lp-nb">
+            <button type="button" class="lp-nb__btn" id="lp-moins" aria-label="Un logement de moins">−</button>
+            <input type="text" id="lp-count" class="lp-nb__input" value="8" inputmode="numeric"
+                   aria-label="Nombre de logements" />
+            <button type="button" class="lp-nb__btn" id="lp-plus" aria-label="Un logement de plus">+</button>
+          </div>
+        </div>
+
+        <div class="lp-bar__champ">
+          <span class="lp-bar__label">Facturation</span>
+          <div class="lp-seg" id="lp-periode" role="group" aria-label="Périodicité de facturation"><!-- injecté --></div>
+        </div>
+      </div>
+
+      <p class="lp-devis" id="lp-devis" hidden></p>
+
+      <!-- Les 3 offres, générées depuis PLANS (js/data.js) : une seule source de vérité -->
+      <div class="lp-plans" id="lp-plans"><!-- injecté par js/simulateur.js --></div>
+
+    </div>
+  </section>
+
   <!-- FAQ -->
   <section class="lp-section" id="faq">
     <div class="lp-shell">

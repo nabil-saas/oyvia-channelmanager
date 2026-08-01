@@ -20,13 +20,14 @@
   const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   const elPlans = document.getElementById('lp-plans');
 
-  /* ---------- Les cartes d'offres, recalculées pour n logements ---------- */
-  // actifId = l'offre mise en avant (celle du niveau d'IA choisi, ou la
-  // recommandation par défaut) · manuel = l'utilisateur l'a choisie lui-même,
-  // auquel cas on ne prétend pas que c'est « la plus adaptée ».
-  function planCardHTML(p, n, actifId, manuel) {
-    const prix = planPrixTexte(p.id);
-    const enAvant = p.id === actifId;
+  /* ---------- Les cartes d'offres ----------
+     Elles se recalculent à chaque réglage de la barre : devise, taille du
+     parc et périodicité. Business porte le repère « Le plus populaire »,
+     fixe et non calculé — c'est un choix commercial, pas une déduction. */
+  const PLAN_POPULAIRE = 'business';
+
+  function planCardHTML(p, n) {
+    const gratuit = p.unite === 'essai';
 
     // Dix lignes d'affilée sur Business seraient illisibles : on les rend
     // groupe par groupe, avec l'intitulé du groupe en intertitre.
@@ -36,110 +37,139 @@
         <li class="lp-plan__feat ${g.herite ? 'lp-plan__feat--herite' : ''}">${CHECK}<span><b>${f.titre}</b>${f.desc ? `<em>${f.desc}</em>` : ''}</span></li>`).join('')}
     `).join('');
 
-    const cta = p.unite === 'essai'
-      ? `<a class="btn btn--secondary btn--block" href="app/dashboard.html">Créer mon compte</a>`
-      : `<a class="btn ${enAvant ? 'btn--primary' : 'btn--secondary'} btn--block" href="app/dashboard.html">Choisir ${p.nom}</a>`;
+    const populaire = p.id === PLAN_POPULAIRE;
 
-    // Ce que ça coûte vraiment pour le parc saisi — l'information que le
-    // visiteur cherche.
-    const total = p.unite === 'essai'
-      ? `Gratuit pendant ${p.essaiJours} jours`
-      : `soit <b>${formatMAD(planTotal(p.id, n))}</b> / mois pour ${n} logement${n > 1 ? 's' : ''}`;
+    // Bloc prix. En annuel on montre le prix mensuel barré : la remise doit
+    // se voir sur le chiffre, pas seulement sur une pastille.
+    let bloc;
+    if (gratuit) {
+      bloc = `<div class="lp-plan__price"><b>0</b><span>pendant ${p.essaiJours} jours</span></div>
+              <p class="lp-plan__total">Aucune carte bancaire demandée</p>`;
+    } else if (surDevis()) {
+      bloc = `<div class="lp-plan__price"><b>Sur devis</b></div>
+              <p class="lp-plan__total">Au-delà de ${PARC_MAX_CATALOGUE} logements</p>`;
+    } else {
+      // Tout vient de tarifAffiche : les montants à l'écran sont cohérents
+      // entre eux (prix unitaire × nombre de logements = total).
+      const t = tarifAffiche(p.id, n, devise, periode);
+      const f = v => formatDevise(v, devise, { deja: true });
+      bloc = `
+        ${periode === 'annuel'
+          ? `<p class="lp-plan__avant"><s>${f(t.plein)}</s>
+               <span class="lp-plan__promo">${f(t.plein - t.total)} économisés</span></p>`
+          : ''}
+        <div class="lp-plan__price">
+          <b>${f(t.total)}</b><span>/ mois</span>
+        </div>
+        <p class="lp-plan__total">
+          ${f(t.unite)} par logement · ${n} logement${n > 1 ? 's' : ''}
+          ${periode === 'annuel' ? `<br>Facturé ${f(t.annuel)} par an` : ''}
+        </p>`;
+    }
+
+    const cta = gratuit
+      ? `<a class="btn btn--secondary btn--block" href="app/dashboard.html">Créer mon compte</a>`
+      : surDevis()
+        ? `<a class="btn ${populaire ? 'btn--primary' : 'btn--secondary'} btn--block" href="mailto:contact@oyvia.com?subject=${encodeURIComponent('Demande de devis — ' + n + ' logements')}">Demander un devis</a>`
+        : `<a class="btn ${populaire ? 'btn--primary' : 'btn--secondary'} btn--block" href="app/dashboard.html">Choisir ${p.nom}</a>`;
 
     return `
-      <article class="lp-plan ${enAvant ? 'is-popular' : ''} ${p.unite === 'essai' ? 'lp-plan--free' : ''}">
-        ${enAvant ? `<span class="lp-plan__flag">${manuel ? 'Votre sélection' : 'Adaptée à votre parc'}</span>` : ''}
+      <article class="lp-plan ${populaire ? 'is-popular' : ''} ${gratuit ? 'lp-plan--free' : ''}">
+        ${populaire ? '<span class="lp-plan__flag">Le plus populaire</span>' : ''}
         <h3 class="lp-plan__name">${p.nom}</h3>
-        <div class="lp-plan__price">
-          <b>${prix.montant}</b>
-          <span>${prix.suffixe}</span>
-        </div>
-        <p class="lp-plan__total">${total}</p>
         <p class="lp-plan__resume">${p.accroche}</p>
+        ${bloc}
+        <div class="lp-plan__foot lp-plan__foot--haut">${cta}</div>
         <ul class="lp-plan__feats">${feats}</ul>
-        <div class="lp-plan__foot">
-          <p class="lp-plan__ideal"><b>Idéal pour :</b> ${p.idealPour}</p>
-          ${cta}
-        </div>
+        <p class="lp-plan__ideal"><b>Idéal pour :</b> ${p.idealPour}</p>
       </article>`;
   }
 
-  function renderPlans(n, actifId, manuel) {
-    if (elPlans) elPlans.innerHTML = PLANS.map(p => planCardHTML(p, n, actifId, manuel)).join('');
+  function renderPlans(n) {
+    if (elPlans) elPlans.innerHTML = PLANS.map(p => planCardHTML(p, n)).join('');
   }
 
-  /* ---------- Simulateur : curseur + saisie libre + niveau d'IA ---------- */
-  const range = document.getElementById('sim-range');
-  const elCount = document.getElementById('sim-count');
-  const elTotal = document.getElementById('sim-total');
-  const elSub = document.getElementById('sim-sub');
-  const elPlan = document.getElementById('sim-plan');
-  const elIA = document.getElementById('sim-ia');
-  if (!range || !elCount) return;
+  /* ============================================================
+     Barre de réglage : devise · parc · périodicité
 
-  const COUNT_MIN = parseInt(elCount.min, 10) || 1;
-  const COUNT_MAX = parseInt(elCount.max, 10) || 500;
+     Le curseur a disparu : sur un parc de 3 logements comme de 80, ce
+     qu'on veut c'est saisir un nombre, pas viser une position. Les deux
+     boutons − / + restent visibles en permanence, et le champ accepte la
+     frappe directe.
+     ============================================================ */
+  const elDevise = document.getElementById('lp-devise');
+  const elPeriode = document.getElementById('lp-periode');
+  const elCount = document.getElementById('lp-count');
+  const elDevis = document.getElementById('lp-devis');
+  if (!elDevise || !elCount) return;
 
-  // L'IA est la seule chose qui sépare Smart de Business : on expose donc ce
-  // choix-là plutôt que des noms d'offres, qui ne disent rien de ce qu'on achète.
-  const NIVEAUX_IA = [
-    { id: 'aucun',   plan: 'smart',    label: 'Sans IA',           phrase: 'sans IA' },
-    { id: 'avancee', plan: 'business', label: 'IA Avancée (Vivi)', phrase: "avec l'IA Avancée (Vivi)" },
+  const PERIODES = [
+    { id: 'mensuel', label: 'Mensuel' },
+    { id: 'annuel',  label: 'Annuel'  },
   ];
 
-  let iaChoisie = null;   // null = on suit la recommandation automatique
+  let devise = 'MAD';
+  let periode = 'mensuel';
+  let parc = 8;
 
-  // Le curseur ne va que jusqu'à 100 (pour rester maniable au glisser) ; au-delà,
-  // on continue d'accepter la saisie au clavier — le curseur reste juste calé au bout.
-  function syncRangeThumb(n) {
-    range.value = Math.min(n, parseInt(range.max, 10));
+  const surDevis = () => parc > PARC_MAX_CATALOGUE;
+
+  function renderBarre() {
+    elDevise.innerHTML = DEVISES.map(d => `
+      <button type="button" data-devise="${d.id}" class="${d.id === devise ? 'is-active' : ''}"
+        aria-pressed="${d.id === devise}">${d.label}</button>`).join('');
+
+    // La pastille de remise vit DANS le bouton « Annuel » : posée à côté,
+    // elle semblait flotter hors de la sélection alors qu'elle qualifie
+    // précisément ce choix-là.
+    elPeriode.innerHTML = PERIODES.map(x => `
+      <button type="button" data-periode="${x.id}" class="${x.id === periode ? 'is-active' : ''}"
+        aria-pressed="${x.id === periode}">${x.label}${
+          x.id === 'annuel' ? `<span class="lp-seg__promo">−${REMISE_ANNUELLE} %</span>` : ''}</button>`).join('');
+
+    // Au-delà du catalogue, on le dit là où la décision se prend.
+    elDevis.hidden = !surDevis();
+    if (surDevis()) {
+      elDevis.innerHTML = `Au-delà de ${PARC_MAX_CATALOGUE} logements, le tarif se construit avec vous.
+        <a href="mailto:contact@oyvia.com?subject=${encodeURIComponent('Demande de devis — ' + parc + ' logements')}">Demander un devis</a>`;
+    }
   }
 
-  function renderIA(actif) {
-    if (!elIA) return;
-    // Smart et Business n'ont plus de plafond : les deux choix sont
-    // toujours disponibles, quel que soit le nombre de logements.
-    elIA.innerHTML = NIVEAUX_IA.map(niv => `
-      <button type="button" data-ia="${niv.id}" class="${niv.plan === actif ? 'is-active' : ''}"
-        aria-pressed="${niv.plan === actif}">${niv.label}</button>`).join('');
+  function renderTout() {
+    renderBarre();
+    renderPlans(parc);
   }
 
-  function renderSim(n) {
-    n = Math.min(COUNT_MAX, Math.max(COUNT_MIN, Math.round(n) || COUNT_MIN));
-    elCount.value = n;
-    syncRangeThumb(n);
-
-    // Offre active : celle du niveau d'IA choisi, sinon la recommandation.
-    const manuel = !!iaChoisie;
-    const p = getPlan(manuel
-      ? NIVEAUX_IA.find(x => x.id === iaChoisie).plan
-      : planRecommande(n));
-
-    renderIA(p.id);
-
-    elTotal.textContent = formatMAD(planTotal(p.id, n));
-    elSub.textContent = `par mois en ${p.nom}, ${n > 1 ? `pour vos ${n} logements gérés` : 'pour votre logement'}`;
-
-    const prix = planPrixTexte(p.id);
-    const niv = NIVEAUX_IA.find(x => x.plan === p.id);
-    elPlan.innerHTML = `${manuel
-      ? `${n} logement${n > 1 ? 's' : ''} ${niv.phrase} : offre <b>${p.nom}</b>`
-      : `L'offre la plus adaptée à ${n} logement${n > 1 ? 's' : ''} est <b>${p.nom}</b>`} — ${prix.montant} ${prix.suffixe}.
-      <br><span class="lp-sim__trial">Et avant de payer : 15 jours gratuits dès la création du compte.</span>`;
-
-    renderPlans(n, p.id, manuel);
+  function setParc(n) {
+    // 1 minimum : proposer un tarif pour zéro logement n'aurait pas de sens.
+    parc = Math.max(1, Math.min(999, Math.round(n) || 1));
+    elCount.value = parc;
+    renderTout();
   }
 
-  if (elIA) elIA.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-ia]');
-    if (!btn) return;
-    iaChoisie = btn.dataset.ia;
-    renderSim(parseInt(elCount.value, 10));
+  elDevise.addEventListener('click', e => {
+    const b = e.target.closest('button[data-devise]'); if (!b) return;
+    devise = b.dataset.devise; renderTout();
+  });
+  elPeriode.addEventListener('click', e => {
+    const b = e.target.closest('button[data-periode]'); if (!b) return;
+    periode = b.dataset.periode; renderTout();
+  });
+  document.getElementById('lp-moins').addEventListener('click', () => setParc(parc - 1));
+  document.getElementById('lp-plus').addEventListener('click', () => setParc(parc + 1));
+
+  // Saisie libre : on ne recalcule que sur un nombre valide, sinon effacer
+  // le champ pour retaper ferait sauter l'affichage à 1 sous les doigts.
+  elCount.addEventListener('input', () => {
+    const v = elCount.value.replace(/\D/g, '');
+    elCount.value = v;
+    if (v !== '') { parc = Math.max(1, Math.min(999, parseInt(v, 10))); renderTout(); }
+  });
+  elCount.addEventListener('blur', () => setParc(parseInt(elCount.value, 10)));
+  elCount.addEventListener('keydown', e => {
+    if (e.key === 'ArrowUp')   { e.preventDefault(); setParc(parc + 1); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setParc(parc - 1); }
   });
 
-  range.addEventListener('input', () => renderSim(parseInt(range.value, 10)));
-  elCount.addEventListener('input', () => { if (elCount.value !== '') renderSim(parseInt(elCount.value, 10)); });
-  elCount.addEventListener('blur', () => renderSim(parseInt(elCount.value, 10)));
-
-  renderSim(parseInt(elCount.value, 10));
+  setParc(parc);
 })();

@@ -183,7 +183,6 @@ Layout.init('messagerie');
             : m.heure}</div>
         </div>`;
       }).join('');
-    renderViviTache(c);
     renderVivi(c);
     // Le défilement vient APRÈS l'injection des encarts Vivi : ce sont eux qui
     // rétrécissent le fil et créent le débordement. Appelé avant, scrollTop
@@ -194,206 +193,213 @@ Layout.init('messagerie');
     renderList();
   }
 
-  /* ---------- Tâche déduite du message ----------
-     Deux états : une proposition à valider (les champs sont modifiables
-     directement, éditer et valider sont le même geste), ou une décision
-     déjà prise qu'on peut annuler. */
-  function renderViviTache(c) {
-    const zone = document.getElementById('msg-vivi-tache');
-    if (!zone) return;
+  /* ============================================================
+     PANNEAU VIVI — une seule file, traitée étape par étape
 
-    const prop = viviTacheEnAttente(c.id);
-    if (prop) {
-      const l = getLogement(prop.tache.logementId);
-      const u = VIVI_URGENCES[prop.categorie.urgence];
-      const options = PRESTATAIRES.map(p =>
-        `<option value="${p.id}" ${p.id === prop.tache.prestataireId ? 'selected' : ''}>${p.nom} — ${p.role}</option>`).join('');
+     Avant, deux encarts se disputaient l'écran : la tâche au-dessus, la
+     réponse en dessous. On ne savait pas par quoi commencer, ni combien
+     il restait à faire. Or l'ordre n'est pas arbitraire : on RÉPOND au
+     voyageur d'abord, on engage un prestataire ensuite.
 
-      // Replié par défaut : cet encart peut cohabiter avec la proposition de
-      // réponse au-dessus du composeur, et deux formulaires ouverts ne
-      // laisseraient plus voir le fil de discussion.
-      const enEdition = editionTache === prop.id;
-      const prest = getPrestataire(prop.tache.prestataireId);
+     Le panneau construit donc une file ordonnée et n'en montre qu'une
+     étape à la fois, avec le reste annoncé dessous. Les signalements
+     sont traités par groupe — message puis tâche — dans l'ordre où les
+     messages sont arrivés.
+     ============================================================ */
+  function etapesVivi(c) {
+    const sigs = viviSignalements(c.id);
+    const props = viviTachesProposees(c.id);
+    const items = [];
 
-      // Rappel de l'étape 1 : le voyageur a-t-il déjà eu une réponse ?
-      // Sans ça, on valide une intervention sans savoir si l'on a accusé
-      // réception — et on risque de réécrire au voyageur pour rien.
-      const sig = getSignalement(prop.conversationId, prop.msgIndex);
-      const rep = viviReponseDuSignalement(sig);
-      const ackEnAttente = !!rep && rep.statut !== 'envoyee';
-      const etape1 = !rep ? ''
-        : rep.statut === 'envoyee'
-          ? `<span class="msg-tache__etape msg-tache__etape--ok">✓ Voyageur prévenu</span>`
-          : `<span class="msg-tache__etape msg-tache__etape--wait">⏳ Réponse à valider ci-dessous</span>`;
+    // Les réponses en attente sont de vraies questions de voyageur. Une
+    // intervention détectée, elle, ne passe plus par un accusé de réception :
+    // le message part à la création de la tâche, avec le créneau dedans.
+    viviReponsesEnAttente()
+      .filter(r => r.conversationId === c.id)
+      .forEach(r => {
+        // Une réponse en attente n'a pas encore d'index (elle n'est pas
+        // postée) : on l'ancre sur la QUESTION à laquelle elle répond, sinon
+        // elle passerait après des tâches nées de messages plus récents.
+        const i = c.messages.findIndex(m => m.texte === r.question);
+        items.push({ ancre: i >= 0 ? i : (r.msgIndex == null ? -1 : r.msgIndex), etapes: [{ type: 'reponse', reponse: r }] });
+      });
 
-      // Aperçu de la confirmation, recalculé sur les valeurs affichées.
-      const resa = getReservation(c.reservationId);
-      const prevenirDefaut = true;
-      const apercu = viviTexteConfirmation(prop.categorie, resa, prop.tache,
-        viviLangueMessage(c.messages[prop.msgIndex].texte));
+    // Une seule étape par signalement : la tâche à créer.
+    sigs.forEach(s => {
+      const p = props.find(x => x.msgIndex === s.msgIndex);
+      if (p) items.push({ ancre: s.msgIndex, etapes: [{ type: 'tache', proposition: p, signalement: s }] });
+    });
 
-      zone.className = 'msg-vivi msg-vivi--tache';
-      zone.innerHTML = `
-        <div class="msg-vivi__head">
-          <span class="msg-vivi__ic"><img src="../assets/vivi.svg" alt="" aria-hidden="true" /></span>
-          <div class="grow">
-            <b>Vivi propose une tâche · ${prop.categorie.label}</b>
-            <small>${TACHE_LABEL[prop.tache.type] || prop.tache.type} · ${l.nom} · ${formatDate(prop.tache.date)} à ${prop.tache.heure}${prest ? ` · ${prest.nom}` : ' · à assigner'}${prop.tache.montant ? ` · ${formatEuro(prop.tache.montant)}` : ''} ${etape1}</small>
-          </div>
-          <span class="badge ${u.badge}">${u.label}</span>
-        </div>
-        ${enEdition ? `
-          <div class="msg-tache__grid">
-            <div class="field">
-              <label class="field__label" for="vt-date">Date</label>
-              <input class="input" type="date" id="vt-date" value="${prop.tache.date}" />
-            </div>
-            <div class="field">
-              <label class="field__label" for="vt-heure">Heure</label>
-              <input class="input" type="time" id="vt-heure" value="${prop.tache.heure}" />
-            </div>
-            <div class="field">
-              <label class="field__label" for="vt-prest">Prestataire</label>
-              <select class="select" id="vt-prest">${options}</select>
-            </div>
-          </div>
-          <p class="msg-tache__cible">Vivi a proposé <b>${prest ? prest.nom : 'personne'}</b> : ${prest ? 'c\'est le prestataire habituel de ce logement' : 'aucun intervenant n\'est rattaché à ce logement'}.</p>`
-        : ''}
-        <!-- Étape 3 : confirmer le créneau. Coché par défaut, parce que le
-             voyageur a déjà reçu (ou va recevoir) un « on revient vers vous »
-             qu'il faut bien honorer. L'aperçu évite d'envoyer à l'aveugle. -->
-        <label class="msg-tache__prevenir">
-          <input type="checkbox" id="vt-prevenir" ${prevenirDefaut ? 'checked' : ''} />
-          <span>
-            Prévenir ${resa ? resa.voyageur.split(' ')[0] : 'le voyageur'} du créneau
-            ${ackEnAttente ? `<em>— remplacera la réponse en attente ci-dessous, devenue sans objet</em>` : ''}
-            <small id="vt-apercu">« ${apercu} »</small>
-          </span>
-        </label>
-        <div class="msg-vivi__actions">
-          <button type="button" class="btn btn--primary btn--sm" data-vt-ok="${prop.id}">Créer la tâche</button>
-          ${enEdition
-            ? `<button type="button" class="btn btn--ghost btn--sm" data-vt-cancel>Replier</button>`
-            : `<button type="button" class="btn btn--secondary btn--sm" data-vt-edit="${prop.id}">Modifier</button>`}
-          <button type="button" class="btn btn--ghost btn--sm" data-vt-no="${prop.id}">Ignorer</button>
-        </div>`;
-
-      // Le champ n'existe que déplié : on l'équipe après le rendu, avec le
-      // même contrat que la planification manuelle (cf. js/menage.js).
-      const champDate = document.getElementById('vt-date');
-      if (champDate) DatePicker.attach(champDate, () => ({
-        min: AUJOURDHUI,
-        indispo: d => d < AUJOURDHUI ? 'Date passée' : null,
-        note: d => {
-          const bouts = [];
-          const occ = occupationLogement(prop.tache.logementId, d);
-          if (occ) bouts.push(occ);
-          const idPrest = (document.getElementById('vt-prest') || {}).value || prop.tache.prestataireId;
-          const charge = chargePrestataire(idPrest, d);
-          if (charge.length) {
-            const pr = getPrestataire(idPrest);
-            bouts.push(`${pr ? pr.nom : 'Le prestataire'} : ${charge.length} intervention${charge.length > 1 ? 's' : ''} déjà prévue${charge.length > 1 ? 's' : ''}`);
-          }
-          return bouts.length ? bouts.join(' · ') : null;
-        },
-        legende: [{ classe: 'off', texte: 'Passé' }, { classe: 'note', texte: 'Voyageur sur place ou prestataire chargé' }],
-      }));
-      return;
-    }
-
-    // Décisions déjà prises sur ce fil : on n'affiche que les créations,
-    // un refus n'a pas à encombrer la conversation.
-    const creees = viviSignalements(c.id).filter(d => d.statut === 'creee');
-    if (creees.length) {
-      const d = creees[creees.length - 1];
-      const t = TACHES.find(x => x.id === d.tacheId);
-      const cat = getCategorieTache(d.categorieId);
-      if (t) {
-        const p = getPrestataire(t.prestataireId);
-        zone.className = 'msg-vivi msg-vivi--ok';
-        zone.innerHTML = `
-          <div class="msg-vivi__head">
-            <span class="msg-vivi__ic"><img src="../assets/vivi.svg" alt="" aria-hidden="true" /></span>
-            <div class="grow">
-              <b>${d.auto ? 'Vivi a créé une tâche automatiquement' : 'Tâche créée'}${cat ? ` · ${cat.label}` : ''}</b>
-              <small>${TACHE_LABEL[t.type] || t.type} le ${formatDate(t.date)} à ${t.heure}${p ? ` · ${p.nom}` : ' · à assigner'}
-                ${d.confirmationId
-                  ? `<span class="msg-tache__etape msg-tache__etape--ok">✓ Créneau confirmé au voyageur</span>`
-                  : `<span class="msg-tache__etape msg-tache__etape--wait">Voyageur non prévenu</span>`}</small>
-            </div>
-            <a class="btn btn--ghost btn--sm" href="menage.html">Voir dans Ménage</a>
-            <button type="button" class="btn btn--ghost btn--sm" data-vt-annul="${d.conversationId}|${d.msgIndex}|${d.categorieId || ''}">Annuler</button>
-          </div>`;
-        return;
-      }
-    }
-
-    zone.className = 'msg-vivi hidden';
-    zone.innerHTML = '';
+    // Ordre chronologique des messages d'origine : on traite la
+    // conversation dans le sens où elle s'est déroulée.
+    return items.sort((a, b) => a.ancre - b.ancre).flatMap(x => x.etapes);
   }
 
-  /* ---------- Bloc Vivi au-dessus du composeur ---------- */
-  // Trois états possibles, et un seul affiché à la fois :
-  //   1. une proposition attend votre aval → Approuver / Éditer / Refuser
-  //   2. Vivi a déjà répondu seule sur ce fil → rappel discret
-  //   3. l'offre n'inclut pas l'IA → invitation à en savoir plus, une seule
-  //      fois par conversation et seulement si le voyageur attend une réponse
+  function libelleEtape(e) {
+    if (e.type === 'reponse') return 'Répondre au voyageur';
+    return `Créer la tâche · ${e.proposition.categorie.label}`;
+  }
+
+  /* ---------- Étape « réponse » ---------- */
+  function blocReponse(e) {
+    const r = e.reponse;
+    const enEdition = editionIA === r.id;
+    const motif = viviMotifAttente(r);
+    // Le seuil de confiance n'est pas montré : c'est un réglage interne,
+    // il n'aide pas à décider. La RAISON, elle, est utile.
+    return `
+      <div class="vp-etape__titre">
+        <div class="grow">
+          <b>${r.statut === 'escaladee' ? 'Vivi a escaladé ce message' : 'Réponse proposée par Vivi'}</b>
+          ${motif && motif.cause ? `<small>${motif.cause}</small>` : ''}
+        </div>
+      </div>
+      ${enEdition
+        ? `<textarea class="textarea msg-vivi__edit" id="msg-vivi-txt">${r.reponse.replace(/</g, '&lt;')}</textarea>`
+        : `<p class="msg-vivi__texte">${r.reponse}</p>`}
+      <div class="msg-vivi__actions">
+        ${enEdition
+          ? `<button type="button" class="btn btn--primary btn--sm" data-ia-save="${r.id}">Envoyer ma version</button>
+             <button type="button" class="btn btn--ghost btn--sm" data-ia-cancel>Annuler</button>`
+          : `<button type="button" class="btn btn--primary btn--sm" data-ia-ok="${r.id}">Approuver et envoyer</button>
+             <button type="button" class="btn btn--secondary btn--sm" data-ia-edit="${r.id}">Éditer</button>
+             <button type="button" class="btn btn--ghost btn--sm" data-ia-no="${r.id}">Refuser</button>`}
+      </div>`;
+  }
+
+  /* ---------- Étape « tâche » ---------- */
+  function blocTache(e, c) {
+    const prop = e.proposition;
+    const l = getLogement(prop.tache.logementId);
+    const u = VIVI_URGENCES[prop.categorie.urgence];
+    const prest = getPrestataire(prop.tache.prestataireId);
+    const enEdition = editionTache === prop.id;
+    const options = PRESTATAIRES.map(p =>
+      `<option value="${p.id}" ${p.id === prop.tache.prestataireId ? 'selected' : ''}>${p.nom} — ${p.role}</option>`).join('');
+
+    const resa = getReservation(c.reservationId);
+    const apercu = viviTexteConfirmation(prop.categorie, resa, prop.tache,
+      viviLangueMessage(c.messages[prop.msgIndex].texte));
+
+    return `
+      <div class="vp-etape__titre">
+        <div class="grow"><b>Tâche proposée · ${prop.categorie.label}</b></div>
+        <span class="badge ${u.badge}">${u.label}</span>
+      </div>
+      <p class="msg-tache__cible">
+        ${TACHE_LABEL[prop.tache.type] || prop.tache.type} · <b>${l.nom}</b> ·
+        ${formatDate(prop.tache.date)} à ${prop.tache.heure}${prest ? ` · ${prest.nom}` : ' · à assigner'}${prop.tache.montant ? ` · ${formatEuro(prop.tache.montant)}` : ''}
+      </p>
+      ${enEdition ? `
+        <div class="msg-tache__grid">
+          <div class="field">
+            <label class="field__label" for="vt-date">Date</label>
+            <input class="input" type="date" id="vt-date" value="${prop.tache.date}" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="vt-heure">Heure</label>
+            <input class="input" type="time" id="vt-heure" value="${prop.tache.heure}" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="vt-prest">Prestataire</label>
+            <select class="select" id="vt-prest">${options}</select>
+          </div>
+        </div>
+        <p class="msg-tache__cible">Vivi a proposé <b>${prest ? prest.nom : 'personne'}</b> : ${prest ? "c'est le prestataire habituel de ce logement" : "aucun intervenant n'est rattaché à ce logement"}.</p>`
+      : ''}
+      <label class="msg-tache__prevenir">
+        <input type="checkbox" id="vt-prevenir" checked />
+        <span>
+          Prévenir ${resa ? resa.voyageur.split(' ')[0] : 'le voyageur'} du créneau
+          <small id="vt-apercu">« ${apercu} »</small>
+        </span>
+      </label>
+      <div class="msg-vivi__actions">
+        <button type="button" class="btn btn--primary btn--sm" data-vt-ok="${prop.id}">Créer la tâche</button>
+        ${enEdition
+          ? `<button type="button" class="btn btn--ghost btn--sm" data-vt-cancel>Replier</button>`
+          : `<button type="button" class="btn btn--secondary btn--sm" data-vt-edit="${prop.id}">Modifier</button>`}
+        <button type="button" class="btn btn--ghost btn--sm" data-vt-no="${prop.id}">Ignorer</button>
+      </div>`;
+  }
+
   function renderVivi(c) {
     const zone = document.getElementById('msg-vivi');
     if (!zone) return;
 
-    const attente = getViviEnAttente(c.id);
-    const niveau = viviNiveauIA();
-
-    if (attente) {
-      const enEdition = editionIA === attente.id;
-      const motif = viviMotifAttente(attente);
-      zone.className = 'msg-vivi msg-vivi--attente';
+    const etapes = etapesVivi(c);
+    if (etapes.length) {
+      const e = etapes[0];
+      const reste = etapes.slice(1);
+      zone.className = `msg-vivi vp vp--${e.type}`;
       zone.innerHTML = `
-        <div class="msg-vivi__head">
+        <div class="vp__head">
           <span class="msg-vivi__ic"><img src="../assets/vivi.svg" alt="" aria-hidden="true" /></span>
-          <div class="grow">
-            <b>${attente.statut === 'escaladee' ? 'Vivi a escaladé ce message' : 'Réponse proposée par Vivi'}</b>
-            <small>${motif ? motif.cause : ''}</small>
-          </div>
-          <!-- La confiance est qualifiée PAR RAPPORT AU SEUIL : sans ça,
-               « en attente » à côté de « 96 % » passe pour une incohérence. -->
-          ${motif ? `<span class="msg-vivi__conf ${motif.type === 'confiance' ? 'is-low' : 'is-ok'}" title="${motif.phrase}">${motif.etiquette}</span>` : ''}
-          <span class="badge ${VIVI_STATUT_BADGE[attente.statut]}">${VIVI_STATUT_LABEL[attente.statut]}</span>
+          <b>À traiter</b>
+          ${etapes.length > 1 ? `<span class="vp__compteur">1 / ${etapes.length}</span>` : ''}
         </div>
-        ${enEdition
-          ? `<textarea class="textarea msg-vivi__edit" id="msg-vivi-txt">${attente.reponse.replace(/</g, '&lt;')}</textarea>`
-          : `<p class="msg-vivi__texte">${attente.reponse}</p>`}
-        <div class="msg-vivi__actions">
-          ${enEdition
-            ? `<button type="button" class="btn btn--primary btn--sm" data-ia-save="${attente.id}">Envoyer ma version</button>
-               <button type="button" class="btn btn--ghost btn--sm" data-ia-cancel>Annuler</button>`
-            : `<button type="button" class="btn btn--primary btn--sm" data-ia-ok="${attente.id}">Approuver et envoyer</button>
-               <button type="button" class="btn btn--secondary btn--sm" data-ia-edit="${attente.id}">Éditer</button>
-               <button type="button" class="btn btn--ghost btn--sm" data-ia-no="${attente.id}">Refuser</button>`}
-        </div>`;
+        <div class="vp-etape">${e.type === 'reponse' ? blocReponse(e) : blocTache(e, c)}</div>
+        ${reste.length ? `<ul class="vp__suite">${reste.map((x, i) =>
+          `<li><span>${i + 2}</span>${libelleEtape(x)}</li>`).join('')}</ul>` : ''}`;
+
+      // Le champ de date n'existe que déplié : on l'équipe après le rendu,
+      // avec le même contrat que la planification manuelle (cf. js/menage.js).
+      const champDate = document.getElementById('vt-date');
+      if (champDate) {
+        const prop = e.proposition;
+        DatePicker.attach(champDate, () => ({
+          min: AUJOURDHUI,
+          indispo: d => d < AUJOURDHUI ? 'Date passée' : null,
+          note: d => {
+            const bouts = [];
+            const occ = occupationLogement(prop.tache.logementId, d);
+            if (occ) bouts.push(occ);
+            const idPrest = (document.getElementById('vt-prest') || {}).value || prop.tache.prestataireId;
+            const charge = chargePrestataire(idPrest, d);
+            if (charge.length) {
+              const pr = getPrestataire(idPrest);
+              bouts.push(`${pr ? pr.nom : 'Le prestataire'} : ${charge.length} intervention${charge.length > 1 ? 's' : ''} déjà prévue${charge.length > 1 ? 's' : ''}`);
+            }
+            return bouts.length ? bouts.join(' · ') : null;
+          },
+          legende: [{ classe: 'off', texte: 'Passé' }, { classe: 'note', texte: 'Voyageur sur place ou prestataire chargé' }],
+        }));
+      }
       return;
     }
 
+    // Plus rien à décider : on récapitule ce que Vivi a fait sur ce fil.
+    const creees = viviSignalements(c.id).filter(d => d.statut === 'creee');
     const deja = getViviReponses(c.id);
-    if (deja.length) {
-      // La plus récente = celle qui porte le msgIndex le plus élevé.
-      const derniere = deja.reduce((a, b) => (b.msgIndex > a.msgIndex ? b : a));
-      const auto = deja.filter(r => !r.approuvee).length;
+    if (creees.length || deja.length) {
+      const lignes = [];
+      if (deja.length) {
+        const derniere = deja.reduce((a, b) => ((b.msgIndex || 0) > (a.msgIndex || 0) ? b : a));
+        lignes.push(`${deja.length} réponse${deja.length > 1 ? 's' : ''} · la dernière ${viviOrigine(derniere)}`);
+      }
+      creees.forEach(d => {
+        const t = TACHES.find(x => x.id === d.tacheId);
+        if (!t) return;
+        const p = getPrestataire(t.prestataireId);
+        lignes.push(`${TACHE_LABEL[t.type] || t.type} le ${formatDate(t.date)} à ${t.heure}${p ? ` · ${p.nom}` : ''}${d.confirmationId ? ' · voyageur prévenu' : ''}`);
+      });
       zone.className = 'msg-vivi msg-vivi--ok';
       zone.innerHTML = `
         <div class="msg-vivi__head">
           <span class="msg-vivi__ic"><img src="../assets/vivi.svg" alt="" aria-hidden="true" /></span>
           <div class="grow">
-            <b>${auto ? 'Vivi a répondu automatiquement' : 'Réponse de Vivi validée'}</b>
-            <small>${deja.length} réponse${deja.length > 1 ? 's' : ''} sur ce fil · la dernière ${viviOrigine(derniere)}</small>
+            <b>Rien à valider sur ce fil</b>
+            <small>${lignes.join(' · ')}</small>
           </div>
-          <a class="btn btn--ghost btn--sm" href="vivi.html#audit">Voir l'audit</a>
+          ${creees.length
+            ? `<a class="btn btn--ghost btn--sm" href="menage.html">Voir dans Ménage</a>
+               <button type="button" class="btn btn--ghost btn--sm" data-vt-annul="${creees[creees.length - 1].conversationId}|${creees[creees.length - 1].msgIndex}|${creees[creees.length - 1].categorieId || ''}">Annuler la tâche</button>`
+            : `<a class="btn btn--ghost btn--sm" href="vivi.html#audit">Voir l'audit</a>`}
         </div>`;
       return;
     }
 
-    if (niveau !== 'avancee' && c.nonLu > 0) {
+    if (viviNiveauIA() !== 'avancee' && c.nonLu > 0) {
       zone.className = 'msg-vivi msg-vivi--promo';
       zone.innerHTML = `
         <div class="msg-vivi__head">
@@ -509,7 +515,7 @@ Layout.init('messagerie');
   /* ---------- Aperçu de la confirmation, tenu à jour ----------
      Changer la date ou l'heure change le message que recevra le voyageur :
      l'aperçu doit suivre, sinon il annoncerait un créneau périmé. */
-  document.getElementById('msg-vivi-tache').addEventListener('input', e => {
+  document.getElementById('msg-vivi').addEventListener('input', e => {
     if (!['vt-date', 'vt-heure'].includes(e.target.id)) return;
     const ap = document.getElementById('vt-apercu');
     const c = CONVERSATIONS.find(x => x.id === activeId);
@@ -524,7 +530,7 @@ Layout.init('messagerie');
   });
 
   /* ---------- Actions sur la tâche proposée par Vivi ---------- */
-  document.getElementById('msg-vivi-tache').addEventListener('click', e => {
+  document.getElementById('msg-vivi').addEventListener('click', e => {
     const ok = e.target.closest('[data-vt-ok]');
     if (ok) {
       // Si les champs sont dépliés, ils priment sur la proposition : ce que
@@ -551,12 +557,12 @@ Layout.init('messagerie');
     const ed = e.target.closest('[data-vt-edit]');
     if (ed) {
       editionTache = ed.dataset.vtEdit;
-      renderViviTache(CONVERSATIONS.find(x => x.id === activeId));
+      renderVivi(CONVERSATIONS.find(x => x.id === activeId));
       return;
     }
     if (e.target.closest('[data-vt-cancel]')) {
       editionTache = null;
-      renderViviTache(CONVERSATIONS.find(x => x.id === activeId));
+      renderVivi(CONVERSATIONS.find(x => x.id === activeId));
       return;
     }
 

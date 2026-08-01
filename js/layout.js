@@ -22,6 +22,8 @@ const Layout = (function () {
     abonnement:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
     parametres:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
     vivi:      '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 17h4"/><path d="M2 13h2M20 13h2"/>',
+    site:      '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/>',
+    tarification:'<path d="M3 16.5 8 10l4 3.5L21 4"/><path d="M16 4h5v5"/><path d="M3 21h18"/>',
     search:    '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
     bell:      '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
     menu:      '<path d="M4 6h16M4 12h16M4 18h16"/>',
@@ -36,11 +38,13 @@ const Layout = (function () {
     { id:'proprietaires',label:'Propriétaires',   title:'Propriétaires',     href:'proprietaires.html' },
     { id:'reservations', label:'Réservations',    title:'Réservations',      href:'reservations.html' },
     { id:'voyageurs',    label:'Voyageurs',       title:'Voyageurs',         href:'voyageurs.html' },
+    { id:'site',         label:'Site web',        title:'Site web & réservations directes', href:'site.html' },
     { id:'messagerie',   label:'Messagerie',      title:'Messagerie',        href:'messagerie.html', badge:'unread' },
     { id:'automatisations', label:'Automatisations', title:'Automatisations', href:'automatisations.html' },
     { id:'vivi',         label:'Assistant IA',    title:'Vivi — Assistant IA', href:'vivi.html' },
     { id:'menage',       label:'Gestion des tâches', title:'Gestion des tâches', href:'menage.html' },
     { id:'equipe',       label:'Équipe',          title:'Équipe',            href:'equipe.html' },
+    { id:'tarification', label:'Tarification dynamique', title:'Tarification dynamique', href:'tarification.html' },
     { id:'comptabilite', label:'Comptabilité',    title:'Comptabilité',      href:'comptabilite.html' },
     { id:'abonnement',   label:'Abonnement',      title:'Abonnement & Facturation', href:'abonnement.html' },
     { id:'parametres',   label:'Paramètres',      title:'Paramètres',       href:'parametres.html' },
@@ -50,8 +54,12 @@ const Layout = (function () {
   const NAV_GROUPS = [
     { label:'Aperçu',        items:['dashboard', 'calendrier', 'statistiques'] },
     { label:'Locations',     items:['logements', 'proprietaires', 'reservations', 'voyageurs'] },
+    { label:'Vente directe', items:['site'] },
     { label:'Communication', items:['messagerie', 'automatisations', 'vivi'] },
     { label:'Équipe',        items:['menage', 'equipe'] },
+    // Accueille les outils tiers branchés sur Oyvia. Un seul aujourd'hui,
+    // mais le groupe existe pour que le suivant s'y range sans redécoupage.
+    { label:'Intégrations',  items:['tarification'] },
     { label:'Comptabilité',  items:['comptabilite'] },
     { label:'Compte',        items:['abonnement', 'parametres'] },
   ];
@@ -412,6 +420,30 @@ const UI = {
     UI.openPanel('ui-resa-panel');
     el.querySelectorAll('[data-fiche-view]').forEach(b => b.addEventListener('click', () => UI.viewFiche(r.id, parseInt(b.dataset.ficheView, 10))));
     el.querySelectorAll('[data-fiche-pdf]').forEach(b => b.addEventListener('click', () => UI.downloadFichePDF(r.id, parseInt(b.dataset.fichePdf, 10))));
+    // Accepter / refuser une demande. Le panneau est partagé : la même
+    // décision est donc possible depuis le calendrier et depuis la liste.
+    el.querySelectorAll('[data-demande-ok]').forEach(b => b.addEventListener('click', () => {
+      accepterDemande(b.dataset.demandeOk);
+      UI.openResa(b.dataset.demandeOk);                 // rafraîchit le panneau
+      document.dispatchEvent(new Event('resaChanged'));
+      UI.toast('Réservation confirmée');
+    }));
+    el.querySelectorAll('[data-demande-no]').forEach(b => b.addEventListener('click', () => {
+      const rid = b.dataset.demandeNo;
+      UI.confirm({
+        title: 'Refuser cette demande ?',
+        message: "Les dates seront libérées et redeviendront réservables, ici comme sur vos autres canaux.\n\nPensez à prévenir le voyageur : Oyvia ne lui envoie pas de refus automatique.",
+        confirmText: 'Refuser la demande',
+        cancelText: 'Revenir',
+        danger: true,
+        onConfirm() {
+          refuserDemande(rid);
+          UI.openResa(rid);
+          document.dispatchEvent(new Event('resaChanged'));
+          UI.toast('Demande refusée — dates libérées');
+        },
+      });
+    }));
     el.querySelectorAll('[data-copier-lien]').forEach(b => b.addEventListener('click', () => {
       // On copie l'URL absolue : le lien part par message, il doit être complet.
       const abs = new URL(b.dataset.copierLien, location.href).href;
@@ -640,9 +672,38 @@ const UI = {
         <button type="button" class="btn btn--secondary btn--sm grow" data-copier-lien="${url}">Copier le lien</button>
       </div>`;
 
+    // Une demande venue du site attend une décision : elle passe avant tout
+    // le reste, sinon on parcourt la fiche sans savoir qu'il faut agir.
+    const acompte = Math.round(r.montant * ((SITE_WEB.reservation || {}).acompte || 0) / 100);
+    const mailDemandeur = typeof emailDemande === 'function' ? emailDemande(r) : '';
+    const blocDecision = r.statut === 'demande' ? `
+      <div class="rp-decision">
+        <div class="rp-decision__tete">
+          <b>Demande à valider</b>
+          <span>Reçue depuis votre site${mailDemandeur ? ` · ${mailDemandeur}` : ''}</span>
+        </div>
+        <p class="rp-decision__txt">
+          Les dates sont retenues en attendant votre réponse : personne d'autre ne peut les réserver.
+          ${acompte ? `En acceptant, vous demandez un acompte de <b>${formatEuro(acompte)}</b>.` : ''}
+        </p>
+        <div class="rp-decision__actions">
+          <button type="button" class="btn btn--primary grow" data-demande-ok="${r.id}">Accepter la réservation</button>
+          <button type="button" class="btn btn--secondary" data-demande-no="${r.id}">Refuser</button>
+        </div>
+      </div>` : '';
+
+    // Une demande refusée reste consultable : on explique pourquoi elle est là.
+    const blocRefus = r.statut === 'annule' && r.motifRefus !== undefined ? `
+      <div class="rp-decision rp-decision--refus">
+        <div class="rp-decision__tete"><b>Demande refusée</b><span>${r.refuseeLe ? formatDate(r.refuseeLe) : ''}</span></div>
+        ${r.motifRefus ? `<p class="rp-decision__txt">Motif : ${r.motifRefus}</p>` : ''}
+        <p class="rp-decision__txt">Les dates ont été libérées et redeviennent réservables.</p>
+      </div>` : '';
+
     return `<div class="panel__head"><div><span class="chip-canal chip-canal--${r.canal}">${CANAL_LABEL[r.canal]}</span>
         <h3 style="margin-top:8px;">${r.voyageur}</h3><p class="text-soft text-sm">${l.nom} · ${l.ville}</p></div>${close}</div>
       <div class="panel__body">
+        ${blocDecision}${blocRefus}
         <div class="rp-section"><p class="eyebrow mb-2">Séjour</p>
           <div class="rp-row"><span>Dates</span><span>${formatPlage(r.arrivee, r.depart)}</span></div>
           <div class="rp-row"><span>Nuits</span><span>${r.nuits}</span></div>
@@ -657,7 +718,8 @@ const UI = {
         <div class="rp-section"><p class="eyebrow mb-2">Page séjour du voyageur</p>${lienRows}</div>
       </div>
       <div class="panel__foot"><div class="row gap-2">
-        <a class="btn btn--secondary grow" href="messagerie.html">${conv ? 'Ouvrir la conversation' : 'Écrire au voyageur'}</a>
+        <a class="btn btn--secondary grow" href="${mailDemandeur ? `mailto:${mailDemandeur}` : 'messagerie.html'}">${
+          mailDemandeur ? 'Écrire au demandeur' : conv ? 'Ouvrir la conversation' : 'Écrire au voyageur'}</a>
         <a class="btn btn--primary grow" href="reservations.html?r=${r.id}">Voir la réservation</a></div></div>`;
   },
 };

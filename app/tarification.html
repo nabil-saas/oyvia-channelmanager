@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Tarification dynamique</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Tarification dynamique</h1>
+            <p id="td-sous-titre">Vos prix, recalculés chaque nuit et poussés vers vos canaux.</p>
+          </div>
+          <div class="app-pagehead__actions" id="td-actions"><!-- injecté --></div>
+        </div>
+
+        <!-- Passerelle déconnectée : tout le reste est masqué -->
+        <div id="td-gate" hidden><!-- injecté --></div>
+
+        <!-- Section pilotée -->
+        <div id="td-corps" hidden>
+          <div class="app-grid app-grid--kpi" id="td-kpis"><!-- injecté --></div>
+
+          <div class="tabs mt-6" id="td-tabs">
+            <button class="is-active" data-tab="calendrier">Calendrier des prix</button>
+            <button data-tab="logements">Logements</button>
+            <button data-tab="regles">Règles</button>
+            <button data-tab="journal">Synchronisation</button>
+          </div>
+
+          <div class="tabpane is-active" data-pane="calendrier" id="td-pane-calendrier"><!-- injecté --></div>
+          <div class="tabpane" data-pane="logements" id="td-pane-logements"><!-- injecté --></div>
+          <div class="tabpane" data-pane="regles" id="td-pane-regles"><!-- injecté --></div>
+          <div class="tabpane" data-pane="journal" id="td-pane-journal"><!-- injecté --></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Panneau : détail d'une nuit -->
+  <aside class="panel" id="td-panel" role="dialog" aria-modal="true" aria-labelledby="td-panel-title">
+    <div class="panel__head">
+      <div>
+        <h3 class="panel__title" id="td-panel-title">Détail de la nuit</h3>
+        <p class="text-sm text-soft" id="td-panel-sub"></p>
+      </div>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="panel__body" id="td-panel-body"><!-- injecté --></div>
+    <div class="panel__foot" id="td-panel-foot"><!-- injecté --></div>
+  </aside>
+
+  <!-- Modale : bornes d'un logement -->
+  <div class="modal" id="td-bornes-modal" role="dialog" aria-modal="true" aria-labelledby="td-bornes-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="td-bornes-title">Bornes de tarification</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body" id="td-bornes-body"><!-- injecté --></div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="td-bornes-ok">Enregistrer</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/tarification.js"></script>
+  <script src="../js/vivi.js"></script>
+</body>
+</html>

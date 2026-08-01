@@ -325,9 +325,13 @@ Layout.init('logements');
           ${row('Tarif week-end', t.weekend ? `${formatEuro(t.weekend)} / nuit` : 'Identique à la semaine')}
           ${row('Voyageurs inclus', t.personnesIncluses)}
           ${row('Personne supplémentaire', t.personneSup ? `${formatEuro(t.personneSup)} / nuit` : 'Sans supplément')}
-          ${row('Tarification dynamique', t.dynamique.actif
+          ${row('Tarification dynamique', tdPilote(l)
             ? `<span class="badge badge--positive">${t.dynamique.source}</span>`
-            : '<span class="badge badge--neutral">Désactivée</span>')}
+            : (t.dynamique.actif
+              // Activée sur la fiche mais passerelle débranchée : afficher
+              // « PriceLabs » laisserait croire que des prix partent.
+              ? '<span class="badge badge--warning">En attente de connexion</span>'
+              : '<span class="badge badge--neutral">Désactivée</span>'))}
           ${row('Bornes du tarif', t.min && t.max ? `${formatEuro(t.min)} — ${formatEuro(t.max)}` : vide)}
         </div>
 

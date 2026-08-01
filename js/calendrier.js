@@ -53,7 +53,11 @@ Layout.init('calendrier');
     const visEnd = Math.min(e, N);
     if (visEnd <= 0 || visStart >= N || visEnd <= visStart) return '';
     const labelTxt = r.canal === 'bloque' ? (r.note || 'Bloqué') : r.voyageur;
-    return `<div class="cal-bar cal-bar--${r.canal}" style="grid-column:${visStart + 1}/${visEnd + 1}" data-res="${r.id}" tabindex="0" role="button" aria-label="${labelTxt}, ${formatPlage(r.arrivee, r.depart)}">${labelTxt}</div>`;
+    // Une demande n'est pas une réservation confirmée : elle occupe la
+    // place mais reste hachurée, pour qu'on la repère sans ouvrir la fiche.
+    const enAttente = r.statut === 'demande' ? ' cal-bar--demande' : '';
+    const suffixe = r.statut === 'demande' ? ' (à valider)' : '';
+    return `<div class="cal-bar cal-bar--${r.canal}${enAttente}" style="grid-column:${visStart + 1}/${visEnd + 1}" data-res="${r.id}" tabindex="0" role="button" aria-label="${labelTxt}, ${formatPlage(r.arrivee, r.depart)}${suffixe}">${labelTxt}${suffixe}</div>`;
   }
 
   function render() {
@@ -99,7 +103,8 @@ Layout.init('calendrier');
         }).join('');
       } else {
         cells = days.map(d => `<div class="cal-daycell ${isToday(d) ? 'cal-daycell--today' : ''} ${isWE(d) ? 'cal-daycell--we' : ''}"></div>`).join('');
-        extra = RESERVATIONS.filter(r => r.logementId === l.id).map(r => barFor(r, rangeStart, N)).join('');
+        extra = RESERVATIONS.filter(r => r.logementId === l.id && r.statut !== 'annule')
+          .map(r => barFor(r, rangeStart, N)).join('');
       }
       html += `<div class="cal-row cal-row--body">
         <div class="cal-namecell">
@@ -264,6 +269,7 @@ Layout.init('calendrier');
   });
 
   // Filtres & synchronisation
+  document.addEventListener('resaChanged', render);
   document.addEventListener('logementChange', e => { logementFiltre = e.detail; render(); });
   document.addEventListener('resaChanged', render);
 

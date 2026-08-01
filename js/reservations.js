@@ -5,7 +5,7 @@ Layout.init('reservations');
 
 (function () {
   const PAY_BADGE = { paye: 'badge--positive', acompte: 'badge--warning', impaye: 'badge--danger', rembourse: 'badge--neutral' };
-  const STA_BADGE = { confirme: 'badge--accent', en_cours: 'badge--positive', termine: 'badge--neutral', annule: 'badge--danger' };
+  const STA_BADGE = { demande: 'badge--warning', confirme: 'badge--accent', en_cours: 'badge--positive', termine: 'badge--neutral', annule: 'badge--danger' };
   const tbody = document.getElementById('resa-tbody');
   const today = parseDate(AUJOURDHUI);
 
@@ -18,6 +18,7 @@ Layout.init('reservations');
     logement: document.getElementById('app-logement'),
     paiement: document.getElementById('resa-paiement'),
     periode: document.getElementById('resa-periode'),
+    statut: document.getElementById('resa-statut'),
   };
 
   function matchPeriode(r, p) {
@@ -39,13 +40,42 @@ Layout.init('reservations');
         if (F.canal.value !== 'all' && r.canal !== F.canal.value) return false;
         if (F.logement.value !== 'all' && r.logementId !== F.logement.value) return false;
         if (F.paiement.value !== 'all' && r.paiement !== F.paiement.value) return false;
+        if (F.statut && F.statut.value !== 'all' && r.statut !== F.statut.value) return false;
         if (!matchPeriode(r, F.periode.value)) return false;
         return true;
       })
       .sort((a, b) => parseDate(a.arrivee) - parseDate(b.arrivee));
   }
 
+  /* Les demandes venues du site ne doivent pas se noyer dans la liste :
+     elles ont une échéance implicite (24 h annoncées au voyageur). */
+  function renderBandeau() {
+    let z = document.getElementById('resa-demandes');
+    if (!z) {
+      z = document.createElement('div');
+      z.id = 'resa-demandes';
+      const t = document.querySelector('.table-wrap') || tbody.closest('table').parentElement;
+      t.parentElement.insertBefore(z, t);
+    }
+    const d = demandesEnAttente();
+    if (!d.length) { z.innerHTML = ''; return; }
+    z.innerHTML = `
+      <div class="resa-alerte">
+        <div class="grow">
+          <b>${d.length} demande${d.length > 1 ? 's' : ''} de réservation à valider</b>
+          <small>Reçue${d.length > 1 ? 's' : ''} depuis votre site. Les dates sont retenues en attendant votre réponse.</small>
+        </div>
+        <button class="btn btn--primary btn--sm" id="resa-voir-demandes">${d.length > 1 ? 'Les voir' : 'La voir'}</button>
+      </div>`;
+    document.getElementById('resa-voir-demandes').addEventListener('click', () => {
+      if (d.length === 1) { UI.openResa(d[0].id); return; }
+      F.statut.value = 'demande';
+      render();
+    });
+  }
+
   function render() {
+    renderBandeau();
     const list = filtered();
     document.getElementById('resa-count').textContent =
       `${list.length} réservation${list.length > 1 ? 's' : ''} · ${formatEuro(list.reduce((s, r) => s + r.montant, 0))} de volume`;

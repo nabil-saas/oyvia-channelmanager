@@ -26,6 +26,7 @@ function formatMAD(n, decimales = 0) {
 const MOIS_COURT = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const MOIS_LONG  = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 const JOURS_COURT = ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+const JOURS_LONG  = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 function parseDate(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
 function formatDate(s, opts = {}) {
   const d = parseDate(s);
@@ -1068,6 +1069,10 @@ function nuitsOccupees(logementId, ignorerReservationId) {
   RESERVATIONS.forEach(r => {
     if (r.logementId !== logementId) return;
     if (ignorerReservationId && r.id === ignorerReservationId) return;
+    // Une réservation annulée libère ses nuits : sans ce filtre, refuser
+    // une demande laisserait les dates bloquées à jamais, invendables
+    // partout sans qu'aucun séjour n'y corresponde.
+    if (r.statut === 'annule') return;
     for (let d = r.arrivee; d < r.depart; d = addDays(d, 1)) occ.set(d, r);
   });
   return occ;
@@ -1095,7 +1100,7 @@ function prochaineNuitOccupee(logementId, depuis, ignorerReservationId) {
 // interdire : un ménage de mi-séjour se fait justement pendant le séjour.
 function occupationLogement(logementId, date) {
   const r = RESERVATIONS.find(x => x.logementId === logementId
-    && x.canal !== 'bloque' && date >= x.arrivee && date <= x.depart);
+    && x.canal !== 'bloque' && x.statut !== 'annule' && date >= x.arrivee && date <= x.depart);
   if (!r) return null;
   if (date === r.arrivee) return `Arrivée de ${r.voyageur}`;
   if (date === r.depart)  return `Départ de ${r.voyageur}`;
@@ -1107,6 +1112,288 @@ function occupationLogement(logementId, date) {
 function chargePrestataire(prestataireId, date, ignorerTacheId) {
   return TACHES.filter(t => t.prestataireId === prestataireId
     && t.date === date && t.statut !== 'termine' && t.id !== ignorerTacheId);
+}
+
+/* ============================================================
+   SITE WEB — la vitrine qui alimente les réservations directes
+
+   Raison d'être : chaque réservation passée par une OTA coûte 15 à 18 %
+   de commission. Un site propre, avec un vrai moteur de réservation
+   branché sur le MÊME calendrier que le reste d'Oyvia, transforme ces
+   séjours en direct. C'est pour ça que la page n'est pas une simple
+   plaquette : elle expose des disponibilités réelles.
+
+   Les réservations créées depuis le site arrivent avec canal 'direct',
+   exactement comme celles saisies à la main — aucun circuit parallèle,
+   donc aucun risque de surréservation entre le site et les OTA.
+   ============================================================ */
+
+const SITE_THEMES = [
+  { id:'epure',    label:'Épuré',    desc:"Blanc, typographie large, beaucoup d'air.",
+    fond:'#FFFFFF', alt:'#F5F7FB', texte:'#0B1020', titres:'#0B1020', c1:'#5170FF', c2:'#0B1020' },
+  { id:'chaleur',  label:'Chaleur',  desc:"Tons sable et terracotta, esprit maison d'hôtes.",
+    fond:'#FDF8F3', alt:'#F6EDE4', texte:'#3A302A', titres:'#2A211C', c1:'#C2703F', c2:'#3A302A' },
+  { id:'nuit',     label:'Nuit',     desc:'Fond sombre, photos mises en avant.',
+    fond:'#0F1422', alt:'#171E30', texte:'#C9D2E4', titres:'#FFFFFF', c1:'#7B93FF', c2:'#070A12' },
+  { id:'olive',    label:'Olive',    desc:'Vert grisé, sobre et naturel.',
+    fond:'#FAFAF7', alt:'#EFF1EA', texte:'#3A3F36', titres:'#22261E', c1:'#6C7574', c2:'#011E1C' },
+  { id:'azur',     label:'Azur',     desc:'Bleu clair, bord de mer.',
+    fond:'#FBFDFF', alt:'#EAF3FA', texte:'#28394A', titres:'#12293D', c1:'#1E88C7', c2:'#0C2739' },
+  { id:'terracotta', label:'Terracotta', desc:'Ocre et brique, ambiance méditerranéenne.',
+    fond:'#FFFAF6', alt:'#F7E9E0', texte:'#4A362E', titres:'#33231C', c1:'#B4542F', c2:'#33231C' },
+  { id:'ardoise',  label:'Ardoise',  desc:'Gris profond, très contemporain.',
+    fond:'#FAFAFB', alt:'#EEEFF2', texte:'#33383F', titres:'#16191D', c1:'#41474F', c2:'#16191D' },
+  { id:'or',       label:'Or',       desc:'Noir et doré, positionnement haut de gamme.',
+    fond:'#FFFFFF', alt:'#F7F4EC', texte:'#3B372C', titres:'#191713', c1:'#B08A38', c2:'#191713' },
+];
+function getTheme(id) { return SITE_THEMES.find(t => t.id === id) || SITE_THEMES[0]; }
+
+// Canaux de contact affichés sur le site. Le logo est porté par le
+// référentiel, pas par le gabarit : ajouter un canal ne demande alors
+// aucune retouche de la vitrine.
+const SITE_CONTACTS = [
+  { id:'tel',       label:'Téléphone', placeholder:'+212 6 00 00 00 00', lien: v => `tel:${String(v).replace(/[^+\d]/g, '')}`,
+    icone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>' },
+  { id:'whatsapp',  label:'WhatsApp',  placeholder:'+212 6 00 00 00 00', lien: v => `https://wa.me/${String(v).replace(/[^\d]/g, '')}`,
+    icone:'<path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2z"/><path d="M8.5 7.8c.2-.4.4-.4.6-.4h.6c.2 0 .5 0 .7.5l.9 2c.1.3 0 .5-.1.7l-.4.5c-.1.2-.3.3-.1.6a7 7 0 0 0 3.3 2.9c.3.1.5.1.7-.1l.6-.7c.2-.2.4-.2.6-.1l1.9.9c.3.1.4.3.4.5 0 .5-.2 1.4-.9 1.8-.6.4-1.6.6-2.7.2a11 11 0 0 1-6.3-6c-.4-1.1-.2-2.2.2-2.8z" fill="#fff" stroke="none"/>' },
+  { id:'instagram', label:'Instagram', placeholder:'votre_compte',       lien: v => `https://instagram.com/${String(v).replace(/^@/, '')}`,
+    icone:'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor" stroke="none"/>' },
+  { id:'email',     label:'E-mail',    placeholder:'contact@exemple.com', lien: v => `mailto:${v}`,
+    icone:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/>' },
+];
+function getContactCanal(id) { return SITE_CONTACTS.find(c => c.id === id) || null; }
+// Valeur d'un canal, uniquement s'il est activé. Renvoie '' sinon, ce qui
+// permet aux gabarits de tester la présence sans vérifier deux champs.
+function contactValeur(id) {
+  const c = (SITE_WEB.contacts || {})[id];
+  return c && c.actif ? String(c.valeur || '').trim() : '';
+}
+function lienContact(id) {
+  const canal = getContactCanal(id), v = contactValeur(id);
+  return canal && v ? canal.lien(v) : '';
+}
+// Canaux réellement affichables : activés ET renseignés.
+function contactsActifs() {
+  return SITE_CONTACTS
+    .map(c => ({ canal: c, conf: (SITE_WEB.contacts || {})[c.id] }))
+    .filter(x => x.conf && x.conf.actif && String(x.conf.valeur || '').trim());
+}
+
+// Modes de confirmation d'une demande venue du site.
+const SITE_MODES_RESA = [
+  { id:'instantane', label:'Réservation instantanée',
+    desc:"Le voyageur réserve et paie en ligne ; les dates se bloquent immédiatement." },
+  { id:'demande',    label:'Demande à valider',
+    desc:"Vous recevez la demande et confirmez sous 24 h. Les dates ne se bloquent qu'après votre accord." },
+];
+
+const SITE_WEB = {
+  // Assistant de création : tant qu'il n'est pas terminé, la page affiche
+  // les 5 étapes plutôt que les réglages détaillés. Un réglage fin n'a pas
+  // de sens avant que le site ait un nom, des couleurs et des logements.
+  configure: false,
+  statut: 'brouillon',                  // publie | brouillon
+  actif: false,
+  sousDomaine: 'mon-site',              // mon-site.oyvia.site
+  domainePerso: '',                     // ex. www.conciergerie-lumia.fr
+  domaineVerifie: false,
+  theme: 'epure',
+  couleur: '#5170FF',
+  couleurSecondaire: '#0B1020',
+  couleurTexte: '#3A4152',
+  couleurTitres: '#0B1020',
+  couleurFond: '#FFFFFF',
+  // Couverture : hauteur du bandeau d'accueil et densité du voile sombre,
+  // sans quoi un titre blanc sur une photo claire devient illisible.
+  couvertureHauteur: 78,               // % de la hauteur d'écran
+  couvertureVoile: 45,                 // % d'opacité du voile
+  contacts: {
+    tel:       { actif:false, valeur:'' },
+    whatsapp:  { actif:false, valeur:'' },
+    instagram: { actif:false, valeur:'' },
+    email:     { actif:false, valeur:'' },
+  },
+  whatsappFlottant: false,
+  logo: null,                           // image réduite, en data URL
+  photos: [],                           // accueil : plusieurs = carrousel
+  titre: '',
+  slogan: '',
+  adresse: '',
+  accroche: 'Votre prochain séjour commence ici',
+  sousAccroche: "Des locations d'exception, en réservation directe.",
+  // Sections éditoriales de la vitrine. Stockées ici pour qu'elles restent
+  // modifiables comme le reste, plutôt que figées dans le gabarit.
+  // Sections de la page, dans l'ordre d'affichage. Chacune peut être
+  // renommée, déplacée, masquée ou supprimée — c'est ce qui rend le site
+  // modifiable sans toucher au code.
+  sections: [
+    { id:'sec-logements', type:'logements', actif:true,
+      surtitre:'Nos adresses', titre:'Choisissez votre logement' },
+    { id:'sec-services', type:'cartes', actif:true, fond:'alt',
+      surtitre:'Notre conciergerie', titre:"L'expérience d'un séjour d'exception",
+      items:[
+        { titre:'Conciergerie complète', texte:"Annonces, tarifs, voyageurs, ménage : nous prenons tout en charge." },
+        { titre:'Ménage hôtelier',       texte:"Linge fourni, contrôle qualité avant chaque arrivée." },
+        { titre:'Accueil des voyageurs', texte:"Remise des clés, assistance 7 j/7, réponse en moins d'une heure." },
+        { titre:'Revenus optimisés',     texte:"Tarification ajustée à la saison et à la demande réelle." },
+      ] },
+    { id:'sec-proprio', type:'proprietaire', actif:true,
+      surtitre:'Propriétaires', titre:'Vous êtes propriétaire ?',
+      texte:"Confiez-nous votre bien : nous nous occupons de tout, de la mise en ligne au ménage, et vous suivez vos revenus en toute transparence.",
+      bouton:'Nous confier un bien' },
+    { id:'sec-contact', type:'contact', actif:true, fond:'alt',
+      surtitre:'Contact', titre:'Une question ?' },
+  ],
+  apropos: "Nous gérons une dizaine d'adresses en France. Chaque logement est nettoyé par notre équipe, vérifié avant chaque arrivée, et nous répondons en moins d'une heure.",
+  logementsPublies: [],
+  reseaux: { instagram: '', facebook: '' },
+  // Moteur de réservation
+  reservation: {
+    actif: true,
+    mode: 'demande',
+    remiseDirecte: 10,                  // % affiché face au prix OTA
+    acompte: 30,                        // % à la réservation
+    nuitsMin: 2,
+    delaiMin: 1,                        // jours entre la demande et l'arrivée
+    annulation: 'flexible',             // cf. POLITIQUES_ANNULATION
+    cgvAcceptees: true,
+    paiementEnLigne: true,
+  },
+  // Compteurs de la démo (non dérivables : on ne trace pas les visites)
+  stats: { visites30j: 0, demandes30j: 0, tauxConversion: 0 },
+};
+
+// Types de sections proposés à l'ajout. « unique » interdit les doublons :
+// deux listes de logements ou deux blocs contact n'auraient pas de sens.
+const SITE_TYPES_SECTION = [
+  { id:'texte',        label:'Texte libre',     desc:'Un titre et un paragraphe.', unique:false },
+  { id:'cartes',       label:'Cartes',          desc:'Une grille de services ou d\'atouts.', unique:false },
+  { id:'logements',    label:'Nos logements',   desc:'La grille des biens publiés.', unique:true },
+  { id:'proprietaire', label:'Propriétaires',   desc:'Un appel aux propriétaires, avec chiffres clés.', unique:true },
+  { id:'contact',      label:'Contact',         desc:'Vos coordonnées et vos réseaux.', unique:true },
+];
+function nouvelleSection(type) {
+  const t = SITE_TYPES_SECTION.find(x => x.id === type) || SITE_TYPES_SECTION[0];
+  const base = { id: 'sec-' + Date.now(), type: t.id, actif: true, surtitre: '', titre: t.label };
+  if (t.id === 'cartes') base.items = [{ titre: 'Un atout', texte: 'Décrivez-le en une phrase.' }];
+  if (t.id === 'texte') base.texte = 'Votre texte ici.';
+  if (t.id === 'proprietaire') { base.texte = 'Confiez-nous votre bien.'; base.bouton = 'Nous contacter'; }
+  return base;
+}
+
+// Les 5 étapes de l'assistant. « complete » sert à la fois à la pastille
+// de progression et au blocage du bouton « Continuer » : une étape sans
+// contenu utile ne doit pas pouvoir être franchie.
+const SITE_ETAPES = [
+  { id:'identite', titre:'Votre identité',       sous:"Le nom et le slogan affichés en haut de votre site.",
+    complete: () => !!String(SITE_WEB.titre || '').trim() },
+  { id:'couleurs', titre:'Vos couleurs',         sous:"Elles habillent les boutons et accents de votre site.",
+    complete: () => !!SITE_WEB.couleur },
+  { id:'photos',   titre:"Vos photos d'accueil", sous:"Plusieurs images = carrousel automatique. Vous pourrez aussi importer les photos de vos biens depuis Airbnb plus tard.",
+    complete: () => true },              // facultatif : un site sans photo reste un site
+  { id:'contact',  titre:'Vos coordonnées',      sous:"Pour que vos voyageurs et propriétaires puissent vous joindre.",
+    // Au moins UN moyen d'être joint : lequel importe peu, mais publier un
+    // site sans aucun contact revient à publier une impasse.
+    complete: () => contactsActifs().length > 0 },
+  { id:'logements',titre:'Vos logements',        sous:"Sélectionnez les biens à afficher. Vous pourrez tout affiner ensuite.",
+    complete: () => true },
+];
+
+// Logements réellement publiables : une annonce en brouillon ou hors ligne
+// n'a rien à faire sur le site public.
+function logementsPubliables() {
+  return LOGEMENTS.filter(l => l.statut !== 'brouillon');
+}
+function logementsDuSite() {
+  return logementsPubliables().filter(l => SITE_WEB.logementsPublies.includes(l.id));
+}
+/* ---------- Images du site ----------
+   Les photos sont stockées en data URL dans le même instantané que le
+   reste. Sans réduction, deux photos de smartphone suffiraient à dépasser
+   le quota localStorage — et saveOyviaState échoue silencieusement, ce qui
+   ferait perdre TOUT l'état, pas seulement les images. On redimensionne
+   donc systématiquement avant de stocker, et on plafonne le nombre. */
+const SITE_PHOTOS_MAX = 6;
+const SITE_IMAGE_LARGEUR_MAX = 1400;
+const SITE_LOGO_LARGEUR_MAX = 400;
+
+function reduireImage(file, largeurMax) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith('image/')) return reject(new Error('Fichier non image'));
+    const lecteur = new FileReader();
+    lecteur.onerror = () => reject(new Error('Lecture impossible'));
+    lecteur.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Image illisible'));
+      img.onload = () => {
+        const ratio = Math.min(1, largeurMax / img.width);
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * ratio);
+        c.height = Math.round(img.height * ratio);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        // Le PNG conserve la transparence, indispensable pour un logo.
+        const png = file.type === 'image/png' && largeurMax === SITE_LOGO_LARGEUR_MAX;
+        resolve(c.toDataURL(png ? 'image/png' : 'image/jpeg', 0.78));
+      };
+      img.src = lecteur.result;
+    };
+    lecteur.readAsDataURL(file);
+  });
+}
+
+function urlSite() {
+  return SITE_WEB.domainePerso && SITE_WEB.domaineVerifie
+    ? SITE_WEB.domainePerso
+    : `${SITE_WEB.sousDomaine || 'mon-site'}.oyvia.site`;
+}
+// Prix affiché en direct : la remise est le principal argument face aux OTA.
+function prixDirect(l) {
+  const r = SITE_WEB.reservation;
+  return Math.round(l.tarifBase * (1 - (r.remiseDirecte || 0) / 100));
+}
+// Réservations directes déjà encaissées, et commission évitée. Le taux OTA
+// moyen est une hypothèse assumée : on l'affiche comme telle dans l'écran.
+const COMMISSION_OTA_MOYENNE = 0.15;
+function statsReservationsDirectes() {
+  const directes = RESERVATIONS.filter(r => r.canal === 'direct' && r.statut !== 'annule');
+  const ca = directes.reduce((s, r) => s + r.montant, 0);
+  return { nombre: directes.length, ca, commissionEvitee: Math.round(ca * COMMISSION_OTA_MOYENNE) };
+}
+
+/* ---------- Demandes de réservation venues du site ----------
+   Une demande occupe déjà ses nuits dès sa création : c'est volontaire.
+   Les laisser vendables pendant qu'on réfléchit reviendrait à promettre
+   un logement qu'on peut perdre entre-temps. Accepter ne change donc pas
+   la disponibilité, seulement l'engagement ; refuser la libère. */
+function demandesEnAttente() {
+  return RESERVATIONS.filter(r => r.statut === 'demande');
+}
+// L'e-mail du demandeur est déposé dans la note à la création (site public).
+function emailDemande(r) {
+  const m = String(r.note || '').match(/[\w.+-]+@[\w-]+\.[\w.]+/);
+  return m ? m[0] : '';
+}
+function accepterDemande(id) {
+  const r = getReservation(id);
+  if (!r || r.statut !== 'demande') return null;
+  r.statut = 'confirme';
+  // L'acompte réglé en ligne ne l'a pas encore été : en mode « demande »,
+  // rien n'est encaissé tant que l'hôte n'a pas dit oui.
+  const ac = (SITE_WEB.reservation || {}).acompte || 0;
+  r.paiement = ac ? 'acompte' : 'impaye';
+  r.accepteeLe = AUJOURDHUI;
+  if (typeof saveOyviaState === 'function') saveOyviaState();
+  return r;
+}
+function refuserDemande(id, motif) {
+  const r = getReservation(id);
+  if (!r || r.statut !== 'demande') return null;
+  r.statut = 'annule';
+  r.paiement = 'rembourse';
+  r.motifRefus = motif || '';
+  r.refuseeLe = AUJOURDHUI;
+  if (typeof saveOyviaState === 'function') saveOyviaState();
+  return r;
 }
 
 /* ============================================================
@@ -1282,6 +1569,86 @@ const PLANS = [
 function getPlan(id) { return PLANS.find(p => p.id === id) || PLANS[0]; }
 
 // Total mensuel d'une offre pour un parc donné.
+/* ============================================================
+   DEVISES & PÉRIODICITÉ DE FACTURATION
+
+   Les tarifs de PLANS sont exprimés en MAD : c'est la devise de
+   référence du produit. Les autres montants en sont convertis.
+
+   Un vrai SaaS fixerait un prix propre à chaque marché (on ne vend pas
+   14,90 € parce que 160 MAD font 14,73 €) ; ici la conversion suffit à
+   la démonstration, et les taux sont regroupés en un seul endroit pour
+   pouvoir être remplacés par une grille par pays le jour venu.
+   ============================================================ */
+const DEVISES = [
+  { id:'EUR',  label:'EUR',   symbole:'€',    taux:0.092, avant:false, arrondi:1 },
+  { id:'MAD',  label:'MAD',   symbole:'MAD',  taux:1,     avant:false, arrondi:5 },
+  { id:'USD',  label:'USD',   symbole:'$',    taux:0.10,  avant:true,  arrondi:1 },
+  { id:'XOF',  label:'FCFA',  symbole:'FCFA', taux:60,    avant:false, arrondi:500 },
+];
+function getDevise(id) { return DEVISES.find(d => d.id === id) || DEVISES[1]; }
+
+// Au-delà de ce parc, le tarif catalogue n'a plus de sens : on bascule
+// sur un devis plutôt que d'afficher un montant à cinq chiffres.
+const PARC_MAX_CATALOGUE = 100;
+
+// Remise appliquée à l'engagement annuel, affichée telle quelle sur le
+// sélecteur : c'est l'argument de la bascule.
+const REMISE_ANNUELLE = 20;
+
+// Conversion + arrondi « commercial » : un prix affiché 11,04 € ferait
+// bricolé. On arrondit au pas propre à chaque devise.
+function convertirMAD(montantMAD, deviseId) {
+  const d = getDevise(deviseId);
+  const brut = montantMAD * d.taux;
+  return Math.round(brut / d.arrondi) * d.arrondi;
+}
+function formatDevise(montantMAD, deviseId, opts = {}) {
+  const d = getDevise(deviseId);
+  const v = opts.deja ? montantMAD : convertirMAD(montantMAD, deviseId);
+  const n = v.toLocaleString('fr-FR');
+  return d.avant ? `${d.symbole}${n}` : `${n} ${d.symbole}`;
+}
+
+// Prix mensuel par logement, éventuellement remisé si l'on paie à l'année.
+// On raisonne toujours en « par mois » : c'est ce que le visiteur compare.
+function prixMensuelParLogement(planId, periodicite) {
+  const p = getPlan(planId);
+  if (p.unite === 'essai') return 0;
+  return periodicite === 'annuel'
+    ? p.prix * (1 - REMISE_ANNUELLE / 100)
+    : p.prix;
+}
+function totalMensuel(planId, nbLogements, periodicite) {
+  return prixMensuelParLogement(planId, periodicite) * nbLogements;
+}
+// Ce qui est réellement débité : douze mois d'un coup en annuel.
+function totalFacture(planId, nbLogements, periodicite) {
+  const m = totalMensuel(planId, nbLogements, periodicite);
+  return periodicite === 'annuel' ? m * 12 : m;
+}
+
+/* Tarif tel qu'il sera AFFICHÉ, dans la devise choisie.
+
+   Point délicat : convertir séparément le prix unitaire et le total donne
+   des chiffres qui ne tombent pas juste à l'écran (17 € × 8 ≠ 132 €), parce
+   que chaque conversion est arrondie de son côté. On ancre donc tout sur le
+   prix unitaire arrondi, et le total en découle par simple multiplication.
+   La remise annuelle s'applique elle aussi à ce prix affiché : le client
+   doit pouvoir refaire le calcul de tête. */
+function tarifAffiche(planId, nbLogements, deviseId, periodicite) {
+  const p = getPlan(planId);
+  const d = getDevise(deviseId);
+  if (p.unite === 'essai') return { unite: 0, total: 0, plein: 0, annuel: 0 };
+
+  const plein = convertirMAD(p.prix, deviseId);
+  const unite = periodicite === 'annuel'
+    ? Math.round(plein * (1 - REMISE_ANNUELLE / 100) / d.arrondi) * d.arrondi
+    : plein;
+  const total = unite * nbLogements;
+  return { unite, total, plein: plein * nbLogements, annuel: total * 12 };
+}
+
 function planTotal(planId, nbLogements) {
   const p = getPlan(planId);
   if (p.unite === 'essai') return 0;
@@ -1470,6 +1837,348 @@ const PLATEFORMES = [
   { id:'pricelabs',  section:'applications', nom:'PriceLabs',    lettre:'P', connecte:false, desc:"Synchronisez une tarification dynamique, logement par logement." },
   { id:'ical',       section:'applications', nom:'iCal',         lettre:'I', connecte:true,  desc:"Importez un calendrier externe (Airbnb, Vrbo, Google…) pour bloquer les dates." },
 ];
+
+/* ============================================================
+   TARIFICATION DYNAMIQUE — le pont avec PriceLabs
+   (section Intégrations)
+
+   Ce que fait PriceLabs, et que l'on reproduit ici : il part d'un
+   PRIX DE BASE par logement, lui applique une pile de règles
+   (saison, jour de la semaine, proximité de l'arrivée, nuits
+   orphelines, tension sur les dates), puis borne le résultat entre
+   un plancher et un plafond décidés par l'hôte. Le prix obtenu est
+   poussé chaque nuit vers les canaux connectés.
+
+   Deux partis pris, importants pour ne rien raconter de faux :
+
+   1. Le plancher et le plafond ne sont pas des règles de plus, ce
+      sont des GARDE-FOUS. Ils s'appliquent en dernier et écrasent
+      tout le reste : aucune combinaison de règles ne peut vendre
+      une nuit sous le prix que l'hôte a fixé comme acceptable.
+
+   2. PriceLabs s'appuie sur des données de MARCHÉ (les comparables
+      du quartier). Oyvia n'a pas ces données. Plutôt que d'inventer
+      une « occupation du marché » qui n'existe pas, la règle de
+      tension se calcule sur VOTRE propre calendrier, autour de la
+      date — et elle est libellée comme telle à l'écran. C'est moins
+      puissant, mais c'est vérifiable.
+   ============================================================ */
+
+// Modulation par mois (index 0 = janvier), en pourcentage du prix de base.
+const TARIF_DYNAMIQUE = {
+  id: 'TD',
+  syncAuto: true,
+  heureSync: '06:00',
+  derniereSync: '2026-07-23 06:12',
+  horizonJours: 365,          // profondeur de calendrier poussée aux canaux
+  arrondi: 1,                 // arrondi du prix final, en euros
+
+  saison:  { actif: true, mois: [-20, -15, -10, 0, 5, 12, 25, 30, 10, 0, -15, -5] },
+  // index = getDay() : 0 = dimanche … 6 = samedi
+  jours:   { actif: true, pct: [-8, -10, -10, -8, -3, 12, 15] },
+
+  // Décote à l'approche de l'arrivée : une nuit invendue ne se rattrape pas.
+  // Le premier palier dont `jours` couvre l'échéance l'emporte.
+  derniereMinute: { actif: true, paliers: [
+    { jours: 1,  pct: -22 },
+    { jours: 3,  pct: -15 },
+    { jours: 7,  pct: -8  },
+    { jours: 14, pct: -3  },
+  ]},
+
+  // Nuits coincées entre deux séjours, dans un trou plus court que le
+  // minimum de nuits du logement : invendables au prix normal.
+  orphelines: { actif: true, pct: -25 },
+
+  // Tension sur la période, mesurée sur votre propre calendrier.
+  // `fenetre` = nombre de jours de part et d'autre de la date.
+  tension: { actif: true, fenetre: 10, paliers: [
+    { seuil: 0,  pct: -10 },
+    { seuil: 30, pct: 0   },
+    { seuil: 60, pct: 8   },
+    { seuil: 80, pct: 18  },
+  ]},
+
+  // Minimum de nuits piloté : on assouplit là où l'on veut remplir.
+  minNuits: { actif: true, orphelin: true, derniereMinuteJours: 3, derniereMinuteMin: 1 },
+};
+
+/* Prix fixés à la main pour une nuit précise. Ils court-circuitent tout le
+   moteur — y compris le plancher et le plafond : si l'hôte inscrit un prix,
+   c'est qu'il sait quelque chose que le calendrier ignore (un festival, un
+   congrès, une réservation de groupe attendue). */
+const TD_OVERRIDES = [
+  { id:'TDO1', logementId:'L001', date:'2026-08-15', prix:210, note:"Fête de l'Assomption — forte demande en centre-ville" },
+  { id:'TDO2', logementId:'L003', date:'2026-09-12', prix:340, note:'Congrès — tout le quartier est plein' },
+];
+
+/* Journal des synchronisations poussées vers les canaux. */
+const TD_JOURNAL = [
+  { id:'TDJ1', horodatage:'2026-07-23 06:12', statut:'ok',        logements:5, nuits:1825, message:'Prix poussés vers Airbnb et Booking.com' },
+  { id:'TDJ2', horodatage:'2026-07-22 06:11', statut:'ok',        logements:5, nuits:1825, message:'Prix poussés vers Airbnb et Booking.com' },
+  { id:'TDJ3', horodatage:'2026-07-21 06:13', statut:'attention', logements:4, nuits:1460, message:"L005 ignoré : plancher supérieur au plafond, bornes à corriger" },
+  { id:'TDJ4', horodatage:'2026-07-20 06:10', statut:'ok',        logements:5, nuits:1825, message:'Prix poussés vers Airbnb et Booking.com' },
+];
+
+const TD_STATUT_JOURNAL = { ok:'Réussie', attention:'Avertissement', erreur:'Échec' };
+
+// La section n'a de sens que si le compte PriceLabs est relié.
+function pricelabsConnecte() {
+  const p = PLATEFORMES.find(x => x.id === 'pricelabs');
+  return !!(p && p.connecte);
+}
+
+// Un logement est piloté s'il est activé ET si la passerelle est branchée :
+// afficher « PriceLabs » sur une fiche alors que le compte est déconnecté
+// laisserait croire que des prix partent, alors que rien ne part.
+function tdPilote(l) {
+  return pricelabsConnecte() && !!(l && l.tarifs && l.tarifs.dynamique && l.tarifs.dynamique.actif);
+}
+function tdLogementsPilotes() { return LOGEMENTS.filter(tdPilote); }
+
+// Prix de base et garde-fous. Un logement qui n'a jamais été borné reçoit
+// des valeurs de départ dérivées de son prix de base, pour que le moteur ne
+// tourne jamais sans filet.
+function tdBornes(l) {
+  const base = l.tarifBase || 0;
+  const min = (l.tarifs && l.tarifs.min != null) ? l.tarifs.min : Math.round(base * 0.75);
+  const max = (l.tarifs && l.tarifs.max != null) ? l.tarifs.max : Math.round(base * 1.9);
+  return { base, min, max };
+}
+// Bornes incohérentes : le moteur ne peut pas trancher à la place de l'hôte.
+function tdBornesInvalides(l) {
+  const { base, min, max } = tdBornes(l);
+  if (min > max) return 'Le plancher dépasse le plafond.';
+  if (base < min || base > max) return 'Le prix de base est hors des bornes.';
+  return null;
+}
+
+function tdOverride(logementId, date) {
+  return TD_OVERRIDES.find(o => o.logementId === logementId && o.date === date) || null;
+}
+function tdPoserOverride(logementId, date, prix, note) {
+  const ex = tdOverride(logementId, date);
+  if (ex) { ex.prix = prix; if (note !== undefined) ex.note = note; return ex; }
+  const o = { id:'TDO' + Date.now(), logementId, date, prix, note: note || '' };
+  TD_OVERRIDES.push(o);
+  return o;
+}
+function tdRetirerOverride(logementId, date) {
+  const o = tdOverride(logementId, date);
+  return o ? supprimerEntite('TD_OVERRIDES', o.id) : false;
+}
+
+/* Nuit orpheline : une nuit libre dans un trou fermé des DEUX côtés par un
+   séjour, et plus court que le minimum de nuits du logement. Personne ne
+   peut réserver ce trou sans enfreindre la règle de séjour minimum — d'où
+   la décote, qui va de pair avec l'assouplissement du minimum de nuits.
+   Au-delà de LIMITE jours de liberté d'un côté, ce n'est plus un trou :
+   c'est une période ouverte, qui n'a rien d'orphelin. */
+function tdTrouOrphelin(logementId, date) {
+  const occ = nuitsOccupees(logementId);
+  if (occ.has(date)) return null;
+  const LIMITE = 12;
+  let avant = 0, apres = 0;
+  while (avant < LIMITE && !occ.has(addDays(date, -(avant + 1)))) avant++;
+  if (avant >= LIMITE) return null;
+  while (apres < LIMITE && !occ.has(addDays(date, apres + 1))) apres++;
+  if (apres >= LIMITE) return null;
+  const taille = avant + 1 + apres;
+  const l = getLogement(logementId);
+  const seuil = (l && l.sejour && l.sejour.nuitsMin) || 1;
+  return taille < seuil ? { taille, seuil } : null;
+}
+
+// Part des nuits déjà vendues autour de la date, sur ce logement.
+function tdTension(logementId, date, fenetre) {
+  const occ = nuitsOccupees(logementId);
+  const f = fenetre || TARIF_DYNAMIQUE.tension.fenetre;
+  let prises = 0, total = 0;
+  for (let i = -f; i <= f; i++) { if (occ.has(addDays(date, i))) prises++; total++; }
+  return Math.round((prises / total) * 100);
+}
+function tdPalierTension(pct) {
+  const paliers = TARIF_DYNAMIQUE.tension.paliers;
+  let choisi = paliers[0];
+  paliers.forEach(p => { if (pct >= p.seuil) choisi = p; });
+  return choisi;
+}
+
+/* Cœur du moteur. Renvoie le prix poussé pour une nuit, ET le détail des
+   règles qui y mènent : sans ce détail, l'hôte ne peut ni faire confiance
+   au chiffre ni corriger la règle fautive. */
+function prixRecommande(logementId, date) {
+  const l = getLogement(logementId);
+  if (!l) return null;
+  const T = TARIF_DYNAMIQUE;
+  const { base, min, max } = tdBornes(l);
+  const reservation = nuitsOccupees(logementId).get(date) || null;
+  const jAvant = nuitsEntre(AUJOURDHUI, date);
+
+  const res = {
+    logementId, date, base, min, max,
+    reservation, passe: jAvant < 0,
+    facteurs: [], override: null, brut: base, prix: base,
+    borne: null, minNuits: (l.sejour && l.sejour.nuitsMin) || 1, orphelin: null,
+  };
+
+  const ov = tdOverride(logementId, date);
+  if (ov) {
+    res.override = ov;
+    res.brut = ov.prix; res.prix = ov.prix;
+    return res;
+  }
+
+  const d = parseDate(date);
+  let coef = 1;
+  const ajouter = (id, label, pct, detail) => {
+    if (!pct) return;
+    res.facteurs.push({ id, label, pct, detail: detail || '' });
+    coef *= 1 + pct / 100;
+  };
+
+  if (T.saison.actif) ajouter('saison', MOIS_LONG[d.getMonth()], T.saison.mois[d.getMonth()] || 0, 'Saisonnalité');
+  if (T.jours.actif)  ajouter('jour', JOURS_LONG[d.getDay()], T.jours.pct[d.getDay()] || 0, 'Jour de la semaine');
+
+  // Les règles de remplissage ne s'appliquent qu'à une nuit encore à vendre.
+  // Recalculer une décote « dernière minute » sur une nuit déjà réservée
+  // n'aurait aucun sens : le prix est encaissé, il ne bouge plus.
+  if (!reservation && !res.passe) {
+    if (T.derniereMinute.actif) {
+      const p = T.derniereMinute.paliers.slice().sort((a, b) => a.jours - b.jours).find(x => jAvant <= x.jours);
+      if (p) ajouter('derniere_minute', `Arrivée dans ${jAvant} j`, p.pct, 'Dernière minute');
+    }
+    const orph = T.orphelines.actif ? tdTrouOrphelin(logementId, date) : null;
+    if (orph) {
+      res.orphelin = orph;
+      ajouter('orpheline', `Trou de ${orph.taille} nuit${orph.taille > 1 ? 's' : ''}`, T.orphelines.pct, `Minimum ${orph.seuil} nuits`);
+    }
+    if (T.tension.actif) {
+      const t = tdTension(logementId, date);
+      const p = tdPalierTension(t);
+      res.tensionPct = t;
+      ajouter('tension', `Calendrier rempli à ${t} %`, p.pct, 'Tension sur la période');
+    }
+  }
+
+  res.brut = Math.round(base * coef);
+  const arr = T.arrondi || 1;
+  let prix = Math.round((base * coef) / arr) * arr;
+  if (prix < min) { prix = min; res.borne = 'min'; }
+  else if (prix > max) { prix = max; res.borne = 'max'; }
+  res.prix = prix;
+
+  // Minimum de nuits piloté, dans la même logique que le prix.
+  if (T.minNuits.actif) {
+    if (res.orphelin && T.minNuits.orphelin) res.minNuits = res.orphelin.taille;
+    else if (!reservation && !res.passe && jAvant <= T.minNuits.derniereMinuteJours) {
+      res.minNuits = Math.min(res.minNuits, T.minNuits.derniereMinuteMin);
+    }
+  }
+  return res;
+}
+
+/* Synthèse sur une fenêtre glissante, pour les compteurs d'en-tête.
+   On ne mesure QUE les nuits encore à vendre : inclure les nuits déjà
+   réservées ferait passer pour une recommandation un prix qui a été
+   décidé il y a des mois. */
+function tdSynthese(logementIds, jours = 30, depuis = AUJOURDHUI) {
+  const ids = logementIds && logementIds.length
+    ? logementIds
+    : tdLogementsPilotes().map(l => l.id);
+  let nuits = 0, sommePrix = 0, sommeBase = 0;
+  let orphelines = 0, plancher = 0, plafond = 0, fixes = 0;
+  ids.forEach(id => {
+    for (let i = 0; i < jours; i++) {
+      const date = addDays(depuis, i);
+      const r = prixRecommande(id, date);
+      if (!r || r.reservation) continue;
+      nuits++;
+      sommePrix += r.prix;
+      sommeBase += r.base;
+      if (r.override) fixes++;
+      if (r.orphelin) orphelines++;
+      if (r.borne === 'min') plancher++;
+      if (r.borne === 'max') plafond++;
+    }
+  });
+  const moyen = nuits ? sommePrix / nuits : 0;
+  const moyenBase = nuits ? sommeBase / nuits : 0;
+  return {
+    logements: ids.length, nuits,
+    prixMoyen: Math.round(moyen),
+    baseMoyenne: Math.round(moyenBase),
+    ecartPct: moyenBase ? Math.round(((moyen - moyenBase) / moyenBase) * 100) : 0,
+    orphelines, plancher, plafond, fixes,
+  };
+}
+
+/* Pousse les prix vers les canaux et journalise le résultat.
+   Un logement aux bornes incohérentes est EXCLU de l'envoi plutôt que
+   corrigé d'office : un plancher au-dessus du plafond est une erreur de
+   saisie, et deviner l'intention de l'hôte reviendrait à vendre ses nuits
+   à un prix qu'il n'a jamais validé. On l'écrit dans le journal. */
+function tdSynchroniser() {
+  const pilotes = tdLogementsPilotes();
+  const bloques = pilotes.filter(l => tdBornesInvalides(l));
+  const envoyes = pilotes.filter(l => !tdBornesInvalides(l));
+  const horizon = TARIF_DYNAMIQUE.horizonJours;
+
+  const horodatage = _tdMaintenant();
+
+  const canaux = PLATEFORMES.filter(p => p.section === 'ota' && p.connecte).map(p => p.nom);
+  let statut = 'ok';
+  let message = canaux.length
+    ? `Prix poussés vers ${canaux.join(' et ')}`
+    : "Prix calculés, mais aucun canal connecté pour les recevoir";
+  if (!canaux.length) statut = 'attention';
+  if (bloques.length) {
+    statut = 'attention';
+    message = `${bloques.map(l => l.id).join(', ')} ignoré${bloques.length > 1 ? 's' : ''} : bornes à corriger`;
+  }
+  if (!envoyes.length) {
+    statut = 'erreur';
+    message = 'Aucun logement piloté : rien à synchroniser';
+  }
+
+  const entree = {
+    id: 'TDJ' + Date.now(), horodatage, statut,
+    logements: envoyes.length, nuits: envoyes.length * horizon, message,
+  };
+  TD_JOURNAL.unshift(entree);
+  if (TD_JOURNAL.length > 30) TD_JOURNAL.length = 30;
+  TARIF_DYNAMIQUE.derniereSync = horodatage;
+  return entree;
+}
+
+/* « Maintenant » dans le référentiel de la démo : la DATE d'AUJOURDHUI,
+   l'HEURE de l'horloge réelle. Prendre Date.now() tel quel daterait la
+   synchronisation d'un jour qui n'existe pas dans le calendrier affiché,
+   et « il y a 9 j » s'afficherait sur une synchro faite à l'instant. */
+function _tdMaintenant() {
+  const n = new Date();
+  const p2 = v => String(v).padStart(2, '0');
+  return `${AUJOURDHUI} ${p2(n.getHours())}:${p2(n.getMinutes())}`;
+}
+function _tdHorodatageMs(horodatage) {
+  const [dpart, hpart] = String(horodatage).split(' ');
+  const [y, m, d] = dpart.split('-').map(Number);
+  const [hh, mm] = (hpart || '00:00').split(':').map(Number);
+  return new Date(y, m - 1, d, hh, mm).getTime();
+}
+
+// « il y a 2 h », pour dater la dernière synchronisation sans faire lire
+// un horodatage complet à l'utilisateur.
+function tdDepuis(horodatage) {
+  if (!horodatage) return 'jamais';
+  const min = Math.round((_tdHorodatageMs(_tdMaintenant()) - _tdHorodatageMs(horodatage)) / 60000);
+  if (min < 1) return "à l'instant";
+  if (min < 60) return `il y a ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `il y a ${h} h`;
+  const j = Math.round(h / 24);
+  return `il y a ${j} j`;
+}
 
 /* ============================================================
    VIVI — assistant IA d'Oyvia
@@ -1844,10 +2553,6 @@ const VIVI_CATEGORIES_TACHE = [
     id:'panne', label:'Panne ou dégât', type:'maintenance', urgence:'haute',
     desc:"Fuite, chauffe-eau, serrure, électroménager, climatisation, Wi-Fi.",
     heureDefaut:'16:00', montant:0,
-    reponses:{
-      fr:"Bonjour {prenom}, merci de nous avoir signalé ce problème, et désolés pour la gêne. Nous prévenons notre intervenant dès maintenant et nous revenons vers vous dès que le passage est calé.",
-      en:"Hello {prenom}, thank you for reporting this, and sorry for the inconvenience. We're contacting our technician right away and will get back to you as soon as a visit is scheduled.",
-    },
     confirmations:{
       fr:"Bonjour {prenom}, c'est confirmé : notre intervenant passera {quand} pour régler le problème. Merci de votre patience !",
       en:"Hello {prenom}, it's confirmed: our technician will come {quand} to fix the issue. Thank you for your patience!",
@@ -1866,10 +2571,6 @@ const VIVI_CATEGORIES_TACHE = [
     id:'proprete', label:'Problème de propreté', type:'menage', urgence:'haute',
     desc:"Logement sale à l'arrivée, poubelles pleines, draps ou serviettes tachés.",
     heureDefaut:'14:00', montant:0,
-    reponses:{
-      fr:"Bonjour {prenom}, je suis vraiment désolée, ce n'est pas le standard que nous voulons vous offrir. Nous programmons un passage de ménage au plus vite et nous vous confirmons l'horaire très rapidement.",
-      en:"Hello {prenom}, I'm truly sorry — this is not the standard we aim for. We're arranging a cleaning visit as soon as possible and will confirm the time shortly.",
-    },
     confirmations:{
       fr:"Bonjour {prenom}, c'est confirmé : une équipe de ménage passera {quand}. Encore désolés pour ce désagrément, et merci de nous l'avoir signalé.",
       en:"Hello {prenom}, it's confirmed: a cleaning team will come {quand}. Again, sorry for the inconvenience, and thank you for letting us know.",
@@ -1887,10 +2588,6 @@ const VIVI_CATEGORIES_TACHE = [
     id:'consommables', label:'Linge et consommables', type:'linge', urgence:'normale',
     desc:"Serviettes, draps, papier toilette, capsules, produits d'entretien.",
     heureDefaut:'09:00', montant:15,
-    reponses:{
-      fr:"Bonjour {prenom}, merci de nous avoir prévenus ! Nous organisons un réapprovisionnement et vous recevrez le nécessaire très vite.",
-      en:"Hello {prenom}, thanks for letting us know! We're arranging a restock and you'll receive everything shortly.",
-    },
     confirmations:{
       fr:"Bonjour {prenom}, c'est noté : le réapprovisionnement vous sera livré {quand}. Bonne journée !",
       en:"Hello {prenom}, all set: your restock will be delivered {quand}. Have a great day!",
@@ -1907,10 +2604,6 @@ const VIVI_CATEGORIES_TACHE = [
     id:'menage_sejour', label:'Ménage en cours de séjour', type:'menage', urgence:'normale',
     desc:"Séjour long : ménage intermédiaire demandé par le voyageur.",
     heureDefaut:'11:00', montant:0,
-    reponses:{
-      fr:"Bonjour {prenom}, oui, c'est tout à fait possible. Nous regardons les disponibilités de notre équipe et nous revenons vers vous avec une proposition d'horaire.",
-      en:"Hello {prenom}, yes, that's absolutely possible. We're checking our team's availability and will come back to you with a suggested time.",
-    },
     confirmations:{
       fr:"Bonjour {prenom}, c'est confirmé : le ménage de mi-séjour est programmé {quand}. Merci de laisser l'accès possible à cette heure-là.",
       en:"Hello {prenom}, it's confirmed: your mid-stay cleaning is scheduled {quand}. Please make sure access is possible at that time.",
@@ -1935,8 +2628,10 @@ function viviModeTache(catId) {
    C'est l'unité persistée : une fois créé, il survit à la réponse que Vivi
    envoie juste après (sinon la tâche disparaîtrait au moment même où elle
    devient nécessaire).
-     statut  : ouvert (tâche à valider) | creee | refusee
-     reponseId : la réponse d'accusé de réception envoyée au voyageur */
+     statut : ouvert (tâche à valider) | creee | refusee
+   Le voyageur n'est prévenu qu'à la création, avec le créneau : pas
+   d'accusé de réception préalable, qui l'obligerait à lire deux messages
+   pour une seule information. */
 const VIVI_SIGNALEMENTS = [];
 
 /* ---------- Détection ---------- */
@@ -2070,50 +2765,6 @@ function getSignalement(convId, msgIndex) {
   return VIVI_SIGNALEMENTS.find(s => s.conversationId === convId && s.msgIndex === msgIndex) || null;
 }
 
-/* ---------- Étape 1 : la réponse au voyageur ----------
-   Un voyageur qui signale une fuite attend d'abord qu'on lui réponde.
-   Cette réponse suit EXACTEMENT les mêmes règles que les autres réponses
-   de Vivi (garde-fous, seuil de confiance, heures de silence) : il n'y a
-   pas de second circuit de décision, sinon les deux divergeraient.
-
-   La confiance part de la détection, puis chute de 25 points si le
-   logement n'a pas de contexte renseigné : Vivi promet une intervention
-   sur un bien qu'elle ne connaît pas, mieux vaut vous la faire relire.
-   C'est le même raisonnement que le « Logement non décrit » existant. */
-const _PENALITE_LOGEMENT_NON_DECRIT = 25;
-
-// Marqueurs d'escalade. On ne teste QUE les garde-fous que vous avez
-// activés dans la configuration — cocher/décocher se voit immédiatement.
-const VIVI_GF_MARQUEURS = {
-  remboursement: ['remboursement', 'rembourser', 'annuler ma réservation', 'refund', 'compensation'],
-  plainte:       ['inacceptable', 'scandaleux', 'honteux', 'porter plainte', 'inadmissible', 'unacceptable'],
-  agressif:      ['!!!', 'ras-le-bol', 'en colère', 'furieux', 'immédiatement et sans'],
-};
-function _viviGardeFouDeclenche(texte) {
-  const t = ' ' + String(texte || '').toLowerCase() + ' ';
-  const actifs = (VIVI_CONFIG.gardeFous && VIVI_CONFIG.gardeFous.escalade) || [];
-  for (const id of Object.keys(VIVI_GF_MARQUEURS)) {
-    if (!actifs.includes(id)) continue;
-    if (VIVI_GF_MARQUEURS[id].some(m => t.includes(m))) return id;
-  }
-  return null;
-}
-
-// L'heure figure dans le libellé du message (« 09:41 », « Hier 17:20 »).
-function _viviMinutes(s) {
-  const m = String(s || '').match(/(\d{1,2}):(\d{2})/);
-  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
-}
-function _viviDansSilence(heureLibelle) {
-  const g = VIVI_CONFIG.gardeFous;
-  if (!g || !g.silenceActif) return false;
-  const t = _viviMinutes(heureLibelle);
-  const debut = _viviMinutes(g.silenceDebut), fin = _viviMinutes(g.silenceFin);
-  if (t == null || debut == null || fin == null) return false;
-  // La plage traverse minuit (22 h → 8 h) dans le cas courant.
-  return debut > fin ? (t >= debut || t < fin) : (t >= debut && t < fin);
-}
-
 // Détection de langue volontairement grossière : elle sert seulement à
 // choisir le modèle de réponse. Un vrai modèle ferait mieux.
 const _VIVI_MOTS_EN = [' the ', ' is ', ' are ', ' we ', ' our ', ' could ', ' would ', ' please ',
@@ -2123,64 +2774,11 @@ function viviLangueMessage(texte) {
   return _VIVI_MOTS_EN.filter(m => t.includes(m)).length >= 3 ? 'en' : 'fr';
 }
 
-// Construit et route la réponse d'accusé de réception. Renvoie l'entrée
-// ajoutée à VIVI_REPONSES, pour que l'audit et la messagerie la voient.
-function _viviRepondreAuSignalement(c, msgIndex, cat) {
-  const resa = getReservation(c.reservationId);
-  if (!resa || !cat.reponses) return null;
-  const msg = c.messages[msgIndex];
-  const langue = viviLangueMessage(msg.texte);
-  const prenom = String(resa.voyageur || '').split(' ')[0];
-  const texte = (cat.reponses[langue] || cat.reponses.fr).replace(/{prenom}/g, prenom);
-
-  const contexteConnu = !!getViviLogement(resa.logementId);
-  const base = Math.min(96, 68 + (viviDetecterTache(msg.texte) || { mots: [] }).mots.length * 9);
-  const confiance = Math.max(0, base - (contexteConnu ? 0 : _PENALITE_LOGEMENT_NON_DECRIT));
-
-  const g = VIVI_CONFIG.gardeFous;
-  const gf = _viviGardeFouDeclenche(msg.texte);
-  const silence = _viviDansSilence(msg.heure);
-
-  const rep = {
-    id: `V-${c.id}-${msgIndex}`,
-    conversationId: c.id, msgIndex: null,
-    quand: `${AUJOURDHUI} ${String(msg.heure || '').slice(-5)}`,
-    langue, confiance, delai: null,
-    question: msg.texte,
-    reponse: texte,
-    origineTache: cat.id,   // trace : cette réponse accompagne un signalement
-    statut: 'attente', raison: '',
-  };
-
-  if (gf) {
-    rep.statut = 'escaladee';
-    rep.raison = (VIVI_ESCALADES.find(e => e.id === gf) || {}).label || 'Garde-fou déclenché';
-  } else if (confiance < g.confianceMin) {
-    // La carte affiche déjà « confiance X % » : on donne ici la CAUSE,
-    // pas une seconde fois le chiffre.
-    rep.raison = contexteConnu
-      ? `Sujet sensible : confiance sous votre seuil de ${g.confianceMin} %`
-      : `Logement non décrit dans le contexte de Vivi`;
-  } else if (silence) {
-    rep.raison = `Reçu pendant les heures de silence (${g.silenceDebut} – ${g.silenceFin})`;
-  } else {
-    // Envoi automatique : le message part réellement dans la conversation.
-    c.messages.push({ de: 'hote', texte, heure: "À l'instant" });
-    c.horodatage = "À l'instant";
-    rep.msgIndex = c.messages.length - 1;
-    rep.statut = 'envoyee';
-    rep.delai = g.delaiMin || 30;
-    rep.raison = null;
-  }
-
-  VIVI_REPONSES.unshift(rep);
-  return rep;
-}
-
-/* ---------- Étape 2 : la tâche ----------
+/* ---------- La tâche proposée ----------
    Les propositions sont construites à partir des SIGNALEMENTS ouverts, et
-   non plus des messages restés sans réponse : Vivi vient précisément de
-   répondre, la tâche ne doit pas disparaître pour autant. */
+   non des messages restés sans réponse : créer la tâche envoie un message
+   au voyageur, ce qui ferait sortir le message d'origine de la liste des
+   « sans réponse » et évaporerait la proposition en cours de route. */
 function viviTachesProposees(convId) {
   if (!VIVI_CONFIG.taches || !VIVI_CONFIG.taches.actif) return [];
   if (viviNiveauIA() !== 'avancee') return [];
@@ -2205,10 +2803,6 @@ function viviTacheEnAttente(convId) {
 // Signalements d'une conversation, quel que soit leur état.
 function viviSignalements(convId) {
   return VIVI_SIGNALEMENTS.filter(s => s.conversationId === convId);
-}
-// La réponse que Vivi a produite pour un signalement donné.
-function viviReponseDuSignalement(s) {
-  return s && s.reponseId ? VIVI_REPONSES.find(r => r.id === s.reponseId) || null : null;
 }
 
 /* ---------- Étape 3 : confirmer le créneau au voyageur ----------
@@ -2264,15 +2858,6 @@ function viviTacheCreer(propositionId, overrides, auto, prevenir) {
     const langue = viviLangueMessage(c.messages[msgIndex].texte);
     const texte = viviTexteConfirmation(cat, resa, t, langue);
     if (texte) {
-      // L'accusé de réception encore en attente devient sans objet : il
-      // annonçait « on revient vers vous », or on revient précisément.
-      // L'envoyer après la confirmation inverserait la chronologie.
-      const ack = viviReponseDuSignalement(s);
-      if (ack && ack.statut !== 'envoyee') {
-        viviRefuser(ack.id);
-        s.reponseId = null;
-        s.ackRemplace = true;
-      }
       c.messages.push({ de: 'hote', texte, heure: "À l'instant" });
       c.horodatage = "À l'instant";
       const conf = {
@@ -2330,14 +2915,12 @@ function _viviTraiterSignalements() {
       if (!det) return;
       if (viviModeTache(det.categorie.id) === 'ignorer') return;
 
-      const rep = _viviRepondreAuSignalement(c, i, det.categorie);
       VIVI_SIGNALEMENTS.push({
         id: `VS-${c.id}-${i}`,
         conversationId: c.id, msgIndex: i,
         categorieId: det.categorie.id,
         mots: det.mots,
         statut: 'ouvert', tacheId: null, auto: false,
-        reponseId: rep ? rep.id : null,
         quand: AUJOURDHUI,
       });
     });
@@ -2548,7 +3131,10 @@ function saveFichePolice(reservationId, index, data) {
 // n'existent que côté messagerie (une conversation, mais pas de réservation).
 const CANAL_LABEL = { airbnb:'Airbnb', booking:'Booking.com', direct:'Direct', bloque:'Blocage', whatsapp:'WhatsApp', email:'E-mail' };
 const PAIEMENT_LABEL = { paye:'Payé', acompte:'Acompte', impaye:'Impayé', rembourse:'Remboursé' };
-const STATUT_LABEL = { confirme:'Confirmée', en_cours:'En cours', termine:'Terminée', annule:'Annulée' };
+// « demande » : une réservation venue du site en mode « à valider ». Elle
+// existe bel et bien dans le calendrier — sinon on la revendrait ailleurs —
+// mais elle attend votre accord, d'où un statut distinct de « confirmée ».
+const STATUT_LABEL = { demande:'Demande à valider', confirme:'Confirmée', en_cours:'En cours', termine:'Terminée', annule:'Annulée' };
 
 /* ============================================================
    NOTIFICATIONS — alertes recalculées à la volée (pas de serveur,
@@ -2743,7 +3329,8 @@ const _OYVIA_ENTITIES = {
   COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, TACHE_LABEL,
   PROPRIETAIRES, DEPENSES, FACTURES,
   ROLES, UTILISATEURS,
-  VIVI_CONFIG, VIVI_REPONSES, VIVI_SIGNALEMENTS, PAGE_SEJOUR,
+  VIVI_CONFIG, VIVI_REPONSES, VIVI_SIGNALEMENTS, PAGE_SEJOUR, SITE_WEB,
+  TARIF_DYNAMIQUE, TD_OVERRIDES, TD_JOURNAL,
 };
 
 /* Identifiants supprimés depuis l'interface, par entité.

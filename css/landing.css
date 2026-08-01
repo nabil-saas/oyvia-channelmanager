@@ -320,3 +320,53 @@
   .lp-simseg { display: flex; flex-direction: column; width: 100%; border-radius: var(--r-lg); }
   .lp-simseg button { width: 100%; border-radius: var(--r-md); padding: var(--sp-3); }
 }
+
+/* ============================================================
+   Barre de réglage des tarifs (devise · parc · périodicité)
+   Inspirée des comparateurs SaaS : tous les leviers sur une ligne,
+   au-dessus des offres qu'ils recalculent.
+   ============================================================ */
+.lp-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-5) var(--sp-6);
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-full);
+  padding: var(--sp-4) var(--sp-6); box-shadow: var(--shadow-sm); margin-bottom: var(--sp-5); }
+.lp-bar__champ { display: flex; align-items: center; gap: var(--sp-3); }
+.lp-bar__label { font-size: var(--fs-sm); color: var(--c-text-soft); white-space: nowrap; }
+
+/* Segments (devise, périodicité) : la pilule active est pleine */
+.lp-seg { display: inline-flex; align-items: center; gap: 2px; background: var(--bg-ink); border-radius: var(--r-full); padding: 4px; }
+.lp-seg button { border-radius: var(--r-full); padding: var(--sp-2) var(--sp-4); font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold); color: rgba(255,255,255,.72); white-space: nowrap;
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  transition: background var(--t-fast), color var(--t-fast); }
+.lp-seg button:hover { color: #fff; }
+.lp-seg button.is-active { background: #fff; color: var(--bg-ink); }
+.lp-seg__promo { background: var(--amber-400, #FFD84D); color: var(--bg-ink); border-radius: var(--r-full);
+  padding: 2px var(--sp-2); font-size: 11px; font-weight: var(--fw-bold); line-height: 1.4; }
+
+/* Compteur : − et + toujours visibles, champ large et saisissable */
+.lp-nb { display: inline-flex; align-items: center; gap: 4px; background: var(--bg-ink); border-radius: var(--r-full); padding: 4px; }
+.lp-nb__btn { width: 34px; height: 34px; border-radius: var(--r-full); color: rgba(255,255,255,.8);
+  font-size: var(--fs-lg); line-height: 1; display: grid; place-items: center; transition: background var(--t-fast), color var(--t-fast); }
+.lp-nb__btn:hover { background: rgba(255,255,255,.14); color: #fff; }
+.lp-nb__input { width: 86px; height: 34px; border: 0; background: #fff; border-radius: var(--r-full);
+  text-align: center; font-family: inherit; font-size: var(--fs-md); font-weight: var(--fw-bold); color: var(--bg-ink); }
+.lp-nb__input:focus { outline: 2px solid var(--blue-600); outline-offset: 2px; }
+
+.lp-devis { text-align: center; font-size: var(--fs-sm); color: var(--c-text-soft); margin-bottom: var(--sp-5); }
+.lp-devis a { color: var(--blue-600); font-weight: var(--fw-semibold); text-decoration: underline; }
+
+/* Cartes : le prix passe avant la liste, le CTA juste après */
+.lp-plan__avant { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); margin-bottom: 2px; }
+.lp-plan__avant s { color: var(--c-text-muted); font-size: var(--fs-lg); font-weight: var(--fw-semibold); }
+.lp-plan__promo { background: var(--c-warning-soft); color: var(--c-warning-ink); border-radius: var(--r-full);
+  padding: 1px var(--sp-2); font-size: var(--fs-xs); font-weight: var(--fw-bold); }
+.lp-plan__foot--haut { margin: var(--sp-4) 0 var(--sp-5); }
+
+@media (max-width: 860px) {
+  .lp-bar { border-radius: var(--r-2xl); flex-direction: column; align-items: stretch; gap: var(--sp-4); }
+  .lp-bar__champ { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
+  .lp-bar__label { text-align: center; }
+  .lp-seg, .lp-nb { justify-content: center; }
+  .lp-seg button { flex: 1; }
+  .lp-nb__input { flex: 1; }
+}
