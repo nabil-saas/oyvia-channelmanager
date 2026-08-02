@@ -1,9 +1,10 @@
 /* ============================================================
    OYVIA — Landing : offres tarifaires + simulateur
-   Modèle : 3 offres (cf. PLANS dans js/data.js).
-     · Gratuit  → essai de 15 jours à la création du compte
-     · Smart    → prix par logement et par mois, sans IA voyageur
-     · Business → prix par logement et par mois, + Vivi IA Avancée
+   Modèle : 4 offres (cf. PLANS dans js/data.js).
+     · Découverte → essai de 15 jours, jusqu'à 5 logements
+     · Smart      → grille dégressive par logement, sans IA voyageur
+     · Business   → grille dégressive par logement, + Vivi IA Avancée
+     · Entreprise → sur devis au-delà de 100 logements
 
    Les cartes d'offres ET le simulateur sont générés depuis PLANS :
    la landing ne peut donc pas diverger du tarif appliqué dans l'app
@@ -28,24 +29,40 @@
 
   function planCardHTML(p, n) {
     const gratuit = p.unite === 'essai';
+    const devis   = p.unite === 'devis';
 
-    // Dix lignes d'affilée sur Business seraient illisibles : on les rend
-    // groupe par groupe, avec l'intitulé du groupe en intertitre.
+    // Au-delà du catalogue, il ne reste qu'Entreprise : Découverte, Smart
+    // et Business sont grisées ensemble. On les grise plutôt que de les
+    // retirer, pour que le visiteur voie ce qu'il quitte en basculant.
+    // Découverte est concernée elle aussi : un essai calibré pour
+    // 5 logements n'a rien à proposer à un parc de plus de 100.
+    const bloque = n > PARC_MAX_CATALOGUE && !devis;
+
+    // Douze lignes d'affilée seraient illisibles : on les rend groupe par
+    // groupe, avec l'intitulé du groupe en intertitre.
     const feats = planGroupes(p.id).map(g => `
       ${g.titre ? `<li class="lp-plan__group">${g.titre}</li>` : ''}
       ${g.items.map(f => `
         <li class="lp-plan__feat ${g.herite ? 'lp-plan__feat--herite' : ''}">${CHECK}<span><b>${f.titre}</b>${f.desc ? `<em>${f.desc}</em>` : ''}</span></li>`).join('')}
     `).join('');
 
-    const populaire = p.id === PLAN_POPULAIRE;
+    // Le repère « populaire » est un choix commercial, pas une déduction —
+    // mais il n'a plus de sens sur une carte grisée.
+    const populaire = p.id === PLAN_POPULAIRE && !bloque;
 
     // Bloc prix. En annuel on montre le prix mensuel barré : la remise doit
     // se voir sur le chiffre, pas seulement sur une pastille.
     let bloc;
-    if (gratuit) {
+    if (bloque) {
+      bloc = `<div class="lp-plan__price"><b>—</b></div>
+              <p class="lp-plan__total">Jusqu'à ${PARC_MAX_CATALOGUE} logements</p>`;
+    } else if (gratuit) {
+      const couvre = essaiCouvreParc(n);
       bloc = `<div class="lp-plan__price"><b>0</b><span>pendant ${p.essaiJours} jours</span></div>
-              <p class="lp-plan__total">Aucune carte bancaire demandée</p>`;
-    } else if (surDevis()) {
+              <p class="lp-plan__total">${couvre
+                ? 'Aucune carte bancaire demandée'
+                : `L'essai couvre ${p.essaiLogements} de vos ${n} logements`}</p>`;
+    } else if (devis) {
       bloc = `<div class="lp-plan__price"><b>Sur devis</b></div>
               <p class="lp-plan__total">Au-delà de ${PARC_MAX_CATALOGUE} logements</p>`;
     } else {
@@ -67,14 +84,14 @@
         </p>`;
     }
 
-    const cta = gratuit
-      ? `<a class="btn btn--secondary btn--block" href="app/dashboard.html">Créer mon compte</a>`
-      : surDevis()
-        ? `<a class="btn ${populaire ? 'btn--primary' : 'btn--secondary'} btn--block" href="mailto:contact@oyvia.com?subject=${encodeURIComponent('Demande de devis — ' + n + ' logements')}">Demander un devis</a>`
-        : `<a class="btn ${populaire ? 'btn--primary' : 'btn--secondary'} btn--block" href="app/dashboard.html">Choisir ${p.nom}</a>`;
+    let cta;
+    if (bloque)       cta = `<span class="btn btn--secondary btn--block is-disabled" aria-disabled="true">Indisponible pour ${n} logements</span>`;
+    else if (gratuit) cta = `<a class="btn btn--secondary btn--block" href="app/dashboard.html">Créer mon compte</a>`;
+    else if (devis)   cta = `<a class="btn ${n > PARC_MAX_CATALOGUE ? 'btn--primary' : 'btn--secondary'} btn--block" href="mailto:contact@oyvia.com?subject=${encodeURIComponent('Demande de devis — ' + n + ' logements')}">Demander un devis</a>`;
+    else              cta = `<a class="btn ${populaire ? 'btn--primary' : 'btn--secondary'} btn--block" href="app/dashboard.html">Choisir ${p.nom}</a>`;
 
     return `
-      <article class="lp-plan ${populaire ? 'is-popular' : ''} ${gratuit ? 'lp-plan--free' : ''}">
+      <article class="lp-plan ${populaire ? 'is-popular' : ''} ${gratuit ? 'lp-plan--free' : ''} ${bloque ? 'is-locked' : ''}">
         ${populaire ? '<span class="lp-plan__flag">Le plus populaire</span>' : ''}
         <h3 class="lp-plan__name">${p.nom}</h3>
         <p class="lp-plan__resume">${p.accroche}</p>

@@ -63,7 +63,7 @@ const Vivi = (function () {
         return {
           texte: `Votre offre <b>${p.nom}</b> n'inclut pas d'IA pour répondre aux voyageurs. Vivi reste disponible ici, en revanche, pour répondre à <em>vos</em> questions.
             <br><br>Attention à ne pas confondre : vos <b>automatisations</b> (confirmation, rappel avant arrivée, demande d'avis) sont bien actives — ce sont des règles déclenchées par la réservation, pas de l'IA.
-            <br><br>Pour que Vivi réponde d'elle-même aux messages entrants, il faut l'offre <b>Business</b> à ${formatMAD(getPlan('business').prix)} par logement et par mois.`,
+            <br><br>Pour que Vivi réponde d'elle-même aux messages entrants, il faut l'offre <b>Business</b> à ${formatMAD(prixParLogement('business', COMPTE.nbLogements))} par logement et par mois, pour votre parc de ${COMPTE.nbLogements} logements.`,
           actions: btn('Comparer les offres', lien('abonnement.html')),
         };
       },
@@ -183,7 +183,7 @@ const Vivi = (function () {
       mots: ['facturation', 'combien je paie', 'mon abonnement', 'ma facture', 'prix', 'tarif'],
       repond() {
         const p = getPlan(COMPTE.plan);
-        const prix = planPrixTexte(p.id);
+        const prix = planPrixTexte(p.id, COMPTE.nbLogements);
         return {
           texte: `Vous êtes en <b>${p.nom}</b> : ${prix.montant} ${prix.suffixe}. Pour ${COMPTE.nbLogements} logements gérés, cela fait <b>${formatMAD(planTotal(p.id, COMPTE.nbLogements))} par mois</b>.
             <br><br>Sans engagement, résiliable à tout moment. L'option WhatsApp voyageur, si elle est active, est facturée au message envoyé — les réponses dans la fenêtre de 24 h restent gratuites.`,

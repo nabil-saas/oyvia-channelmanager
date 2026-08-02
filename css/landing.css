@@ -151,7 +151,10 @@
 /* Les 3 offres (Gratuit · Smart · Business) */
 /* Les cartes suivent le simulateur : la marge est au-dessus, et assez ample
    pour dégager le badge « Votre sélection » qui déborde en haut des cartes. */
-.lp-plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5); align-items: stretch; margin-top: var(--sp-16); }
+.lp-plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4); align-items: stretch; margin-top: var(--sp-16); }
+/* Quatre colonnes tiennent sur un écran large, deux suffisent au-delà :
+   à trois, la dernière carte se retrouverait seule sur sa ligne. */
+@media (max-width: 1180px) { .lp-plans { grid-template-columns: repeat(2, 1fr); } }
 .lp-plan { position: relative; display: flex; flex-direction: column; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-2xl); padding: var(--sp-6); box-shadow: var(--shadow-sm); text-align: left; }
 /* L'offre la plus choisie ressort sans casser l'alignement de la grille */
 .lp-plan.is-popular { border-color: var(--blue-600); box-shadow: var(--shadow-blue), var(--shadow-md); }
@@ -166,8 +169,13 @@
 /* Le montant réel pour le parc saisi dans le simulateur */
 .lp-plan__total { margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--c-text-soft); background: var(--c-surface-alt); border: 1px solid var(--c-border); border-radius: var(--r-full); padding: 4px var(--sp-3); display: inline-block; }
 .lp-plan__total b { color: var(--c-text); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
-/* Offre hors périmètre pour ce parc : lisible mais visiblement inerte */
-.lp-plan.is-locked { opacity: 0.55; }
+/* Offre hors périmètre pour ce parc : lisible mais visiblement inerte.
+   On grise sans masquer — le visiteur doit voir ce qu'il quitte en
+   basculant sur Entreprise, sinon la carte disparaîtrait sans explication. */
+.lp-plan.is-locked { opacity: 0.5; background: var(--bg-subtle); }
+.lp-plan.is-locked .lp-plan__price b { color: var(--c-text-muted); }
+.btn.is-disabled { pointer-events: none; opacity: .7; background: var(--bg-muted); color: var(--c-text-muted);
+  border-color: var(--c-border); box-shadow: none; }
 .lp-plan__resume { margin-top: var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-soft); }
 .lp-plan__feats { margin-top: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-3); }
 .lp-plan__feat { display: flex; gap: var(--sp-2); font-size: var(--fs-sm); }

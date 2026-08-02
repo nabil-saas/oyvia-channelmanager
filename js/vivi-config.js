@@ -36,7 +36,7 @@ Layout.init('vivi');
   function renderLocked() {
     const p = getPlan(COMPTE.plan);
     const biz = getPlan('business');
-    const prix = planPrixTexte('business');
+    const prix = planPrixTexte('business', COMPTE.nbLogements);
     const total = planTotal('business', COMPTE.nbLogements);
 
     // Ce que l'utilisateur gagne concrètement : on liste les capacités,

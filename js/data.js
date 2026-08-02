@@ -1483,83 +1483,128 @@ const RECURRENTES = [
 ];
 
 /* ============================================================
-   TARIFS — 3 offres. Source unique de vérité, partagée par la
+   TARIFS — 4 offres. Source unique de vérité, partagée par la
    landing (index.html#tarifs) et l'abonnement de l'app
    (app/abonnement.html), pour qu'elles ne divergent jamais.
 
-   Deux façons de facturer :
-     - unite:'essai'         → gratuit, limité dans le temps
-                               (Gratuit : 15 jours dès la création
-                               du compte)
-     - unite:'logement_mois' → prix × nombre de logements gérés
-                               (Smart, Business)
+   Trois façons de facturer :
+     - unite:'essai'         → gratuit, limité dans le temps ET en
+                               parc (Découverte : 15 jours dès la
+                               création du compte, 5 logements)
+     - unite:'logement_mois' → grille dégressive × nombre de
+                               logements gérés (Smart, Business)
+     - unite:'devis'         → hors catalogue (Entreprise)
 
    Ce qui sépare Smart de Business est UNIQUEMENT l'intelligence
    artificielle : Smart contient tout l'opérationnel (calendrier,
    messagerie, automatisations de règles, ménage, statistiques),
-   Business y ajoute Vivi et sa configuration. Les automatisations
-   de Smart sont des règles, pas de l'IA — la distinction est
-   volontaire et se retrouve dans toute l'interface.
+   Business y ajoute Vivi. Les automatisations de Smart sont des
+   règles, pas de l'IA — la distinction est volontaire et se
+   retrouve dans toute l'interface.
 
    Les fonctionnalités sont cumulatives (champ « herite ») et
    regroupées par thème (champ « groupes ») pour rester lisibles
-   sur une carte : Business en compte dix.
+   sur une carte.
    ============================================================ */
+
+/* Déclaré ici et non plus bas : PLANS s'en sert pour borner Smart et
+   Business, et une constante `const` lue avant sa déclaration lèverait
+   une ReferenceError. Au-delà de ce parc, le tarif catalogue n'a plus
+   de sens : on bascule sur un devis plutôt que d'afficher un montant à
+   cinq chiffres. */
+const PARC_MAX_CATALOGUE = 100;
+
+/* Grille dégressive, en MAD par logement et par mois.
+
+   Tarification « de volume » et non par tranches cumulées : le palier
+   atteint s'applique à TOUT le parc. Un parc de 20 logements est donc
+   facturé 20 × 130, pas 10 × 140 + 10 × 130. C'est la lecture naturelle
+   d'une grille « 11-30 : 130 MAD/logement », et c'est aussi la seule qui
+   permet au visiteur de refaire le calcul de tête. Effet de bord assumé :
+   passer de 10 à 11 logements fait BAISSER la facture unitaire, jamais
+   monter — on ne pénalise jamais la croissance du parc.
+
+   `max` est la borne haute INCLUSE du palier. Au-delà du dernier palier,
+   on sort du catalogue et l'offre Entreprise prend le relais. */
+const PALIERS_SMART = [
+  { min:1,  max:10,  prix:140 },
+  { min:11, max:30,  prix:130 },
+  { min:31, max:50,  prix:120 },
+  { min:51, max:100, prix:110 },
+];
+const PALIERS_BUSINESS = [
+  { min:1,  max:10,  prix:190 },
+  { min:11, max:30,  prix:180 },
+  { min:31, max:50,  prix:170 },
+  { min:51, max:100, prix:160 },
+];
 
 const PLANS = [
   {
-    id:'gratuit', nom:'Gratuit', prix:0, unite:'essai', essaiJours:15,
-    minLog:1, maxLog:1,
+    id:'decouverte', nom:'Découverte', unite:'essai', essaiJours:15, essaiLogements:5,
+    minLog:1, maxLog:Infinity,
     accroche:"Créez votre compte et explorez Oyvia pendant 15 jours, sans carte bancaire. Le compteur démarre à la création du compte.",
-    idealPour:"Découvrir Oyvia avant de passer à une offre payante.",
+    idealPour:"Découvrir Oyvia avant de choisir votre offre.",
     herite:null,
     groupes:[
       { titre:null, items:[
-        { titre:'Accès complet pendant 15 jours', desc:"Toutes les fonctionnalités du socle, sur 1 logement." },
+        { titre:'Accès complet pendant 15 jours', desc:"Toutes les fonctionnalités du socle, sur 5 logements." },
         { titre:'Aucun engagement',               desc:"À la fin des 15 jours, vous choisissez votre offre — ou vous vous arrêtez là." },
       ] },
     ],
     ia:null,
   },
   {
-    id:'smart', nom:'Smart', prix:120, unite:'logement_mois',
-    minLog:1, maxLog:Infinity,
+    id:'smart', nom:'Smart', unite:'logement_mois', paliers:PALIERS_SMART,
+    minLog:1, maxLog:PARC_MAX_CATALOGUE,
     accroche:"Tout le nécessaire pour automatiser la gestion quotidienne de vos locations.",
-    idealPour:"Hôtes indépendants et petits gestionnaires (2 à 5 logements).",
+    idealPour:"Les hôtes indépendants (2 à 5 logements).",
     herite:null,
     groupes:[
       { titre:'Inclus', items:[
-        { titre:'Calendrier unifié multi-canaux' },
+        { titre:'Calendrier unifié multi-canaux',    desc:"Airbnb et Booking.com" },
         { titre:'Messagerie centralisée',            desc:"Airbnb, Booking, e-mail et WhatsApp" },
-        { titre:'Messages automatiques',             desc:"Confirmation, avant arrivée, check-out, demande d'avis… envoyés sur les plateformes de réservation (Airbnb, Booking…)" },
+        { titre:'Messages automatiques',             desc:"Confirmation, avant arrivée, check-out, demande d'avis — envoyés sur Airbnb, Booking, e-mail et WhatsApp" },
         { titre:'Réservations directes sans commission' },
-        { titre:'Gestion du ménage et des équipes' },
+        { titre:'Gestion du ménage et des équipes',  desc:"Tâches automatiques, assignation, check-list mobile" },
         { titre:'Tableau de bord & statistiques' },
-        { titre:'Intégration WhatsApp',              desc:"Réception et réponses gratuites pendant la fenêtre de service de 24 h" },
+        { titre:'Portail propriétaires' },
+        { titre:'Comptabilité' },
+        { titre:'Intégration WhatsApp' },
+        { titre:'Création de site web',              desc:"Pour vos réservations directes" },
+        { titre:'App mobile complète' },
+        { titre:'Support standard' },
       ] },
     ],
     ia:null,
   },
   {
-    id:'business', nom:'Business', prix:180, unite:'logement_mois',
-    minLog:1, maxLog:Infinity, populaire:true,
-    accroche:"L'automatisation avancée grâce à l'intelligence artificielle.",
-    idealPour:"Conciergeries et gestionnaires professionnels (6 logements et plus).",
+    id:'business', nom:'Business', unite:'logement_mois', paliers:PALIERS_BUSINESS,
+    minLog:1, maxLog:PARC_MAX_CATALOGUE, populaire:true,
+    accroche:"Tout Smart, plus Vivi : l'IA qui répond aux voyageurs et déclenche vos interventions.",
+    idealPour:"Les hôtes confirmés, à partir de 6 logements.",
     herite:'smart',
     groupes:[
-      { titre:'Vivi IA Avancée', items:[
-        { titre:'Répond automatiquement aux messages', desc:"Airbnb, Booking, e-mail et WhatsApp" },
-        { titre:'Répond dans la langue du voyageur' },
+      { titre:'Vivi — IA Avancée', items:[
+        { titre:'Répond automatiquement aux messages', desc:"Dans toutes les langues, sur Airbnb, Booking, e-mail et WhatsApp" },
         { titre:'Détecte les incidents et crée les tâches', desc:"Ménage, maintenance, intervention…" },
-      ] },
-      { titre:'Configuration avancée de Vivi', items:[
-        { titre:'Contexte personnalisé par logement', desc:"Wi-Fi, parking, check-in, équipements, règles…" },
+        { titre:'Contexte personnalisé par logement', desc:"Wi-Fi, parking, check-in, équipements, règles" },
         { titre:'Ton et personnalité personnalisables' },
         { titre:'Garde-fous intelligents',            desc:"Escalade automatique pour les remboursements, réclamations et demandes sensibles" },
         { titre:'Seuil de confiance configurable',    desc:"Réponse automatique uniquement au-dessus de 75 %, par exemple" },
-        { titre:'Heures de silence',                  desc:"Messages mis en attente entre 22 h et 8 h" },
-        { titre:"Journal d'audit complet de chaque réponse IA" },
-        { titre:'Validation obligatoire sous le seuil de confiance' },
+      ] },
+    ],
+    ia:'avancee',
+  },
+  {
+    id:'entreprise', nom:'Entreprise', unite:'devis',
+    minLog:PARC_MAX_CATALOGUE + 1, maxLog:Infinity,
+    accroche:"Au-delà de 100 logements, la grille catalogue ne s'applique plus : le tarif se construit avec vous.",
+    idealPour:"Les conciergeries.",
+    herite:'business',
+    groupes:[
+      { titre:null, items:[
+        { titre:'Tarif sur mesure', desc:"Établi selon la taille de votre parc et vos besoins." },
       ] },
     ],
     ia:'avancee',
@@ -1567,6 +1612,21 @@ const PLANS = [
 ];
 
 function getPlan(id) { return PLANS.find(p => p.id === id) || PLANS[0]; }
+
+/* Palier applicable à un parc donné, pour une offre à grille dégressive.
+   Renvoie null pour les offres sans grille (essai, devis) : l'appelant
+   doit alors afficher autre chose qu'un prix, pas un « 0 MAD » trompeur. */
+function palierPour(planId, nbLogements) {
+  const p = getPlan(planId);
+  if (!p.paliers || !p.paliers.length) return null;
+  const n = Math.max(1, Math.round(nbLogements) || 1);
+  return p.paliers.find(x => n <= x.max) || null;
+}
+// Prix mensuel par logement au catalogue, pour ce parc-là. 0 si hors grille.
+function prixParLogement(planId, nbLogements) {
+  const pal = palierPour(planId, nbLogements);
+  return pal ? pal.prix : 0;
+}
 
 // Total mensuel d'une offre pour un parc donné.
 /* ============================================================
@@ -1588,10 +1648,6 @@ const DEVISES = [
 ];
 function getDevise(id) { return DEVISES.find(d => d.id === id) || DEVISES[1]; }
 
-// Au-delà de ce parc, le tarif catalogue n'a plus de sens : on bascule
-// sur un devis plutôt que d'afficher un montant à cinq chiffres.
-const PARC_MAX_CATALOGUE = 100;
-
 // Remise appliquée à l'engagement annuel, affichée telle quelle sur le
 // sélecteur : c'est l'argument de la bascule.
 const REMISE_ANNUELLE = 20;
@@ -1612,15 +1668,15 @@ function formatDevise(montantMAD, deviseId, opts = {}) {
 
 // Prix mensuel par logement, éventuellement remisé si l'on paie à l'année.
 // On raisonne toujours en « par mois » : c'est ce que le visiteur compare.
-function prixMensuelParLogement(planId, periodicite) {
+// Le parc entre dans le calcul, puisqu'il détermine le palier applicable.
+function prixMensuelParLogement(planId, periodicite, nbLogements) {
   const p = getPlan(planId);
-  if (p.unite === 'essai') return 0;
-  return periodicite === 'annuel'
-    ? p.prix * (1 - REMISE_ANNUELLE / 100)
-    : p.prix;
+  if (p.unite !== 'logement_mois') return 0;
+  const base = prixParLogement(planId, nbLogements);
+  return periodicite === 'annuel' ? base * (1 - REMISE_ANNUELLE / 100) : base;
 }
 function totalMensuel(planId, nbLogements, periodicite) {
-  return prixMensuelParLogement(planId, periodicite) * nbLogements;
+  return prixMensuelParLogement(planId, periodicite, nbLogements) * nbLogements;
 }
 // Ce qui est réellement débité : douze mois d'un coup en annuel.
 function totalFacture(planId, nbLogements, periodicite) {
@@ -1639,40 +1695,58 @@ function totalFacture(planId, nbLogements, periodicite) {
 function tarifAffiche(planId, nbLogements, deviseId, periodicite) {
   const p = getPlan(planId);
   const d = getDevise(deviseId);
-  if (p.unite === 'essai') return { unite: 0, total: 0, plein: 0, annuel: 0 };
+  const n = Math.max(1, Math.round(nbLogements) || 1);
+  if (p.unite !== 'logement_mois') return { unite: 0, total: 0, plein: 0, annuel: 0, palier: null };
 
-  const plein = convertirMAD(p.prix, deviseId);
+  const pal = palierPour(planId, n);
+  if (!pal) return { unite: 0, total: 0, plein: 0, annuel: 0, palier: null };
+
+  const plein = convertirMAD(pal.prix, deviseId);
   const unite = periodicite === 'annuel'
     ? Math.round(plein * (1 - REMISE_ANNUELLE / 100) / d.arrondi) * d.arrondi
     : plein;
-  const total = unite * nbLogements;
-  return { unite, total, plein: plein * nbLogements, annuel: total * 12 };
+  const total = unite * n;
+  return { unite, total, plein: plein * n, annuel: total * 12, palier: pal };
 }
 
 function planTotal(planId, nbLogements) {
-  const p = getPlan(planId);
-  if (p.unite === 'essai') return 0;
-  return p.prix * Math.max(1, nbLogements);
+  const n = Math.max(1, nbLogements);
+  return prixParLogement(planId, n) * n;
 }
 
 // Le prix affiché « à l'unité », tel qu'on le lit sur une carte d'offre.
-function planPrixTexte(planId) {
+// Il dépend du parc : sans lui, on ne saurait pas quel palier citer.
+function planPrixTexte(planId, nbLogements) {
   const p = getPlan(planId);
   if (p.unite === 'essai') return { montant:'0 MAD', suffixe:`pendant ${p.essaiJours} jours` };
-  return { montant:formatMAD(p.prix), suffixe:'par logement et par mois' };
+  if (p.unite === 'devis') return { montant:'Sur devis', suffixe:`au-delà de ${PARC_MAX_CATALOGUE} logements` };
+  return { montant:formatMAD(prixParLogement(planId, nbLogements)), suffixe:'par logement et par mois' };
 }
 
-// Une offre est-elle proposable pour ce nombre de logements ?
-// Seul l'essai gratuit est plafonné (1 logement) ; Smart et Business
-// n'ont pas de limite haute.
+/* Une offre est-elle proposable pour ce nombre de logements ?
+
+   Smart et Business s'arrêtent au catalogue (100 logements) : au-delà,
+   la grille n'a plus de prix à appliquer et c'est Entreprise qui prend
+   le relais. Symétriquement, Entreprise ne s'active qu'au-dessus.
+   Découverte, elle, reste toujours proposable : c'est un essai, il ne
+   se refuse pas à un gros parc — il couvre simplement 5 logements,
+   ce que la carte dit explicitement. */
 function planEligible(planId, nbLogements) {
   const p = getPlan(planId);
-  return nbLogements >= p.minLog && nbLogements <= p.maxLog;
+  const n = Math.max(1, Math.round(nbLogements) || 1);
+  return n >= p.minLog && n <= p.maxLog;
+}
+
+// L'essai couvre-t-il tout le parc annoncé ?
+function essaiCouvreParc(nbLogements) {
+  const p = getPlan('decouverte');
+  return (Math.max(1, nbLogements) <= (p.essaiLogements || Infinity));
 }
 
 // L'offre conseillée, calée sur le « Idéal pour » de chaque offre :
-// Smart jusqu'à 5 logements, Business à partir de 6.
+// Smart jusqu'à 5 logements, Business de 6 à 100, Entreprise au-delà.
 function planRecommande(nbLogements) {
+  if (nbLogements > PARC_MAX_CATALOGUE) return 'entreprise';
   return nbLogements <= 5 ? 'smart' : 'business';
 }
 
@@ -1890,13 +1964,22 @@ const TARIF_DYNAMIQUE = {
   // minimum de nuits du logement : invendables au prix normal.
   orphelines: { actif: true, pct: -25 },
 
-  // Tension sur la période, mesurée sur votre propre calendrier.
-  // `fenetre` = nombre de jours de part et d'autre de la date.
-  tension: { actif: true, fenetre: 10, paliers: [
-    { seuil: 0,  pct: -10 },
-    { seuil: 30, pct: 0   },
-    { seuil: 60, pct: 8   },
-    { seuil: 80, pct: 18  },
+  /* Tension sur la période, mesurée sur votre propre calendrier.
+     `fenetre` = nombre de jours de part et d'autre de la date.
+
+     `horizonUtile` est le garde-fou essentiel de cette règle : au-delà,
+     elle ne s'applique plus du tout. Un calendrier vide à quatre mois
+     n'est PAS un signal de faible demande — c'est l'état normal d'un
+     calendrier à quatre mois, personne n'a encore réservé. Sans cette
+     borne, la règle lisait ce vide comme une alerte et décotait toutes
+     les dates lointaines, ce qui collait les prix au plancher sur la
+     moitié de l'horizon. Les paliers sont calés sur l'échelle réelle
+     d'un calendrier privé, pas sur une courbe de marché. */
+  tension: { actif: true, fenetre: 10, horizonUtile: 60, paliers: [
+    { seuil: 0,  pct: -8 },
+    { seuil: 20, pct: 0  },
+    { seuil: 45, pct: 10 },
+    { seuil: 70, pct: 18 },
   ]},
 
   // Minimum de nuits piloté : on assouplit là où l'on veut remplir.
@@ -2053,7 +2136,8 @@ function prixRecommande(logementId, date) {
       res.orphelin = orph;
       ajouter('orpheline', `Trou de ${orph.taille} nuit${orph.taille > 1 ? 's' : ''}`, T.orphelines.pct, `Minimum ${orph.seuil} nuits`);
     }
-    if (T.tension.actif) {
+    // Hors de l'horizon utile, le remplissage n'est pas encore un signal.
+    if (T.tension.actif && jAvant <= (T.tension.horizonUtile || Infinity)) {
       const t = tdTension(logementId, date);
       const p = tdPalierTension(t);
       res.tensionPct = t;

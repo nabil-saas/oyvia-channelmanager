@@ -1,8 +1,9 @@
 /* ============================================================
    OYVIA — Abonnement : offre en cours, comparatif, options, historique
-   Modèle : 3 offres (PLANS dans js/data.js), les mêmes que la landing.
-     · Gratuit → essai de 15 jours
-     · Smart / Business → prix × nombre de logements gérés
+   Modèle : 4 offres (PLANS dans js/data.js), les mêmes que la landing.
+     · Découverte → essai de 15 jours, 5 logements
+     · Smart / Business → grille dégressive × nombre de logements gérés
+     · Entreprise → sur devis au-delà du catalogue
    L'offre du compte est COMPTE.plan ; on peut en changer depuis cette
    page (le changement est immédiat dans la démo et déverrouille /
    verrouille l'IA Avancée de Vivi).
@@ -15,7 +16,7 @@ Layout.init('abonnement');
 
   function renderHero() {
     const p = getPlan(COMPTE.plan);
-    const prix = planPrixTexte(p.id);
+    const prix = planPrixTexte(p.id, nbLog);
     document.getElementById('ab-hero').innerHTML = `
       <span class="ab-hero__badge">Mois en cours — ${moisCourant.mois}</span>
       <div class="ab-hero__plan">${formatMAD(planTotal(p.id, nbLog))}</div>
@@ -30,7 +31,9 @@ Layout.init('abonnement');
   function renderSummary() {
     const p = getPlan(COMPTE.plan);
     const base = planTotal(p.id, nbLog);
-    const ligneBase = `${nbLog} logement${nbLog > 1 ? 's' : ''} × ${formatMAD(p.prix)} (${p.nom}) · ${moisCourant.mois}`;
+    // Le prix unitaire vient de la grille dégressive : à 10 logements ce
+    // n'est pas le même qu'à 40, et la ligne de facture doit le refléter.
+    const ligneBase = `${nbLog} logement${nbLog > 1 ? 's' : ''} × ${formatMAD(prixParLogement(p.id, nbLog))} (${p.nom}) · ${moisCourant.mois}`;
 
     document.getElementById('ab-summary').innerHTML = `
       <div class="ab-summline"><span>${ligneBase}</span><span>${formatMAD(base)}</span></div>
@@ -45,8 +48,9 @@ Layout.init('abonnement');
     const actuel = COMPTE.plan;
 
     zone.innerHTML = PLANS.map(p => {
-      const prix = planPrixTexte(p.id);
+      const prix = planPrixTexte(p.id, nbLog);
       const isActuel = p.id === actuel;
+      const dispo = planEligible(p.id, nbLog);
 
       // Même découpage par groupes que la landing, mais sans les descriptions :
       // la carte est deux fois plus étroite ici.
@@ -57,17 +61,25 @@ Layout.init('abonnement');
       let action;
       if (isActuel) action = `<span class="badge badge--positive">Offre actuelle</span>`;
       else if (p.unite === 'essai') action = `<span class="text-xs text-muted">Essai consommé</span>`;
+      else if (p.unite === 'devis') action = `<a class="btn btn--secondary btn--sm btn--block" href="mailto:contact@oyvia.com?subject=${encodeURIComponent('Demande de devis — ' + nbLog + ' logements')}">Demander un devis</a>`;
+      else if (!dispo) action = `<span class="text-xs text-muted">Au-delà de ${PARC_MAX_CATALOGUE} logements</span>`;
       else action = `<button type="button" class="btn btn--secondary btn--sm btn--block" data-choisir="${p.id}">Passer en ${p.nom}</button>`;
 
+      const total = p.unite === 'essai'
+        ? `Gratuit ${p.essaiJours} jours, jusqu'à ${p.essaiLogements} logements`
+        : p.unite === 'devis'
+          ? `Tarif construit avec vous`
+          : dispo
+            ? `soit ${formatMAD(planTotal(p.id, nbLog))} / mois pour ${nbLog} logement${nbLog > 1 ? 's' : ''}`
+            : `Parc trop grand pour le catalogue`;
+
       return `
-        <article class="ab-plan ${isActuel ? 'is-current' : ''}">
+        <article class="ab-plan ${isActuel ? 'is-current' : ''} ${!dispo && p.unite === 'logement_mois' ? 'is-locked' : ''}">
           <div class="ab-plan__top">
             <b>${p.nom}</b>
             <span>${prix.montant}<small>${prix.suffixe}</small></span>
           </div>
-          <p class="ab-plan__total">${p.unite === 'essai'
-            ? `Gratuit ${p.essaiJours} jours`
-            : `soit ${formatMAD(planTotal(p.id, nbLog))} / mois pour ${nbLog} logement${nbLog > 1 ? 's' : ''}`}</p>
+          <p class="ab-plan__total">${total}</p>
           <ul class="ab-plan__feats">${feats}</ul>
           <div class="ab-plan__action">${action}</div>
         </article>`;
