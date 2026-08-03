@@ -44,8 +44,13 @@
 
 @media (max-width: 720px) {
   .blog-hero { padding: var(--sp-10) 0 var(--sp-6); }
-  .blog-filters { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; margin-inline: calc(var(--sp-4) * -1); padding: 0 var(--sp-4) var(--sp-2); }
-  .blog-filter { flex-shrink: 0; }
+  /* Défilement horizontal des filtres, SANS marge négative : le conteneur
+     .lp-shell n'a plus de padding à cette largeur, la marge de −16 px
+     n'était donc compensée par rien et faisait déborder toute la page
+     de 16 px vers la droite. */
+  .blog-filters { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap;
+    padding-bottom: var(--sp-2); -webkit-overflow-scrolling: touch; }
+  .blog-filter { flex-shrink: 0; min-height: 48px; }
   .blog-featured { grid-template-columns: 1fr; }
   .blog-featured__media { min-height: 160px; }
   .blog-featured__body { padding: var(--sp-6); }

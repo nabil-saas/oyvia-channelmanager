@@ -943,6 +943,187 @@ const VOYAGEURS = [
 ];
 
 /* ============================================================
+   AVIS — la réputation, dans les deux sens
+
+   Deux flux distincts, d'où les deux sous-sections de la page :
+
+   1. AVIS  : ce que les voyageurs ont écrit sur vos logements, tous
+      canaux confondus. L'hôte y répond ; la réponse repart vers la
+      plateforme d'origine.
+   2. ÉVALUATIONS : ce que l'hôte écrit sur ses voyageurs. Ce n'est
+      pas le miroir du premier — c'est un autre objet, avec un autre
+      délai et une autre destination.
+
+   Deux pièges du monde réel qu'on modélise plutôt que de les lisser :
+
+   · LES ÉCHELLES DIFFÈRENT. Airbnb note sur 5, Booking.com sur 10.
+     Afficher « 9,2 » à côté de « 4,8 » sans le dire ferait passer
+     un bon avis Booking pour une note délirante, et tout ramener
+     sur 5 trahirait ce que le voyageur a réellement mis. On garde
+     donc l'échelle d'origine à l'écran, et on ne normalise que pour
+     comparer et faire des moyennes.
+
+   · LES DÉLAIS EXPIRENT. Une évaluation de voyageur n'est pas
+     déposable indéfiniment : passé la fenêtre de la plateforme, le
+     bouton doit disparaître. Laisser croire qu'on peut encore
+     évaluer un séjour de mai serait un mensonge de l'interface.
+   ============================================================ */
+
+const AVIS_CANAUX = {
+  airbnb:  { label:'Airbnb',      max:5,  pas:1,   delaiEvaluation:14 },
+  booking: { label:'Booking.com', max:10, pas:0.5, delaiEvaluation:28 },
+  expedia: { label:'Expedia',     max:5,  pas:1,   delaiEvaluation:14 },
+  vrbo:    { label:'Vrbo',        max:5,  pas:1,   delaiEvaluation:14 },
+  agoda:   { label:'Agoda',       max:10, pas:0.5, delaiEvaluation:28 },
+  // Le direct n'a pas de plateforme tierce : l'avis est recueilli par
+  // Oyvia lui-même, sans date limite imposée de l'extérieur.
+  direct:  { label:'Direct',      max:5,  pas:1,   delaiEvaluation:null },
+};
+function avisCanal(canal) { return AVIS_CANAUX[canal] || AVIS_CANAUX.direct; }
+
+// Note ramenée sur 5, UNIQUEMENT pour trier et moyenner. Jamais affichée
+// telle quelle à la place de la note d'origine.
+function avisNoteSur5(note, canal) {
+  const c = avisCanal(canal);
+  return c.max === 5 ? note : (note / c.max) * 5;
+}
+// Note telle que le voyageur l'a mise, avec son échelle : « 9,2/10 ».
+function avisNoteTexte(note, canal) {
+  const c = avisCanal(canal);
+  const n = Number(note);
+  const txt = Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+  return `${txt}/${c.max}`;
+}
+
+/* Avis reçus. `reponse: null` = en attente de réponse de l'hôte. */
+const AVIS = [
+  { id:'AV01', logementId:'L001', reservationId:'R01', voyageurId:'V01', canal:'airbnb',  note:5,   date:'2026-07-08',
+    texte:"Appartement exactement comme sur les photos, très calme malgré l'hyper-centre. Le balcon sur cour est un vrai plus. Camille a répondu à toutes nos questions avant l'arrivée.",
+    reponse:"Merci beaucoup Emma, c'est un plaisir de vous accueillir à nouveau quand vous voulez !", reponseDate:'2026-07-09' },
+  { id:'AV02', logementId:'L001', reservationId:'R02', voyageurId:'V02', canal:'booking', note:8.8, date:'2026-07-17',
+    texte:"Ottima posizione, appartamento pulito. La porta d'ingresso dell'edificio è difficile da aprire, ci abbiamo messo un po'.",
+    reponse:null, reponseDate:null },
+  { id:'AV03', logementId:'L002', reservationId:'R05', voyageurId:'V05', canal:'airbnb',  note:4,   date:'2026-07-10',
+    texte:"Great little studio, perfect location for exploring Montmartre. Only downside is the noise from the street on Friday night.",
+    reponse:null, reponseDate:null },
+  { id:'AV04', logementId:'L003', reservationId:'R09', voyageurId:'V09', canal:'booking', note:9.6, date:'2026-07-06',
+    texte:"Sehr schöne Wohnung, geschmackvoll eingerichtet. Die Kommunikation war ausgezeichnet.",
+    reponse:"Vielen Dank Anna! Wir freuen uns auf Ihren nächsten Besuch in Bordeaux.", reponseDate:'2026-07-07' },
+  { id:'AV05', logementId:'L004', reservationId:'R13', voyageurId:'V12', canal:'direct',  note:5,   date:'2026-07-19',
+    texte:"Comme chaque été, le chalet est impeccable. Le spa avait été contrôlé avant notre arrivée, c'est appréciable.",
+    reponse:null, reponseDate:null },
+  { id:'AV06', logementId:'L005', reservationId:'R16', voyageurId:'V15', canal:'direct',  note:4,   date:'2026-07-12',
+    texte:"Villa parfaite pour notre séminaire, très spacieuse. La connexion Wi-Fi a été un peu juste pour 8 personnes en visioconférence.",
+    reponse:null, reponseDate:null },
+  { id:'AV07', logementId:'L006', reservationId:'R19', voyageurId:'V18', canal:'airbnb',  note:5,   date:'2026-07-12',
+    texte:"Séjour parfait, logement conforme et hôte très réactive. Je recommande sans hésiter.",
+    reponse:null, reponseDate:null },
+  { id:'AV08', logementId:'L007', reservationId:'R22', voyageurId:'V21', canal:'booking', note:7.5, date:'2026-07-15',
+    texte:"Logement correct et bien situé. Le ménage n'était pas terminé à notre arrivée, nous avons attendu vingt minutes.",
+    reponse:null, reponseDate:null },
+  { id:'AV09', logementId:'L008', reservationId:'R25', voyageurId:'V24', canal:'direct',  note:5,   date:'2026-07-21',
+    texte:"Idéal avec trois enfants, la maison est sécurisée et le jardin très agréable. Merci pour le lit parapluie.",
+    reponse:"Merci pour votre retour, c'était un plaisir de vous recevoir en famille !", reponseDate:'2026-07-22' },
+  { id:'AV10', logementId:'L009', reservationId:'R28', voyageurId:'V27', canal:'airbnb',  note:3,   date:'2026-07-22',
+    texte:"Le logement est bien placé mais la climatisation ne fonctionnait pas correctement pendant la canicule. Signalé dès le premier jour, rien n'a été fait.",
+    reponse:null, reponseDate:null },
+  { id:'AV11', logementId:'L010', reservationId:'R31', voyageurId:'V30', canal:'airbnb',  note:5,   date:'2026-07-23',
+    texte:"Wonderful stay, the flat is beautiful and very well equipped. Check-in was smooth and self-service.",
+    reponse:null, reponseDate:null },
+];
+
+/* Évaluations déposées PAR l'hôte SUR les voyageurs. Ce qui n'est pas
+   là est « à évaluer », tant que le délai de la plateforme court. */
+const EVALUATIONS = [
+  { id:'EV01', reservationId:'R01', note:5, texte:"Emma est une voyageuse idéale : communication fluide, logement rendu impeccable.", date:'2026-07-08' },
+  { id:'EV02', reservationId:'R09', note:5, texte:"Séjour sans le moindre accroc, je recommande Anna à tout hôte.", date:'2026-07-06' },
+];
+
+/* ---------- Avis reçus : lectures dérivées ---------- */
+function getAvis(id) { return AVIS.find(a => a.id === id) || null; }
+function avisEnAttente() { return AVIS.filter(a => !a.reponse); }
+// Un avis sur un canal débranché ne peut plus recevoir de réponse :
+// la passerelle qui la porterait n'existe plus.
+function avisRepondable(a) {
+  const pf = PLATEFORMES.find(p => p.id === a.canal);
+  return a.canal === 'direct' || (pf ? pf.connecte : false);
+}
+function repondreAvis(id, texte) {
+  const a = getAvis(id);
+  if (!a || !texte.trim()) return null;
+  a.reponse = texte.trim();
+  a.reponseDate = AUJOURDHUI;
+  return a;
+}
+function supprimerReponseAvis(id) {
+  const a = getAvis(id);
+  if (!a) return false;
+  a.reponse = null; a.reponseDate = null;
+  return true;
+}
+
+/* Moyenne du parc, normalisée sur 5 : c'est la seule façon de mêler des
+   notes Airbnb et Booking sans additionner des choux et des carottes. */
+function avisMoyenne(liste) {
+  const src = liste || AVIS;
+  if (!src.length) return 0;
+  const s = src.reduce((t, a) => t + avisNoteSur5(a.note, a.canal), 0);
+  return s / src.length;
+}
+function avisParLogement(logementId) { return AVIS.filter(a => a.logementId === logementId); }
+
+/* ---------- Évaluations de voyageurs ---------- */
+function evaluationDe(reservationId) {
+  return EVALUATIONS.find(e => e.reservationId === reservationId) || null;
+}
+// Dernier jour où la plateforme accepte encore l'évaluation.
+function dateLimiteEvaluation(r) {
+  const c = avisCanal(r.canal);
+  return c.delaiEvaluation ? addDays(r.depart, c.delaiEvaluation) : null;
+}
+function evaluationExpiree(r, aujourdhui = AUJOURDHUI) {
+  const limite = dateLimiteEvaluation(r);
+  return limite ? aujourdhui > limite : false;
+}
+
+/* Séjours terminés, avec leur état d'évaluation. On renvoie TOUT, y
+   compris les délais expirés : les masquer donnerait l'illusion d'un
+   fichier propre alors que ces évaluations sont définitivement perdues,
+   ce qui est justement l'information utile. */
+function sejoursAEvaluer() {
+  return RESERVATIONS
+    .filter(r => r.statut === 'termine')
+    .map(r => {
+      const ev = evaluationDe(r.id);
+      const limite = dateLimiteEvaluation(r);
+      const expire = !ev && evaluationExpiree(r);
+      return {
+        reservation: r, evaluation: ev, limite, expire,
+        statut: ev ? 'fait' : (expire ? 'expire' : 'a_faire'),
+        joursRestants: (!ev && limite && !expire) ? nuitsEntre(AUJOURDHUI, limite) : null,
+      };
+    })
+    // À évaluer d'abord, et parmi eux le plus urgent en tête : c'est
+    // l'ordre de la file d'attente, pas l'ordre chronologique.
+    .sort((a, b) => {
+      const rang = { a_faire: 0, expire: 1, fait: 2 };
+      if (rang[a.statut] !== rang[b.statut]) return rang[a.statut] - rang[b.statut];
+      if (a.statut === 'a_faire') return (a.joursRestants ?? 99) - (b.joursRestants ?? 99);
+      return b.reservation.depart.localeCompare(a.reservation.depart);
+    });
+}
+
+function evaluerVoyageur(reservationId, note, texte) {
+  const r = getReservation(reservationId);
+  if (!r || evaluationExpiree(r)) return null;
+  const ex = evaluationDe(reservationId);
+  if (ex) { ex.note = note; ex.texte = texte.trim(); ex.date = AUJOURDHUI; return ex; }
+  const e = { id: 'EV' + Date.now(), reservationId, note, texte: texte.trim(), date: AUJOURDHUI };
+  EVALUATIONS.push(e);
+  return e;
+}
+
+/* ============================================================
    CONVERSATIONS (18) — reliées à une réservation
    canal : airbnb | booking | email | whatsapp
 
@@ -3415,6 +3596,7 @@ const _OYVIA_ENTITIES = {
   ROLES, UTILISATEURS,
   VIVI_CONFIG, VIVI_REPONSES, VIVI_SIGNALEMENTS, PAGE_SEJOUR, SITE_WEB,
   TARIF_DYNAMIQUE, TD_OVERRIDES, TD_JOURNAL,
+  AVIS, EVALUATIONS,
 };
 
 /* Identifiants supprimés depuis l'interface, par entité.

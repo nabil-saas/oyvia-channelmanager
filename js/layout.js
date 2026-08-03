@@ -24,6 +24,7 @@ const Layout = (function () {
     vivi:      '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 17h4"/><path d="M2 13h2M20 13h2"/>',
     site:      '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/>',
     tarification:'<path d="M3 16.5 8 10l4 3.5L21 4"/><path d="M16 4h5v5"/><path d="M3 21h18"/>',
+    avis:      '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/>',
     search:    '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
     bell:      '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
     menu:      '<path d="M4 6h16M4 12h16M4 18h16"/>',
@@ -37,7 +38,8 @@ const Layout = (function () {
     { id:'logements',    label:'Logements',       title:'Logements',         href:'logements.html' },
     { id:'proprietaires',label:'Propriétaires',   title:'Propriétaires',     href:'proprietaires.html' },
     { id:'reservations', label:'Réservations',    title:'Réservations',      href:'reservations.html' },
-    { id:'voyageurs',    label:'Voyageurs',       title:'Voyageurs',         href:'voyageurs.html' },
+    { id:'voyageurs',    label:'Historique des voyageurs', title:'Historique des voyageurs', href:'voyageurs.html' },
+    { id:'avis',         label:'Avis',            title:'Avis',              href:'avis.html', badge:'avis' },
     { id:'site',         label:'Site web',        title:'Site web & réservations directes', href:'site.html' },
     { id:'messagerie',   label:'Messagerie',      title:'Messagerie',        href:'messagerie.html', badge:'unread' },
     { id:'automatisations', label:'Automatisations', title:'Automatisations', href:'automatisations.html' },
@@ -53,7 +55,7 @@ const Layout = (function () {
   // Regroupement du menu par catégories (l'ordre des groupes = l'ordre affiché).
   const NAV_GROUPS = [
     { label:'Aperçu',        items:['dashboard', 'calendrier', 'statistiques'] },
-    { label:'Locations',     items:['logements', 'proprietaires', 'reservations', 'voyageurs'] },
+    { label:'Locations',     items:['logements', 'proprietaires', 'reservations', 'voyageurs', 'avis'] },
     { label:'Vente directe', items:['site'] },
     { label:'Communication', items:['messagerie', 'automatisations', 'vivi'] },
     { label:'Équipe',        items:['menage', 'equipe'] },
@@ -76,10 +78,26 @@ const Layout = (function () {
     return CONVERSATIONS.reduce((s, c) => s + (canalConnecte(c.canal) ? (c.nonLu || 0) : 0), 0);
   }
 
+  /* Compteurs de pastille, par identifiant de badge. Ce qui est compté est
+     ce sur quoi l'utilisateur doit AGIR : les avis sans réponse et les
+     séjours encore évaluables. Une évaluation dont le délai a expiré ne
+     compte pas — la pastille inviterait à une action devenue impossible. */
+  const BADGES = {
+    unread: unreadCount,
+    avis: () => avisEnAttente().filter(avisRepondable).length
+              + sejoursAEvaluer().filter(s => s.statut === 'a_faire').length,
+  };
+  function badgeCount(id) {
+    const f = BADGES[id];
+    if (!f) return 0;
+    try { return f() || 0; } catch { return 0; }
+  }
+
   function sidebarHTML(active) {
     const groups = NAV_GROUPS.map(g => {
       const items = g.items.map(id => NAV.find(n => n.id === id)).filter(Boolean).map(n => {
-        const badge = n.badge === 'unread' && unreadCount() > 0 ? `<span class="app-navitem__badge">${unreadCount()}</span>` : '';
+        const nb = n.badge ? badgeCount(n.badge) : 0;
+        const badge = nb > 0 ? `<span class="app-navitem__badge">${nb}</span>` : '';
         return `<a class="app-navitem ${n.id === active ? 'is-active' : ''}" href="${n.href}">
           ${svg(I[n.id])}<span>${n.label}</span>${badge}</a>`;
       }).join('');
@@ -126,6 +144,28 @@ const Layout = (function () {
       </button>
       <button class="btn btn--secondary btn--icon" id="app-collapse" aria-label="Replier le menu">${svg(I.chevrons)}</button>
       <button type="button" class="avatar" id="app-avatar-btn" aria-label="Mon compte" aria-haspopup="true" aria-expanded="false">${UTILISATEUR.initiales}</button>`;
+  }
+
+  /* Remet les pastilles du menu à jour sans redessiner toute la barre :
+     un innerHTML complet perdrait l'état du tiroir mobile et les
+     écouteurs posés par init(). Les pages qui font baisser un compteur
+     (répondre à un avis, lire une conversation) appellent ceci. */
+  function refreshSidebarBadges() {
+    const sidebar = document.getElementById('app-sidebar');
+    if (!sidebar) return;
+    NAV.filter(n => n.badge).forEach(n => {
+      const lien = sidebar.querySelector(`.app-navitem[href="${n.href}"]`);
+      if (!lien) return;
+      const nb = badgeCount(n.badge);
+      let el = lien.querySelector('.app-navitem__badge');
+      if (!nb) { if (el) el.remove(); return; }
+      if (!el) {
+        el = document.createElement('span');
+        el.className = 'app-navitem__badge';
+        lien.appendChild(el);
+      }
+      el.textContent = nb;
+    });
   }
 
   function init(active) {
@@ -185,7 +225,7 @@ const Layout = (function () {
     if (avatarBtn) avatarBtn.addEventListener('click', e => { e.stopPropagation(); UI.toggleAccountDropdown(avatarBtn, 'bottom'); });
   }
 
-  return { init, currentLogement: 'all', svg, NAV, unreadCount };
+  return { init, currentLogement: 'all', svg, NAV, unreadCount, refreshSidebarBadges };
 })();
 
 /* --------- Boîte à outils UI partagée (toasts, panneau) --------- */

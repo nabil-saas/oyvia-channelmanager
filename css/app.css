@@ -131,12 +131,19 @@
 .app-filters .input-icon .input { width: 240px; }
 .app-filters .grow { flex: 1 1 auto; }
 
-/* Grilles utilitaires */
+/* Grilles utilitaires
+
+   minmax(0, …) partout et non 1fr : « 1fr » vaut « minmax(auto, 1fr) »,
+   dont la borne basse est la largeur MINIMALE du contenu. Une colonne
+   contenant un canvas de graphique (que Chart.js dimensionne en pixels)
+   ou un tableau large refuse alors de rétrécir et pousse toute la page
+   en débordement horizontal. C'est ce qui faisait déborder Statistiques
+   de 195 px sur mobile. */
 .app-grid { display: grid; gap: var(--sp-4); }
 .app-grid--kpi { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-.app-grid--2 { grid-template-columns: 1fr 1fr; }
-.app-grid--3 { grid-template-columns: repeat(3, 1fr); }
-.app-grid--2-1 { grid-template-columns: 2fr 1fr; }
+.app-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.app-grid--2-1 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 
 /* Liste simple (arrivées/départs, prochaines résas) */
 .app-list { display: flex; flex-direction: column; }
@@ -285,8 +292,11 @@
 /* ============================================================
    STATISTIQUES  (.st-)
    ============================================================ */
-.st-chart { position: relative; height: 288px; }
+/* width:100% + min-width:0 : sans ça le canvas garde la largeur que
+   Chart.js lui a écrite en pixels et ne redescend jamais. */
+.st-chart { position: relative; height: 288px; width: 100%; min-width: 0; }
 .st-chart--sm { height: 240px; }
+.st-chart canvas { max-width: 100%; }
 .st-legend { display: flex; flex-direction: column; gap: var(--sp-3); }
 .st-legend__item { display: flex; align-items: center; gap: var(--sp-3); }
 .st-legend__item i { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
@@ -1169,3 +1179,121 @@
 .td-liste li::before { content: ''; position: absolute; left: 0; top: 9px; width: 5px; height: 5px;
   border-radius: var(--r-full); background: var(--c-border-strong); }
 @media (max-width: 560px) { .td-pcts--12 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ============================================================
+   AVIS
+   ============================================================ */
+
+.kpi--alerte { border-color: var(--amber-500); }
+.kpi--alerte .kpi__icon { background: var(--c-warning-soft); color: var(--c-warning-ink); }
+
+.av-compte { font-size: var(--fs-sm); color: var(--c-text-soft); margin: var(--sp-4) 0 var(--sp-3); }
+.av-compte b { color: var(--c-warning-ink); font-weight: var(--fw-semibold); }
+
+.av-liste { display: flex; flex-direction: column; gap: var(--sp-4); }
+.av-carte { padding: var(--sp-5); }
+/* Le liseré ambre remplace un badge « en attente » sur chaque carte :
+   l'information est portée par le bloc entier, pas par une étiquette. */
+.av-carte.is-attente { border-left: 3px solid var(--amber-500); }
+.av-carte__tete { display: flex; align-items: flex-start; gap: var(--sp-3); }
+.av-carte__vignette { width: 40px; height: 40px; font-size: var(--fs-md); }
+.av-carte__logement { display: block; font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+.av-carte__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3);
+  margin-top: var(--sp-1); font-size: var(--fs-xs); color: var(--c-text-muted); }
+.av-carte__note { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.av-carte__note b { font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.av-carte__texte { margin-top: var(--sp-4); font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--c-text); }
+
+.av-stars { display: inline-flex; gap: 1px; }
+.av-star svg { width: 15px; height: 15px; color: var(--ink-300); }
+.av-star.is-on svg { color: var(--amber-500); fill: var(--amber-500); }
+
+.av-repondre { margin-top: var(--sp-4); }
+.av-bloque { margin-top: var(--sp-4); font-size: var(--fs-xs); color: var(--c-text-muted);
+  background: var(--c-surface-alt); border: 1px solid var(--c-border); border-radius: var(--r-md);
+  padding: var(--sp-3); }
+.av-bloque a { color: var(--c-accent); font-weight: var(--fw-semibold); }
+
+.av-reponse { margin-top: var(--sp-4); background: var(--c-surface-alt); border-left: 3px solid var(--c-accent);
+  border-radius: 0 var(--r-md) var(--r-md) 0; padding: var(--sp-3) var(--sp-4); }
+.av-reponse__tete { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
+.av-reponse__tete b { font-size: var(--fs-xs); color: var(--c-accent-ink); }
+.av-reponse__tete span { font-size: 11px; color: var(--c-text-muted); }
+.av-reponse p { margin-top: var(--sp-2); font-size: var(--fs-sm); line-height: var(--lh-snug); }
+.av-reponse__actions { margin-top: var(--sp-2); }
+
+.av-form { margin-top: var(--sp-4); }
+.av-form__actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-3); }
+
+.av-delai { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--c-text-soft); }
+.av-delai.is-urgent { color: var(--c-danger-ink); }
+
+/* Sélecteur de note de la modale : cibles larges, pas des micro-étoiles */
+.av-notes { display: flex; align-items: center; gap: var(--sp-1); }
+.av-note { width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--r-md);
+  transition: background var(--t-fast); }
+.av-note:hover { background: var(--c-surface-alt); }
+.av-note svg { width: 26px; height: 26px; color: var(--ink-300); transition: color var(--t-fast), fill var(--t-fast); }
+.av-note.is-on svg { color: var(--amber-500); fill: var(--amber-500); }
+.av-notes__valeur { margin-left: var(--sp-3); font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+  color: var(--c-text-soft); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 720px) {
+  .av-carte { padding: var(--sp-4); }
+  .av-carte__tete { flex-wrap: wrap; }
+  /* La note passe sous l'en-tête plutôt que de comprimer le nom du
+     logement à trois caractères sur un écran étroit. */
+  .av-carte__note { flex-direction: row; align-items: center; gap: var(--sp-2);
+    width: 100%; order: 3; margin-top: var(--sp-2); }
+}
+
+/* ============================================================
+   CIBLES TACTILES — mobile et tablette
+
+   Au doigt, tout ce qui se clique doit faire au moins 48 px de haut.
+   Les tailles compactes de la version bureau (btn--sm à 36, seg à 32,
+   icon-btn à 38) sont pensées pour un curseur au pixel près ; au
+   pouce, elles produisent des ratés d'appui.
+
+   On agrandit la ZONE D'APPUI, pas systématiquement le dessin : les
+   contrôles minuscules (croix d'une puce, interrupteur) gardent leur
+   apparence et gagnent une surface invisible autour d'eux. Grossir la
+   croix elle-même déséquilibrerait la puce qui la porte.
+   ============================================================ */
+@media (max-width: 900px) {
+  .btn, .btn--sm, .select, .input, .dp-input { min-height: 48px; }
+  .btn--icon, .icon-btn { min-width: 48px; min-height: 48px; }
+  .seg button, .tabs button, .vc-nav button { min-height: 48px; }
+  .tabs button { padding-inline: var(--sp-3); }
+  .textarea { min-height: 96px; }
+
+  /* Zone d'appui étendue sans toucher au dessin.
+     `inset` négatif : la surface déborde de l'élément visible. */
+  .switch { position: relative; }
+  .switch input { position: absolute; inset: -12px; width: auto; height: auto; }
+
+  /* La croix d'une puce ne peut pas faire 48 px sans faire éclater la
+     puce qui la porte. On l'agrandit visiblement (18 → 32) ET on écarte
+     les puces, pour que la zone d'appui étendue de l'une n'empiète pas
+     sur sa voisine — c'est ce qui se produisait avec un simple ::after
+     de 48 px sur des puces espacées de 8 px : le bas de la zone d'une
+     puce appartenait déjà à celle du dessous. */
+  .po-chips { gap: var(--sp-3); }
+  .po-chip { padding: 8px 8px 8px 16px; }
+  .po-chip__del { width: 32px; height: 32px; position: relative; }
+  .po-chip__del svg { width: 14px; height: 14px; }
+  .icon-btn--xs { position: relative; }
+  .po-chip__del::after, .icon-btn--xs::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: 44px; height: 44px; transform: translate(-50%, -50%);
+  }
+
+  /* Case à cocher enveloppée dans son label : c'est le label qui reçoit
+     l'appui, il doit donc respecter la hauteur minimale, pas la case. */
+  .vc-check { min-height: 48px; }
+
+  /* Une ligne d'actions ne doit pas se comprimer : elle passe à la ligne. */
+  .app-pagehead__actions, .app-filters { width: 100%; }
+  .app-pagehead__actions > .btn, .app-pagehead__actions > .select { flex: 1 1 auto; }
+  .app-filters > .select, .app-filters > .input-icon { flex: 1 1 160px; min-width: 0; }
+}

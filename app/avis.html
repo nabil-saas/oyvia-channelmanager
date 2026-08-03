@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Avis</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Avis</h1>
+            <p id="av-sous-titre">Les avis reçus sur vos logements, et ceux qu'il vous reste à laisser.</p>
+          </div>
+        </div>
+
+        <div class="app-grid app-grid--kpi" id="av-kpis"><!-- injecté --></div>
+
+        <div class="tabs mt-6" id="av-tabs">
+          <button class="is-active" data-tab="logements">Logements</button>
+          <button data-tab="voyageurs">Voyageurs</button>
+        </div>
+
+        <div class="tabpane is-active" data-pane="logements" id="av-pane-logements">
+          <div class="app-filters">
+            <select class="select" id="av-f-logement" aria-label="Filtrer par logement"></select>
+            <select class="select" id="av-f-canal" aria-label="Filtrer par plateforme"></select>
+            <select class="select" id="av-f-statut" aria-label="Filtrer par statut">
+              <option value="all">Tous les avis</option>
+              <option value="attente">En attente de réponse</option>
+              <option value="repondu">Déjà répondus</option>
+            </select>
+          </div>
+          <div id="av-liste"><!-- injecté --></div>
+        </div>
+
+        <div class="tabpane" data-pane="voyageurs" id="av-pane-voyageurs">
+          <div class="app-filters">
+            <select class="select" id="av-g-statut" aria-label="Filtrer par statut">
+              <option value="all">Tous les séjours terminés</option>
+              <option value="a_faire">À évaluer</option>
+              <option value="fait">Déjà évalués</option>
+              <option value="expire">Délai expiré</option>
+            </select>
+          </div>
+          <div id="av-voyageurs"><!-- injecté --></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : évaluer un voyageur -->
+  <div class="modal" id="av-modal" role="dialog" aria-modal="true" aria-labelledby="av-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="av-modal-title">Évaluer le voyageur</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body" id="av-modal-body"><!-- injecté --></div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="av-modal-ok">Envoyer l'évaluation</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/avis.js"></script>
+  <script src="../js/vivi.js"></script>
+</body>
+</html>
