@@ -94,6 +94,12 @@ h4 { font-size: var(--fs-lg); }
 .mt-5 { margin-top: var(--sp-5); } .mt-6 { margin-top: var(--sp-6); }
 .mb-2 { margin-bottom: var(--sp-2); } .mb-3 { margin-bottom: var(--sp-3); } .mb-4 { margin-bottom: var(--sp-4); }
 .hidden { display: none !important; }
+/* L'attribut `hidden` doit l'emporter sur le display: des composants.
+   La feuille de l'agent utilisateur pose bien [hidden]{display:none},
+   mais n'importe quelle règle d'auteur la bat : `.field{display:flex}`
+   suffisait à réafficher un champ pourtant marqué hidden. C'est ce qui
+   laissait « Forfait mensuel » visible sur un contrat à la commission. */
+[hidden] { display: none !important; }
 .divider { height: 1px; background: var(--c-border); border: 0; width: 100%; }
 
 /* Logo Oyvia (wordmark SVG) */

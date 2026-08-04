@@ -26,8 +26,16 @@
     const o = getProprietaire(currentId);
     const biens = getLogementsByProprietaire(currentId);
     const ownerCA = biens.reduce((s, l) => s + caBien(l), 0);
-    const commission = Math.round(ownerCA * o.commission);
-    const net = ownerCA - commission;
+    // Le portail lisait un simple « CA × taux ». C'était faux dès que le
+    // contrat comportait un forfait ou des dépenses refacturées : le
+    // propriétaire y voyait un net supérieur à ce qu'il touchait vraiment.
+    // On passe par le même calcul que la comptabilité du gestionnaire.
+    const depensesOwner = DEPENSES
+      .filter(d => biens.some(l => l.id === d.logementId))
+      .reduce((t, d) => t + d.montant, 0);
+    const dec = calculFacture(o, ownerCA, depensesOwner);
+    const commission = Math.round(dec.honoraires);
+    const net = Math.round(dec.netProprietaire);
     const avgOcc = Math.round(biens.reduce((s, l) => s + occBien(l), 0) / biens.length);
     const upcoming = RESERVATIONS
       .filter(r => r.canal !== 'bloque' && biens.some(l => l.id === r.logementId) && parseDate(r.arrivee) >= parseDate(AUJOURDHUI))
@@ -41,7 +49,9 @@
     /* KPIs */
     const KPIS = [
       { label: 'CA du mois', value: formatEuro(ownerCA), foot: `sur ${biens.length} biens`, ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
-      { label: 'Net propriétaire', value: formatEuro(net), foot: `après commission ${Math.round(o.commission * 100)} %`, ic: icon('<path d="M20 6 9 17l-5-5"/>') },
+      { label: 'Net propriétaire', value: formatEuro(net),
+        foot: dec.depensesACharge ? `après honoraires et ${formatEuro(dec.depensesACharge)} de frais` : `après honoraires ${formatEuro(commission)}`,
+        ic: icon('<path d="M20 6 9 17l-5-5"/>') },
       { label: 'Occupation moyenne', value: avgOcc + ' %', foot: 'ce mois-ci', ic: icon('<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>') },
       { label: 'Réservations à venir', value: upcoming.length, foot: 'sur vos biens', ic: icon('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>') },
     ];
@@ -49,9 +59,14 @@
       <div class="kpi"><span class="kpi__label">${k.label}</span><span class="kpi__value">${k.value}</span>
       <span class="kpi__foot">${k.foot}</span><span class="kpi__icon">${k.ic}</span></div>`).join('');
 
-    /* Biens */
+    /* Biens.
+       La commission ne se ventile par bien que si elle est proportionnelle
+       au CA. Sous contrat au forfait, répartir le forfait bien par bien
+       inventerait une clé de répartition dont personne n'a convenu : on
+       affiche alors 0 et le forfait reste au total. */
+    const commBien = ca => o.remuneration === 'forfait' ? 0 : Math.round(ca * (o.commission || 0));
     document.getElementById('op-biens').innerHTML = biens.map(l => {
-      const ca = caBien(l), comm = Math.round(ca * o.commission);
+      const ca = caBien(l), comm = commBien(ca);
       return `<tr>
         <td><div class="row gap-3"><span class="op-thumb" style="background:${l.couleur}">${l.ville.slice(0, 2).toUpperCase()}</span>
           <div><b class="fw-semibold">${l.nom}</b><br><small class="text-muted">${l.ville} · ${labelTypeLogement(l.type)}</small></div></div></td>
@@ -100,7 +115,7 @@
 
     /* Relevé CSV */
     document.getElementById('op-releve').onclick = () => {
-      const rows = biens.map(l => { const ca = caBien(l), comm = Math.round(ca * o.commission); return [l.nom, l.ville, occBien(l) + ' %', ca, comm, ca - comm]; });
+      const rows = biens.map(l => { const ca = caBien(l), comm = commBien(ca); return [l.nom, l.ville, occBien(l) + ' %', ca, comm, ca - comm]; });
       rows.push([]);
       rows.push(['TOTAL', '', avgOcc + ' %', ownerCA, commission, net]);
       UI.exportCSV(`releve-${o.societe.replace(/\s+/g, '-')}.csv`, ['Bien', 'Ville', 'Occupation', 'CA (€)', 'Commission (€)', 'Net (€)'], rows);

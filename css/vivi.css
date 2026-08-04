@@ -8,18 +8,23 @@
 /* ------------------------------------------------------------
    1. Bouton flottant
    ------------------------------------------------------------ */
+/* Ancré dans la barre du haut, à gauche de la recherche. Il ne flotte
+   plus au-dessus du contenu : plus rien ne passe sous lui. La classe
+   garde son nom (.vivi-fab) pour ne pas éparpiller les sélecteurs. */
 .vivi-fab {
-  position: fixed; right: var(--sp-5); bottom: var(--sp-5); z-index: var(--z-modal);
+  position: relative; flex-shrink: 0;
   display: flex; align-items: center; gap: var(--sp-2);
-  height: 56px; padding: 0 var(--sp-5) 0 var(--sp-4);
+  height: 44px; padding: 0 var(--sp-4) 0 5px;
   border: 0; border-radius: var(--r-full); cursor: pointer;
   background: linear-gradient(135deg, var(--blue-600), #7C4DFF);
   color: #fff; font-family: inherit; font-size: var(--fs-sm); font-weight: var(--fw-semibold);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-sm);
   transition: transform var(--t-fast), box-shadow var(--t-fast), opacity var(--t-fast);
 }
-.vivi-fab:hover { transform: translateY(-2px); box-shadow: 0 20px 46px rgba(13,25,55,0.24); }
+.vivi-fab:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
 .vivi-fab:active { transform: translateY(0); }
+.vivi-fab .vivi-face { width: 34px; height: 34px; }
+.vivi-fab .vivi-avatar { width: 26px; height: 26px; }
 /* Quand la popup est ouverte, le bouton s'efface pour ne pas la doubler */
 .vivi-fab.is-hidden { opacity: 0; visibility: hidden; transform: scale(0.9); }
 .vivi-fab__label { white-space: nowrap; }
@@ -116,16 +121,11 @@
      bloc conteneur initial, qui exclut la barre de défilement — on perdait
      quelques pixels sur chaque bord au lieu d'occuper vraiment tout l'écran. */
   .vivi-panel { inset: 0; width: auto; height: auto; max-width: none; max-height: none; border-radius: 0; border: 0; }
-  .vivi-fab { right: var(--sp-4); bottom: var(--sp-4); height: 52px; padding: 0 var(--sp-4) 0 var(--sp-3); }
+  /* Au doigt et sans place pour le mot : le bouton devient une pastille
+     ronde, à côté de la cloche. La règle qui le masquait sur les pages à
+     barre du bas n'a plus de raison d'être — il ne recouvre plus rien. */
+  .vivi-fab { height: 44px; width: 44px; padding: 0; justify-content: center; }
   .vivi-fab__label { display: none; }
-  /* Pages avec une barre d'action ancrée en bas (le composeur de la
-     messagerie) : en une seule colonne, tout le coin bas-droit est occupé —
-     « Envoyer », puis les actions de la proposition de Vivi juste au-dessus.
-     Le remonter ne fait que déplacer la collision, on masque donc le bouton
-     flottant. Vivi reste accessible par le menu « Assistant IA », et sur la
-     messagerie ses propositions sont déjà affichées dans le fil. */
-  body.has-bottom-bar .vivi-fab,
-  body.has-bottom-bar .vivi-panel { display: none; }
 }
 
 /* ------------------------------------------------------------

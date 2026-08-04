@@ -823,39 +823,172 @@ const RESERVATIONS = [
 RESERVATIONS.forEach(r => { r.nuits = nuitsEntre(r.arrivee, r.depart); });
 
 /* ============================================================
-   PROPRIÉTAIRES — la conciergerie gère les biens pour le compte
-   de plusieurs propriétaires. Chaque propriétaire a son propre
-   modèle de facturation (modeFacturation) :
-     - reversement : la conciergerie encaisse le CA, prélève sa
-       commission + les dépenses, puis reverse le net au propriétaire.
-     - commission  : le propriétaire encaisse directement le CA ; la
-       conciergerie lui facture uniquement sa commission (+ dépenses
-       si refacturerDepenses est activé).
-     - forfait     : abonnement mensuel fixe (forfaitMensuel),
-       indépendant du nombre de réservations.
-     - mixte       : commission + forfait mensuel fixe, dépenses
-       généralement refacturées à part (courant en haut de gamme).
+   PROPRIÉTAIRES & MODÈLE DE FACTURATION
+
+   Le contrat entre la conciergerie et un propriétaire se décrit par
+   TROIS questions indépendantes. Les mélanger en une seule liste
+   d'options était la faiblesse du modèle précédent : « forfait
+   mensuel » ne dit pas qui encaisse les réservations, et « le
+   gestionnaire encaisse » ne dit pas comment il est rémunéré. Les
+   deux combinaisons existent réellement sur le terrain.
+
+   1. encaissement — QUI REÇOIT L'ARGENT DES VOYAGEURS ?
+        'gestionnaire' : la conciergerie encaisse, retient ce qui lui
+                         revient et REVERSE le solde au propriétaire.
+        'proprietaire' : le propriétaire encaisse ; la conciergerie
+                         lui ADRESSE UNE FACTURE.
+      C'est cette question, et elle seule, qui donne le SENS du
+      document : un relevé de reversement ne se lit pas comme une
+      facture, et l'argent ne circule pas dans le même sens.
+
+   2. remuneration — COMMENT LA CONCIERGERIE EST-ELLE PAYÉE ?
+        'commission' : pourcentage du chiffre d'affaires.
+        'forfait'    : montant fixe par mois, quel que soit le CA.
+        'mixte'      : forfait de base + commission sur le CA.
+
+   3. depensesPayeesPar — QUI AVANCE LES FRAIS (ménage, plomberie…) ?
+        'gestionnaire' : la conciergerie avance. On demande alors si
+                         elle les refacture (refacturerDepenses). Si
+                         non, elles sortent de sa propre marge.
+        'proprietaire' : le propriétaire règle directement ses
+                         prestataires. La question de la refacturation
+                         ne se pose plus — d'où le fait qu'elle
+                         disparaisse de l'écran dans ce cas.
    ============================================================ */
-const MODE_FACTURATION_LABEL = {
-  reversement: 'Le gestionnaire encaisse & reverse le net',
-  commission:  'Commission sur les réservations',
-  forfait:     'Forfait mensuel',
-  mixte:       'Mixte (commission + forfait)',
+
+const ENCAISSEMENT_LABEL = {
+  gestionnaire: 'Le gestionnaire encaisse',
+  proprietaire: 'Le propriétaire encaisse',
 };
-const MODE_FACTURATION_DESC = {
-  reversement: 'Vous encaissez les réservations, prélevez votre commission et (si activé) les dépenses, puis reversez le net au propriétaire.',
-  commission:  'Le propriétaire encaisse directement ses réservations ; vous lui facturez votre commission (et les dépenses si elles sont refacturées).',
-  forfait:     'Vous facturez un montant fixe chaque mois, quel que soit le nombre de réservations.',
-  mixte:       'Commission sur le CA + forfait mensuel fixe ; les dépenses sont généralement refacturées séparément.',
+const ENCAISSEMENT_DESC = {
+  gestionnaire: "Vous recevez l'argent des réservations, retenez ce qui vous revient et reversez le solde au propriétaire.",
+  proprietaire: "Le propriétaire reçoit directement l'argent des réservations ; vous lui adressez une facture.",
 };
+const REMUNERATION_LABEL = {
+  commission: "Commission sur le chiffre d'affaires",
+  forfait:    'Forfait mensuel fixe',
+  mixte:      'Mixte : forfait + commission',
+};
+const REMUNERATION_DESC = {
+  commission: "Un pourcentage du CA encaissé sur la période.",
+  forfait:    'Un montant fixe chaque mois, quel que soit le nombre de réservations.',
+  mixte:      "Un forfait de base auquel s'ajoute une commission sur le CA.",
+};
+const PAYEUR_LABEL = {
+  gestionnaire: 'Le gestionnaire avance les frais',
+  proprietaire: 'Le propriétaire règle ses frais',
+};
+
 const PROPRIETAIRES = [
+  // Cas 1a : le gestionnaire encaisse, avance les frais et les déduit du reversement.
   { id:'O1', societe:'SCI Bernard',            contact:'Paul Bernard',  email:'paul.bernard@sci-bernard.fr', tel:'+33 6 12 34 56 78',
-    modeFacturation:'reversement', commission:0.20, forfaitMensuel:0,   refacturerDepenses:true },
+    encaissement:'gestionnaire', remuneration:'commission', commission:0.20, forfaitMensuel:0,
+    depensesPayeesPar:'gestionnaire', refacturerDepenses:true },
+  // Cas 2 : le propriétaire encaisse et règle lui-même ses prestataires.
   { id:'O2', societe:'Investissements Lefort', contact:'Sophie Lefort',  email:'s.lefort@gmail.com',           tel:'+33 6 98 76 54 32',
-    modeFacturation:'commission',  commission:0.18, forfaitMensuel:0,   refacturerDepenses:true },
+    encaissement:'proprietaire', remuneration:'commission', commission:0.18, forfaitMensuel:0,
+    depensesPayeesPar:'proprietaire', refacturerDepenses:false },
+  // Cas 3a : le propriétaire encaisse, le gestionnaire avance et refacture.
   { id:'O3', societe:'Patrimoine Aziz',        contact:'Karim Aziz',     email:'k.aziz@gmail.com',             tel:'+33 6 45 67 89 01',
-    modeFacturation:'mixte',       commission:0.10, forfaitMensuel:99,  refacturerDepenses:true },
+    encaissement:'proprietaire', remuneration:'mixte', commission:0.10, forfaitMensuel:99,
+    depensesPayeesPar:'gestionnaire', refacturerDepenses:true },
 ];
+
+/* Anciens contrats enregistrés avec `modeFacturation` (un seul champ).
+   On les convertit plutôt que d'exiger une ressaisie : un état
+   localStorage antérieur ne doit pas casser l'écran de comptabilité.
+   L'ancien modèle supposait toujours que la conciergerie avançait les
+   frais, c'est donc la valeur de reprise. */
+const _MODE_FACTURATION_LEGACY = {
+  reversement: { encaissement:'gestionnaire', remuneration:'commission' },
+  commission:  { encaissement:'proprietaire', remuneration:'commission' },
+  forfait:     { encaissement:'proprietaire', remuneration:'forfait'    },
+  mixte:       { encaissement:'proprietaire', remuneration:'mixte'      },
+};
+function _migrerFacturation() {
+  PROPRIETAIRES.forEach(o => {
+    if (!o.encaissement || !o.remuneration) {
+      const l = _MODE_FACTURATION_LEGACY[o.modeFacturation] || _MODE_FACTURATION_LEGACY.commission;
+      o.encaissement = o.encaissement || l.encaissement;
+      o.remuneration = o.remuneration || l.remuneration;
+    }
+    if (!o.depensesPayeesPar) o.depensesPayeesPar = 'gestionnaire';
+    if (o.refacturerDepenses === undefined) o.refacturerDepenses = true;
+    delete o.modeFacturation;
+  });
+}
+
+/* ============================================================
+   LE DÉCOMPTE — un seul calcul pour tous les contrats
+
+   Deux nombres seulement changent de place selon le contrat : les
+   honoraires de la conciergerie, et les dépenses. Le reste en
+   découle. On les calcule donc, puis on décide QUI DOIT QUOI À QUI.
+
+   `sens` vaut :
+     'reversement' → la conciergerie doit de l'argent au propriétaire
+     'facture'     → le propriétaire doit de l'argent à la conciergerie
+
+   `depensesACharge` répond à « qui supporte finalement les frais ? »,
+   qui n'est pas la même question que « qui les a avancés ». Une
+   dépense avancée par la conciergerie et non refacturée est bel et
+   bien à SA charge : elle sort de sa marge, et c'est ce que traduit
+   `resultatGestionnaire`.
+   ============================================================ */
+function calculFacture(o, ca, depenses, nbJours = 30) {
+  const commission = o.remuneration === 'forfait' ? 0 : ca * (o.commission || 0);
+  const forfait = (o.remuneration === 'forfait' || o.remuneration === 'mixte')
+    ? (o.forfaitMensuel || 0) * (nbJours / 30)
+    : 0;
+  const honoraires = commission + forfait;
+
+  const avanceesParGestionnaire = o.depensesPayeesPar === 'gestionnaire';
+  const refacturees = (avanceesParGestionnaire && o.refacturerDepenses) ? depenses : 0;
+  const absorbees   = (avanceesParGestionnaire && !o.refacturerDepenses) ? depenses : 0;
+  // À la charge du propriétaire : celles qu'il règle lui-même, ou
+  // celles qu'on lui refacture. Jamais les deux, par construction.
+  const depensesACharge = avanceesParGestionnaire ? refacturees : depenses;
+
+  const sens = o.encaissement === 'gestionnaire' ? 'reversement' : 'facture';
+  // Le montant du document : ce que la conciergerie retient sur
+  // l'encaissement, ou ce qu'elle facture. C'est le même calcul.
+  const montant = honoraires + refacturees;
+
+  return {
+    sens, ca, depenses,
+    commission, forfait, honoraires,
+    depensesRefacturees: refacturees,
+    depensesAbsorbees: absorbees,
+    depensesACharge,
+    montant,
+    // Ce que le propriétaire conserve réellement, tous frais déduits.
+    netProprietaire: ca - honoraires - depensesACharge,
+    // Ce qui reste à la conciergerie une fois supportées ses avances
+    // non refacturées.
+    resultatGestionnaire: honoraires - absorbees,
+    // Somme réellement transférée, et dans quel sens.
+    aVerser: sens === 'reversement' ? ca - montant : 0,
+    aRecevoir: sens === 'facture' ? montant : 0,
+  };
+}
+
+// Résumé d'une ligne de contrat, pour les listes.
+function libelleContrat(o) {
+  const remun = o.remuneration === 'forfait'
+    ? `forfait ${formatEuro(o.forfaitMensuel || 0)}/mois`
+    : o.remuneration === 'mixte'
+      ? `${Math.round((o.commission || 0) * 100)} % + ${formatEuro(o.forfaitMensuel || 0)}/mois`
+      : `${Math.round((o.commission || 0) * 100)} %`;
+  return `${ENCAISSEMENT_LABEL[o.encaissement]} · ${remun}`;
+}
+
+// Sort des dépenses, tel qu'on le lit sur un décompte.
+function libelleDepenses(o) {
+  if (o.depensesPayeesPar === 'proprietaire') return 'Réglées directement par le propriétaire';
+  return o.refacturerDepenses
+    ? (o.encaissement === 'gestionnaire' ? 'Avancées puis déduites du reversement' : 'Avancées puis refacturées')
+    : 'Avancées par le gestionnaire, non refacturées';
+}
 // Répartition des 10 biens entre les 3 propriétaires
 const _PROP_MAP = { L001:'O1', L002:'O1', L003:'O1', L010:'O1', L004:'O2', L005:'O2', L006:'O2', L007:'O3', L008:'O3', L009:'O3' };
 LOGEMENTS.forEach(l => { l.proprietaireId = _PROP_MAP[l.id] || 'O1'; });
@@ -3681,6 +3814,9 @@ _assurerTokensSejour();
 // Automatisations enregistrées avant l'ajout de l'heure d'envoi : on les
 // complète plutôt que d'exiger une réinitialisation.
 _migrerDeclencheurs();
+// Contrats propriétaires enregistrés sous l'ancien champ modeFacturation,
+// qui mélangeait « qui encaisse » et « comment on est rémunéré ».
+_migrerFacturation();
 // Déroulé complet sur les messages qui signalent un besoin d'intervention :
 // Vivi répond, puis prépare la tâche. Appelé APRÈS la restauration, pour que
 // les signalements déjà traités soient connus — un rechargement ne renvoie

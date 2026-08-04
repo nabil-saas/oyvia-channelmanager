@@ -66,6 +66,11 @@ const Layout = (function () {
     { label:'Compte',        items:['abonnement', 'parametres'] },
   ];
 
+  // Position de défilement du menu, conservée d'une page à l'autre.
+  // sessionStorage et non localStorage : cela n'a de sens que le temps
+  // d'une session de navigation.
+  const NAV_SCROLL_KEY = 'oyvia_nav_scroll';
+
   function svg(paths, w) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`; }
 
   // Ne compte que les conversations réellement visibles dans la messagerie :
@@ -176,6 +181,38 @@ const Layout = (function () {
     const topbar = document.getElementById('app-topbar');
     if (sidebar) sidebar.innerHTML = sidebarHTML(active);
     if (topbar) topbar.innerHTML = topbarHTML(nav);
+
+    /* Le menu retrouve la position où il était au clic.
+
+       Chaque page est un document complet : le menu est reconstruit et
+       son défilement repart de zéro. Sur un menu qui ne tient pas dans
+       la hauteur, cliquer « Comptabilité » en bas de liste faisait
+       remonter la barre en haut, et l'entrée active sortait de l'écran —
+       on perdait de vue l'endroit d'où l'on venait.
+
+       On restaure AVANT la première peinture (init() est appelé dans le
+       corps du document), sinon le saut serait visible. */
+    const zoneNav = sidebar && sidebar.querySelector('.app-sidebar__nav');
+    if (zoneNav) {
+      try {
+        const y = parseInt(sessionStorage.getItem(NAV_SCROLL_KEY) || '0', 10);
+        if (y > 0) zoneNav.scrollTop = y;
+      } catch { /* navigation privée : on se passe de la mémoire */ }
+
+      /* Écriture directe, sans requestAnimationFrame : rAF ne se déclenche
+         pas dans un document non peint (onglet en arrière-plan, aperçu
+         hors écran), et la position n'était alors jamais enregistrée. Le
+         navigateur limite déjà « scroll » à une émission par trame, et
+         écrire quelques octets y est négligeable. */
+      const memoriser = () => {
+        try { sessionStorage.setItem(NAV_SCROLL_KEY, String(Math.round(zoneNav.scrollTop))); } catch {}
+      };
+      zoneNav.addEventListener('scroll', memoriser, { passive: true });
+      // Filet : au clic sur une entrée, on fige la position exacte de ce
+      // moment-là, même si l'évènement de défilement a été manqué.
+      zoneNav.addEventListener('click', memoriser);
+      window.addEventListener('pagehide', memoriser);
+    }
 
     // Scrim mobile
     let scrim = document.querySelector('.app-scrim');

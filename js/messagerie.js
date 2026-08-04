@@ -391,10 +391,12 @@ Layout.init('messagerie');
             <b>Rien à valider sur ce fil</b>
             <small>${lignes.join(' · ')}</small>
           </div>
-          ${creees.length
-            ? `<a class="btn btn--ghost btn--sm" href="menage.html">Voir dans Ménage</a>
-               <button type="button" class="btn btn--ghost btn--sm" data-vt-annul="${creees[creees.length - 1].conversationId}|${creees[creees.length - 1].msgIndex}|${creees[creees.length - 1].categorieId || ''}">Annuler la tâche</button>`
-            : `<a class="btn btn--ghost btn--sm" href="vivi.html#audit">Voir l'audit</a>`}
+          <div class="msg-vivi__head-actions">
+            ${creees.length
+              ? `<a class="btn btn--ghost btn--sm" href="menage.html">Voir dans Ménage</a>
+                 <button type="button" class="btn btn--ghost btn--sm" data-vt-annul="${creees[creees.length - 1].conversationId}|${creees[creees.length - 1].msgIndex}|${creees[creees.length - 1].categorieId || ''}">Annuler la tâche</button>`
+              : `<a class="btn btn--ghost btn--sm" href="vivi.html#audit">Voir l'audit</a>`}
+          </div>
         </div>`;
       return;
     }
@@ -408,7 +410,9 @@ Layout.init('messagerie');
             <b>Vivi pourrait répondre à ce message</b>
             <small>L'IA Avancée répond seule aux questions simples, dans la langue du voyageur.</small>
           </div>
-          <a class="btn btn--secondary btn--sm" href="vivi.html">En savoir plus</a>
+          <div class="msg-vivi__head-actions">
+            <a class="btn btn--secondary btn--sm" href="vivi.html">En savoir plus</a>
+          </div>
         </div>`;
       return;
     }

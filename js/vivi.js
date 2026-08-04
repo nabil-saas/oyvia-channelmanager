@@ -369,7 +369,17 @@ const Vivi = (function () {
     panel.setAttribute('aria-label', 'Vivi, votre assistant virtuel');
     panel.innerHTML = panelHTML();
 
-    document.body.appendChild(fab);
+    /* Le bouton vit désormais DANS la barre du haut, juste à gauche du
+       champ de recherche, au lieu de flotter au-dessus du contenu. En
+       flottant il recouvrait ce qui se trouvait dans le coin bas-droit :
+       le composeur de la messagerie sur mobile, les actions d'une
+       proposition de tâche, le dernier message d'un fil. Ancré dans la
+       barre, il ne peut plus rien masquer.
+       Repli sur <body> si la page n'a pas de barre : le bouton doit
+       exister même hors de la coquille applicative. */
+    const ancre = document.querySelector('.app-topbar__search');
+    if (ancre && ancre.parentNode) ancre.parentNode.insertBefore(fab, ancre);
+    else document.body.appendChild(fab);
     document.body.appendChild(panel);
 
     body = panel.querySelector('#vivi-body');

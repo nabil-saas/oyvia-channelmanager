@@ -56,7 +56,7 @@ Layout.init('proprietaires');
 
   function ownerCard(o) {
     const biens = getLogementsByProprietaire(o.id);
-    const modeLabel = MODE_FACTURATION_LABEL[o.modeFacturation] || '—';
+    const modeLabel = libelleContrat(o);
 
     if (editId === o.id) {
       return `<div class="po-card" data-id="${o.id}">
@@ -223,7 +223,12 @@ Layout.init('proprietaires');
     const id = nextProprietaireId();
     PROPRIETAIRES.push({
       id, societe, contact, email, tel,
-      modeFacturation: 'commission', commission: 0.20, forfaitMensuel: 0, refacturerDepenses: false,
+      // Contrat par défaut le plus courant : le propriétaire encaisse et
+      // règle ses frais, la conciergerie facture sa commission. Tout se
+      // reparamètre depuis Comptabilité › Facturation.
+      encaissement: 'proprietaire', remuneration: 'commission',
+      commission: 0.20, forfaitMensuel: 0,
+      depensesPayeesPar: 'proprietaire', refacturerDepenses: false,
     });
     MOIS_COMPTABLES.forEach((mois, i) => {
       FACTURES.push({ id: `F-${id}-${i}`, proprietaireId: id, mois, statut: 'attente' });
