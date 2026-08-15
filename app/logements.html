@@ -139,6 +139,127 @@
     </div>
   </div>
 
+  <!-- Modale : code de la boîte à clés -->
+  <div class="modal" id="acc-boite-modal" role="dialog" aria-modal="true" aria-labelledby="acc-boite-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="acc-boite-modal-title">Code de la boîte à clés</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="field"><label class="field__label" for="acc-b-code">Code</label>
+        <input class="input acc-input-code" id="acc-b-code" maxlength="10" placeholder="A2481" autocomplete="off" />
+        <p class="text-xs text-muted" style="margin-top:var(--sp-2)">Il remplace immédiatement l'ancien code dans les messages et le portail voyageur. Pensez à le changer aussi sur la boîte elle-même.</p>
+      </div>
+      <div class="field mt-4"><label class="field__label" for="acc-b-emplacement">Emplacement de la boîte</label>
+        <input class="input" id="acc-b-emplacement" placeholder="À droite de la porte d'entrée, sous l'interphone" /></div>
+      <div class="field mt-4"><label class="field__label" for="acc-b-modele">Modèle</label>
+        <input class="input" id="acc-b-modele" placeholder="Master Lock 5401EURD" /></div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="acc-b-save">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- Modale : personne en charge de la remise des clés -->
+  <div class="modal" id="acc-personne-modal" role="dialog" aria-modal="true" aria-labelledby="acc-personne-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="acc-personne-modal-title">Personne en charge de la remise des clés</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <p class="eyebrow mb-2">Identité</p>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="acc-p-nom">Nom et prénom</label><input class="input" id="acc-p-nom" placeholder="Céline Barrère" /></div>
+        <div class="field"><label class="field__label" for="acc-p-role">Rôle</label><input class="input" id="acc-p-role" placeholder="Conciergerie, voisin, gardien…" /></div>
+      </div>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <p class="eyebrow mb-2">Coordonnées</p>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="acc-p-tel">Téléphone</label><input class="input" id="acc-p-tel" type="tel" placeholder="+33 6 84 22 07 51" /></div>
+        <div class="field"><label class="field__label" for="acc-p-email">E-mail</label><input class="input" id="acc-p-email" type="email" placeholder="prenom@exemple.fr" /></div>
+      </div>
+      <div class="field mt-4"><label class="field__label" for="acc-p-langues">Langues parlées</label>
+        <input class="input" id="acc-p-langues" placeholder="Français, Anglais, Espagnol" />
+        <p class="text-xs text-muted" style="margin-top:var(--sp-2)">Séparées par des virgules.</p></div>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <p class="eyebrow mb-2">Remise des clés</p>
+      <div class="field"><label class="field__label" for="acc-p-dispo">Disponibilités</label>
+        <input class="input" id="acc-p-dispo" placeholder="Tous les jours, 9 h – 20 h" /></div>
+      <div class="field mt-4"><label class="field__label" for="acc-p-rdv">Lieu de rendez-vous</label>
+        <input class="input" id="acc-p-rdv" placeholder="Devant le portail, 14 avenue de l'Impératrice" /></div>
+      <div class="field mt-4"><label class="field__label" for="acc-p-notes">Consignes internes</label>
+        <textarea class="textarea" id="acc-p-notes" rows="3" placeholder="Où se trouve le double, ce qu'elle fait à l'arrivée…"></textarea></div>
+      <p class="text-xs text-muted" style="margin-top:var(--sp-4)">Ces informations restent internes : elles ne sont transmises à aucun canal et ne sont jamais affichées au voyageur.</p>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="acc-p-save">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- Modale : appairage d'une serrure connectée via Seam -->
+  <div class="modal" id="acc-seam-modal" role="dialog" aria-modal="true" aria-labelledby="acc-seam-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="acc-seam-modal-title">Appairer une serrure</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <p class="text-sm text-soft mb-4">Oyvia passe par <b>Seam</b>, qui expose une API commune à tous les fabricants. Vous connectez votre compte constructeur une fois dans Seam, puis vous rattachez ici le device au logement.</p>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="acc-s-marque">Fabricant</label>
+          <select class="select" id="acc-s-marque">
+            <option>Nuki</option><option>Igloohome</option><option>TTLock</option>
+            <option>August</option><option>Yale</option><option>SmartThings</option>
+          </select></div>
+        <div class="field"><label class="field__label" for="acc-s-modele">Modèle</label>
+          <input class="input" id="acc-s-modele" placeholder="Smart Lock 4.0 Pro" /></div>
+      </div>
+      <div class="field mt-4"><label class="field__label" for="acc-s-device">Identifiant du device Seam</label>
+        <input class="input font-mono" id="acc-s-device" placeholder="seam_dev_9c41ab72e0" autocomplete="off" />
+        <p class="text-xs text-muted" style="margin-top:var(--sp-2)">Visible dans votre console Seam, ou renvoyé par <span class="font-mono">GET /devices/list</span>.</p></div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="acc-s-save">Appairer</button>
+    </div>
+  </div>
+
+  <!-- Modale : génération d'un code sur la serrure -->
+  <div class="modal" id="acc-gen-modal" role="dialog" aria-modal="true" aria-labelledby="acc-gen-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="acc-gen-modal-title">Générer un code</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <p class="lg-canal__alerte hidden" id="acc-g-remplace" style="border-radius:var(--r-md);margin-bottom:var(--sp-4)">⚠ Le code actuel sera révoqué au passage : les voyageurs qui l'ont déjà reçu ne pourront plus entrer.</p>
+
+      <p class="eyebrow mb-2">Portée du code</p>
+      <label class="acc-radio"><input type="radio" name="acc-g-portee" value="fenetre" checked />
+        <span><b>Limité à un séjour</b><small>Le code ne fonctionne qu'entre deux dates. C'est le réglage recommandé.</small></span></label>
+      <label class="acc-radio"><input type="radio" name="acc-g-portee" value="permanent" />
+        <span><b>Permanent</b><small>Le code reste valable jusqu'à ce que vous le supprimiez. À réserver aux prestataires.</small></span></label>
+
+      <div id="acc-g-dates">
+        <hr class="divider" style="margin:var(--sp-5) 0" />
+        <p class="eyebrow mb-2">Validité</p>
+        <p class="text-xs text-muted mb-4" id="acc-g-contexte"></p>
+        <div class="app-grid app-grid--2">
+          <div class="field"><label class="field__label" for="acc-g-debut">Début</label><input class="input" type="datetime-local" id="acc-g-debut" /></div>
+          <div class="field"><label class="field__label" for="acc-g-fin">Fin</label><input class="input" type="datetime-local" id="acc-g-fin" /></div>
+        </div>
+      </div>
+
+      <p class="text-xs text-muted" style="margin-top:var(--sp-5)">Le code est tiré au hasard sur 6 chiffres, puis poussé sur la serrure via Seam. Il n'apparaît sur la fiche qu'une fois la porte confirmée.</p>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="acc-g-save">Générer et envoyer</button>
+    </div>
+  </div>
+
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/datepicker.js"></script>

@@ -143,13 +143,13 @@ const POLITIQUES_ANNULATION = [
   { id:'non_remboursable', label:'Non remboursable', desc:"Aucun remboursement, tarif réduit en contrepartie." },
 ];
 
-// Comment le voyageur entre dans le logement.
+// Comment le voyageur entre dans le logement. Trois modes seulement, parce
+// qu'ils ne se gèrent pas du tout pareil : l'un est piloté par une API
+// (Seam), l'autre par un code saisi à la main, le dernier par un humain.
 const TYPES_ACCES = [
-  { id:'boite_cles',        label:'Boîte à clés' },
-  { id:'serrure_connectee', label:'Serrure connectée' },
-  { id:'digicode',          label:'Digicode' },
-  { id:'accueil',           label:'Accueil en personne' },
-  { id:'concierge',         label:'Concierge / gardien' },
+  { id:'serrure_connectee', label:'Serrure connectée', desc:"Le code est créé et révoqué à distance sur la serrure, via Seam." },
+  { id:'boite_cles',        label:'Boîte à clés',      desc:"Un code fixe, que vous définissez et changez quand vous le souhaitez." },
+  { id:'personne',          label:'Remise en personne', desc:"Quelqu'un accueille le voyageur et lui remet les clés en main propre." },
 ];
 
 const STATUT_ANNONCE = {
@@ -249,7 +249,11 @@ const DEFAUTS_LOGEMENT = {
     complement: '',
   },
 
-  /* --- Accès & logistique terrain --- */
+  /* --- Accès & logistique terrain ---
+     Le code en vigueur reste `codeAcces` à plat : c'est lui que lisent la
+     messagerie, le portail voyageur et les automatisations. Les trois
+     sous-objets ci-dessous décrivent COMMENT ce code (ou son absence) est
+     produit, ce qui n'est pas la même mécanique d'un mode à l'autre. */
   acces: {
     type: 'boite_cles',             // cf. TYPES_ACCES
     emplacementCles: '',
@@ -257,6 +261,31 @@ const DEFAUTS_LOGEMENT = {
     parking: '',
     instructions: '',
     contactUrgence: '',
+
+    // Mode « serrure connectée » : piloté par Seam (cf. Seam plus bas).
+    // Aucun code n'existe côté Oyvia tant que la serrure n'en a pas créé un.
+    serrure: {
+      connectee: false,
+      fournisseur: 'seam',
+      deviceId: '',                 // identifiant du device chez Seam
+      marque: '', modele: '',
+      batterie: null,               // %, null si le device ne la remonte pas
+      enLigne: false,
+      verrouillee: true,
+      derniereSynchro: '',
+      // code actif : { valeur, statut, creeLe, debut, fin, seamId }
+      // statut : actif | programme | expire — null = aucun code sur la serrure
+      code: null,
+    },
+
+    // Mode « boîte à clés » : un code fixe, changé à la main.
+    boiteCles: { emplacement: '', modele: '', modifieLe: '' },
+
+    // Mode « remise en personne » : qui remet les clés, et comment le joindre.
+    personne: {
+      nom: '', role: '', telephone: '', email: '',
+      langues: [], disponibilites: '', lieuRdv: '', notes: '',
+    },
   },
 
   /* --- Conformité (déclaration en mairie, plafond de nuitées) --- */
@@ -273,8 +302,13 @@ const DEFAUTS_LOGEMENT = {
   /* --- Photos : ordre + légende ; la première est la couverture --- */
   photos: [],
 
-  /* --- Connexions aux plateformes --- */
-  // statut : ok | attention | erreur · listingId = identifiant chez le canal
+  /* --- Connexions aux plateformes ---
+     Deux états distincts, qu'il ne faut pas confondre :
+     - `connecte` : le canal est rattaché à ce logement (identifiant d'annonce
+       connu). Le débrancher fait perdre le lien.
+     - `actif`    : la synchronisation tourne. La mettre en pause n'efface
+       rien — l'annonce et l'identifiant restent, on arrête juste d'échanger.
+     statut : ok | attention | erreur · listingId = identifiant chez le canal */
   canaux: {},
   ical: { importe: [], exporte: '' },
 };
@@ -293,10 +327,16 @@ function _logement(o) {
                   dynamique:  { ...D.tarifs.dynamique,  ...((o.tarifs || {}).dynamique  || {}) } },
     sejour:     { ...D.sejour,     ...(o.sejour     || {}) },
     regles:     { ...D.regles,     ...(o.regles     || {}) },
-    acces:      { ...D.acces,      ...(o.acces      || {}) },
+    acces:      { ...D.acces,      ...(o.acces      || {}),
+                  serrure:    { ...D.acces.serrure,    ...((o.acces || {}).serrure    || {}) },
+                  boiteCles:  { ...D.acces.boiteCles,  ...((o.acces || {}).boiteCles  || {}) },
+                  personne:   { ...D.acces.personne,   ...((o.acces || {}).personne   || {}) } },
     conformite: { ...D.conformite, ...(o.conformite || {}) },
     notesDetail:{ ...D.notesDetail,...(o.notesDetail|| {}) },
     ical:       { ...D.ical,       ...(o.ical       || {}) },
+    // Un canal branché synchronise, sauf mention contraire : `actif` est donc
+    // implicite dans les fiches, et seule une mise en pause s'écrit.
+    canaux: Object.fromEntries(Object.entries(o.canaux || {}).map(([k, c]) => [k, { actif: true, ...c }])),
   };
 }
 const LOGEMENTS = [
@@ -331,7 +371,8 @@ const LOGEMENTS = [
     acces:{ type:'boite_cles', emplacementCles:"Boîte à clés noire, à droite de la porte d'entrée", etage:2, ascenseur:false,
       parking:"Parking Saint-Jean à 100 m, payant, 15 €/nuit",
       instructions:"Composez le code sur la boîte à clés, prenez le trousseau, 2ᵉ étage porte gauche.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      contactUrgence:'+33 6 12 45 78 90',
+      boiteCles:{ emplacement:"À droite de la porte d'entrée, sous l'interphone", modele:'Master Lock 5401EURD', modifieLe:'2026-04-12' } },
     codeAcces:'A2481', wifi:{ ssid:'Oyvia-VieuxLyon', pass:'balcon2024' },
     conformite:{ numeroEnregistrement:'6938300123456', plafondNuits:120, nuitsConsommees:87, assurance:'AXA Loueur meublé n° 4417820' },
     notesDetail:{ proprete:4.9, precision:4.8, arrivee:5.0, communication:4.9, emplacement:5.0, qualitePrix:4.7 },
@@ -372,10 +413,11 @@ const LOGEMENTS = [
     sejour:{ nuitsMin:2, nuitsMax:21, preavis:1, arrivee:'16:00', arriveeMax:'23:00', depart:'11:00' },
     politiqueAnnulation:'stricte',
     regles:{ complement:"Immeuble ancien : merci d'éviter le bruit dans les escaliers après 21 h." },
-    acces:{ type:'digicode', emplacementCles:"Boîte à clés dans le hall, sous les boîtes aux lettres", etage:3, ascenseur:false,
+    acces:{ type:'boite_cles', emplacementCles:"Boîte à clés dans le hall, sous les boîtes aux lettres", etage:3, ascenseur:false,
       parking:"Aucun stationnement sur place, parking Anvers à 400 m",
-      instructions:"Digicode 7734B à la porte de la rue, puis 3ᵉ étage porte droite.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      instructions:"Composez le code à la porte de la rue, boîte à clés dans le hall, puis 3ᵉ étage porte droite.",
+      contactUrgence:'+33 6 12 45 78 90',
+      boiteCles:{ emplacement:'Dans le hall, sous les boîtes aux lettres', modele:'Igloohome Keybox 3', modifieLe:'2026-02-28' } },
     codeAcces:'7734B', wifi:{ ssid:'OyviaParis18', pass:'lepic0018' },
     conformite:{ numeroEnregistrement:'7511800987654', plafondNuits:120, nuitsConsommees:112, assurance:'AXA Loueur meublé n° 4417820' },
     notesDetail:{ proprete:4.8, precision:4.6, arrivee:4.7, communication:4.9, emplacement:4.9, qualitePrix:4.5 },
@@ -417,7 +459,10 @@ const LOGEMENTS = [
     acces:{ type:'serrure_connectee', emplacementCles:'Serrure connectée, code envoyé la veille', etage:1, ascenseur:true,
       parking:"Place privative n° 12 au sous-sol, hauteur max 1,90 m",
       instructions:"Le code de la serrure est envoyé automatiquement 24 h avant l'arrivée.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      contactUrgence:'+33 6 12 45 78 90',
+      serrure:{ connectee:true, deviceId:'seam_dev_9c41ab72e0', marque:'Nuki', modele:'Smart Lock 4.0 Pro',
+        batterie:78, enLigne:true, verrouillee:true, derniereSynchro:'2026-07-23 12:35',
+        code:{ valeur:'C9012', statut:'actif', creeLe:'2026-07-17 09:02', debut:'2026-07-18 14:00', fin:'2026-07-23 11:00', seamId:'seam_code_4f0b18d3' } } },
     codeAcces:'C9012', wifi:{ ssid:'Oyvia-Chartrons', pass:'design2024' },
     conformite:{ numeroEnregistrement:'3306300445566', plafondNuits:120, nuitsConsommees:54 },
     notesDetail:{ proprete:4.9, precision:4.8, arrivee:4.7, communication:4.8, emplacement:4.7, qualitePrix:4.8 },
@@ -462,7 +507,8 @@ const LOGEMENTS = [
     acces:{ type:'boite_cles', emplacementCles:'Boîte à clés sur le portail, à gauche', etage:0, ascenseur:false,
       parking:"2 places dans la cour, portail automatique",
       instructions:"Le portail s'ouvre avec la télécommande laissée dans l'entrée. Une clé de secours se trouve dans le boîtier à gauche.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      contactUrgence:'+33 6 12 45 78 90',
+      boiteCles:{ emplacement:'Sur le portail, à gauche du portillon', modele:'Master Lock 5440EURD', modifieLe:'2026-05-30' } },
     codeAcces:'CH440', wifi:{ ssid:'ChaletLac', pass:'annecy2024' },
     conformite:{ numeroEnregistrement:'7429000778899', assurance:'Allianz Multirisque location saisonnière' },
     notesDetail:{ proprete:5.0, precision:5.0, arrivee:4.9, communication:5.0, emplacement:5.0, qualitePrix:4.9 },
@@ -507,10 +553,15 @@ const LOGEMENTS = [
       arrivee:'16:00', arriveeMax:'20:00', depart:'10:00', joursArrivee:['sam'], joursDepart:['sam'] },
     politiqueAnnulation:'stricte',
     regles:{ animaux:true, animauxMax:1, fetes:false, complement:"Piscine non surveillée : enfants sous la responsabilité des parents. Aucun événement sans accord écrit." },
-    acces:{ type:'accueil', emplacementCles:'Remise en main propre', etage:0, ascenseur:false,
+    acces:{ type:'personne', emplacementCles:'Remise en main propre', etage:0, ascenseur:false,
       parking:"2 places dans la cour fermée",
       instructions:"Accueil sur place par la conciergerie, merci de confirmer votre heure d'arrivée la veille.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      contactUrgence:'+33 6 12 45 78 90',
+      personne:{ nom:'Céline Barrère', role:'Conciergerie Côte Basque', telephone:'+33 6 84 22 07 51',
+        email:'celine@conciergerie-cotebasque.fr', langues:['Français','Anglais','Espagnol'],
+        disponibilites:'Tous les jours, 9 h – 20 h · prévenir la veille pour une arrivée après 20 h',
+        lieuRdv:"Devant le portail de la villa, 14 avenue de l'Impératrice",
+        notes:"Fait le tour de la maison avec les voyageurs et relève les compteurs. Double des clés conservé à son bureau, à 5 min." } },
     codeAcces:'VILLA6', wifi:{ ssid:'VillaBiarritz', pass:'ocean2024' },
     conformite:{ numeroEnregistrement:'6412200112233', plafondNuits:null, assurance:'Allianz Multirisque location saisonnière' },
     notesDetail:{ proprete:4.9, precision:4.9, arrivee:4.8, communication:5.0, emplacement:5.0, qualitePrix:4.6 },
@@ -552,7 +603,8 @@ const LOGEMENTS = [
     acces:{ type:'boite_cles', emplacementCles:'Boîte à clés côté droit de la porte', etage:1, ascenseur:false,
       parking:"Aucun stationnement, ruelles piétonnes. Parking Vieux-Port à 500 m",
       instructions:"Ruelle piétonne : les taxis vous déposent place de Lenche, à 100 m.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      contactUrgence:'+33 6 12 45 78 90',
+      boiteCles:{ emplacement:'Côté droit de la porte, à hauteur de poignée', modele:'Master Lock 5401EURD', modifieLe:'2026-06-08' } },
     codeAcces:'MRS13', wifi:{ ssid:'LoftPanier', pass:'marseille13' },
     conformite:{ numeroEnregistrement:'1320200334455', plafondNuits:120, nuitsConsommees:71 },
     notesDetail:{ proprete:4.5, precision:4.6, arrivee:4.7, communication:4.8, emplacement:4.9, qualitePrix:4.6 },
@@ -590,7 +642,8 @@ const LOGEMENTS = [
     acces:{ type:'boite_cles', emplacementCles:'Boîte à clés dans le hall', etage:4, ascenseur:true,
       parking:"Parking public Ferber à 300 m, 18 €/jour",
       instructions:"Hall d'immeuble ouvert de 7 h à 22 h ; au-delà, appelez le gardien.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      contactUrgence:'+33 6 12 45 78 90',
+      boiteCles:{ emplacement:'Dans le hall, colonne de droite après les boîtes aux lettres', modele:'Igloohome Keybox 3', modifieLe:'2026-03-19' } },
     codeAcces:'NCE07', wifi:{ ssid:'OyviaNice', pass:'promenade06' },
     conformite:{ numeroEnregistrement:'0608800556677', plafondNuits:120, nuitsConsommees:98 },
     notesDetail:{ proprete:4.7, precision:4.7, arrivee:4.8, communication:4.7, emplacement:5.0, qualitePrix:4.5 },
@@ -632,7 +685,8 @@ const LOGEMENTS = [
     acces:{ type:'boite_cles', emplacementCles:'Boîte à clés sur le portillon du jardin', etage:0, ascenseur:false,
       parking:"Stationnement gratuit dans la rue, zone résidentielle",
       instructions:"Le portillon du jardin donne sur la porte d'entrée, sur la gauche.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      contactUrgence:'+33 6 12 45 78 90',
+      boiteCles:{ emplacement:'Sur le portillon du jardin, côté rue', modele:'Master Lock 5440EURD', modifieLe:'2026-01-24' } },
     codeAcces:'LR170', wifi:{ ssid:'MaisonPecheur', pass:'larochelle17' },
     conformite:{ numeroEnregistrement:'1730000889900', plafondNuits:120, nuitsConsommees:63 },
     notesDetail:{ proprete:4.8, precision:4.9, arrivee:4.8, communication:4.9, emplacement:4.7, qualitePrix:4.8 },
@@ -670,10 +724,11 @@ const LOGEMENTS = [
       remises:{ hebdo:10, mensuelle:20 }, min:62, max:140 },
     sejour:{ nuitsMin:2, preavis:1, arrivee:'15:00', depart:'11:00' },
     politiqueAnnulation:'moderee',
-    acces:{ type:'digicode', emplacementCles:'Boîte à clés dans le hall', etage:2, ascenseur:true,
+    acces:{ type:'boite_cles', emplacementCles:'Boîte à clés dans le hall', etage:2, ascenseur:true,
       parking:"Parking Capitole sous la place, 22 €/jour",
-      instructions:"Digicode à la porte cochère, puis ascenseur jusqu'au 2ᵉ.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      instructions:"Composez le code à la porte cochère, boîte à clés dans le hall, puis ascenseur jusqu'au 2ᵉ.",
+      contactUrgence:'+33 6 12 45 78 90',
+      boiteCles:{ emplacement:'Dans le hall, derrière la porte cochère', modele:'Master Lock 5401EURD', modifieLe:'2026-05-02' } },
     codeAcces:'TLS09', wifi:{ ssid:'OyviaCapitole', pass:'toulouse31' },
     conformite:{ numeroEnregistrement:'3155500223344', plafondNuits:120, nuitsConsommees:76 },
     notesDetail:{ proprete:4.7, precision:4.6, arrivee:4.8, communication:4.8, emplacement:5.0, qualitePrix:4.6 },
@@ -714,7 +769,10 @@ const LOGEMENTS = [
     acces:{ type:'serrure_connectee', emplacementCles:'Serrure connectée, code envoyé la veille', etage:3, ascenseur:true,
       parking:"Parking République à 150 m, 20 €/jour",
       instructions:"Rue piétonne : dépose-minute autorisée avant 11 h.",
-      contactUrgence:'+33 6 12 45 78 90' },
+      contactUrgence:'+33 6 12 45 78 90',
+      serrure:{ connectee:true, deviceId:'seam_dev_31e7c0a5bd', marque:'Igloohome', modele:'Deadbolt 2S',
+        batterie:14, enLigne:true, verrouillee:true, derniereSynchro:'2026-07-23 12:31',
+        code:{ valeur:'LY102', statut:'actif', creeLe:'2026-07-21 18:40', debut:'2026-07-22 15:00', fin:'2026-07-27 11:00', seamId:'seam_code_b7d2ee91' } } },
     codeAcces:'LY102', wifi:{ ssid:'OyviaPresquile', pass:'republique69' },
     conformite:{ numeroEnregistrement:'6938300998877', plafondNuits:120, nuitsConsommees:44 },
     notesDetail:{ proprete:4.9, precision:4.8, arrivee:4.8, communication:4.8, emplacement:4.9, qualitePrix:4.7 },
@@ -747,6 +805,92 @@ function labelTypeLit(id)      { return (TYPES_LIT.find(t => t.id === id)      |
 function labelTypeAcces(id)    { return (TYPES_ACCES.find(t => t.id === id)    || {}).label || id; }
 function labelPolitique(id)    { return (POLITIQUES_ANNULATION.find(p => p.id === id) || {}).label || id; }
 
+/* ------------------------------------------------------------
+   SEAM — passerelle vers les serrures connectées
+
+   Seam expose une API unique par-dessus une trentaine de fabricants
+   (Nuki, Igloohome, TTLock, August, Yale…). On ne parle jamais au
+   constructeur : on manipule un `device`, et sur ce device des
+   `access_code`. Les deux seules opérations dont l'hôte a besoin :
+   en créer un, le révoquer.
+
+   Ici c'est une simulation — pas de backend dans cette maquette — mais
+   la forme est celle de l'API réelle : appels asynchrones, latence,
+   et surtout un point important à ne pas gommer : chez Seam la création
+   d'un code n'est pas instantanée. L'API accuse réception, puis la
+   serrure confirme quand elle a reçu l'ordre. D'où le délai simulé :
+   une interface qui afficherait le code immédiatement mentirait sur ce
+   qui se passe réellement sur la porte.
+   ------------------------------------------------------------ */
+const Seam = (function () {
+  const LATENCE = 900;                       // aller-retour API + serrure
+  const attendre = ms => new Promise(r => setTimeout(r, ms));
+  // Horodatage au format des autres dates de la maquette (AUJOURDHUI fige
+  // le « maintenant » de la démo, mais l'heure réelle reste parlante).
+  const maintenant = () => {
+    const h = new Date();
+    return `${AUJOURDHUI} ${String(h.getHours()).padStart(2, '0')}:${String(h.getMinutes()).padStart(2, '0')}`;
+  };
+  // Les serrures n'acceptent que du numérique sur le clavier physique.
+  const nouveauCode = () => String(Math.floor(100000 + Math.random() * 900000));
+  const nouvelId = p => p + Math.random().toString(16).slice(2, 10);
+
+  return {
+    /* POST /access_codes/create — crée (ou remplace) le code de la serrure.
+       `fenetre` : { debut, fin } au format 'YYYY-MM-DD HH:MM', optionnel.
+       Sans fenêtre, Seam crée un code permanent. */
+    async creerCode(logement, fenetre = null) {
+      const s = logement.acces.serrure;
+      if (!s.connectee) throw new Error('Aucune serrure connectée sur ce logement');
+      if (!s.enLigne)   throw new Error('La serrure est hors ligne : impossible de lui pousser un code');
+      await attendre(LATENCE);
+      s.code = {
+        valeur: nouveauCode(),
+        statut: fenetre && fenetre.debut > maintenant() ? 'programme' : 'actif',
+        creeLe: maintenant(),
+        debut: fenetre ? fenetre.debut : null,
+        fin:   fenetre ? fenetre.fin   : null,
+        seamId: nouvelId('seam_code_'),
+      };
+      s.derniereSynchro = maintenant();
+      logement.codeAcces = s.code.valeur;    // ce que liront messagerie et portail voyageur
+      return s.code;
+    },
+
+    /* DELETE /access_codes/delete — révoque le code sur la serrure.
+       Le logement se retrouve volontairement sans code : c'est l'état à
+       montrer tel quel plutôt que de laisser traîner un code mort. */
+    async supprimerCode(logement) {
+      const s = logement.acces.serrure;
+      if (!s.code) throw new Error('Aucun code à supprimer');
+      if (!s.enLigne) throw new Error('La serrure est hors ligne : impossible de révoquer le code');
+      await attendre(LATENCE);
+      s.code = null;
+      s.derniereSynchro = maintenant();
+      logement.codeAcces = '';
+      return true;
+    },
+
+    /* GET /devices/get — rafraîchit l'état du device (batterie, connexion). */
+    async synchroniser(logement) {
+      const s = logement.acces.serrure;
+      if (!s.connectee) throw new Error('Aucune serrure connectée sur ce logement');
+      await attendre(LATENCE / 2);
+      s.derniereSynchro = maintenant();
+      return s;
+    },
+  };
+})();
+
+// Une batterie qui tombe est la panne n° 1 des serrures connectées : elle
+// mérite d'être qualifiée, pas juste affichée en pourcentage.
+function etatBatterie(pct) {
+  if (pct == null)  return { niveau:'inconnu',  texte:'Non remontée', badge:'badge--neutral' };
+  if (pct <= 20)    return { niveau:'critique', texte:`${pct} % — à remplacer`, badge:'badge--danger' };
+  if (pct <= 40)    return { niveau:'faible',   texte:`${pct} % — à surveiller`, badge:'badge--warning' };
+  return { niveau:'ok', texte:`${pct} %`, badge:'badge--positive' };
+}
+
 // Total des couchages déclarés, pour contrôler la cohérence avec la capacité.
 function placesCouchages(l) {
   return (l.couchages || []).reduce((s, p) =>
@@ -756,6 +900,325 @@ function placesCouchages(l) {
 function canauxConnectes(l) {
   return Object.entries(l.canaux || {}).filter(([, c]) => c.connecte);
 }
+// Canaux qui synchronisent vraiment : connectés ET non mis en pause. C'est
+// cette liste qui décide des pages canal affichées sur la fiche.
+function canauxActifs(l) {
+  return canauxConnectes(l).filter(([, c]) => c.actif !== false);
+}
+/* ------------------------------------------------------------
+   ANNONCE TELLE QU'ELLE EXISTE CHEZ LE CANAL
+
+   Oyvia stocke un socle normalisé ; chaque plateforme en tire SA
+   propre annonce, avec son vocabulaire, son échelle de notes, ses
+   frais et ses champs obligatoires. `annonceCanal()` refait ce
+   chemin dans l'autre sens : à partir du socle et de la connexion,
+   il reconstitue l'annonce telle que le voyageur la voit sur la
+   plateforme — et la charge utile brute, avec les noms de champs
+   natifs de l'API, sans traduction.
+
+   C'est volontairement dérivé et non stocké : une annonce recopiée
+   à la main dans data.js serait figée et divergerait du socle dès
+   la première modification de la fiche.
+   ------------------------------------------------------------ */
+const CANAUX_META = {
+  airbnb:  { label:'Airbnb',      lettre:'A', couleur:'var(--ch-airbnb)',  echelle:5,  fraisVoyageur:0.142, siteNom:'Airbnb' },
+  booking: { label:'Booking.com', lettre:'B', couleur:'var(--ch-booking)', echelle:10, fraisVoyageur:0,     siteNom:'Booking.com' },
+  direct:  { label:'Direct',      lettre:'D', couleur:'var(--ch-direct)',  echelle:5,  fraisVoyageur:0,     siteNom:'votre site Oyvia' },
+  vrbo:    { label:'VRBO',        lettre:'V', couleur:'#1668E3',           echelle:5,  fraisVoyageur:0.12,  siteNom:'VRBO' },
+  expedia: { label:'Expedia',     lettre:'E', couleur:'#FFC94D',           echelle:10, fraisVoyageur:0,     siteNom:'Expedia' },
+};
+
+// Booking accompagne chaque note d'un adjectif : c'est lui que les
+// voyageurs retiennent, pas le chiffre.
+function mentionBooking(n) {
+  if (n == null) return null;
+  if (n >= 9.5) return 'Exceptionnel';
+  if (n >= 9)   return 'Fabuleux';
+  if (n >= 8.6) return 'Superbe';
+  if (n >= 8)   return 'Très bien';
+  if (n >= 7)   return 'Bien';
+  return 'Correct';
+}
+
+// Devis type — 7 nuits, 2 voyageurs — décomposé comme la plateforme le
+// présente : Airbnb ajoute des frais de service voyageur, Booking non
+// (il se paie sur la commission hôte).
+function devisCanal(l, canalId, nuits = 7, pers = 2) {
+  const m = CANAUX_META[canalId] || CANAUX_META.direct;
+  const t = l.tarifs;
+  const nuitees = l.tarifBase * nuits;
+  const remise = Math.round(nuitees * (t.remises.hebdo || 0) / 100);
+  const sup = Math.max(0, pers - (t.personnesIncluses || pers)) * (t.personneSup || 0) * nuits;
+  const taxe = t.taxeSejour.mode === 'pourcentage'
+    ? Math.round(nuitees * t.taxeSejour.montant / 100)
+    : t.taxeSejour.mode === 'par_sejour'
+      ? t.taxeSejour.montant
+      : t.taxeSejour.montant * pers * Math.min(nuits, t.taxeSejour.plafondNuits || nuits);
+  const sousTotal = nuitees - remise + sup + l.menageTarif;
+  const fraisService = Math.round(sousTotal * m.fraisVoyageur);
+  return { nuits, pers, nuitees, remise, sup, menage: l.menageTarif, fraisService, taxe,
+           total: sousTotal + fraisService + Math.round(taxe) };
+}
+
+function annonceCanal(l, canalId) {
+  const c = (l.canaux || {})[canalId];
+  if (!c) return null;
+  const m = CANAUX_META[canalId] || CANAUX_META.direct;
+  const a = l.annonce, s = l.sejour, r = l.regles, t = l.tarifs, nd = l.notesDetail;
+  const pol = POLITIQUES_ANNULATION.find(p => p.id === l.politiqueAnnulation) || {};
+  const devis = devisCanal(l, canalId);
+  const equipements = amenitiesParCategorie(l);
+  const lits = (l.couchages || []).map(p => ({ piece:p.piece, detail:p.lits.map(b => `${b.nb} × ${labelTypeLit(b.type)}`).join(' · ') }));
+  const nonRenseigne = v => v || null;
+  const oui = v => v ? 'Oui' : 'Non';
+
+  /* --- Airbnb, VRBO : même famille de vocabulaire, note sur 5 --- */
+  if (canalId === 'airbnb' || canalId === 'vrbo') {
+    const vrbo = canalId === 'vrbo';
+    return {
+      canal: canalId, meta: m, connexion: c,
+      entete: {
+        titre: a.titre || l.nom,
+        sousTitre: `${labelTypeChambre(l.typeChambre)} · ${l.quartier}, ${l.ville}`,
+        note: c.note, echelle: 5, avis: c.avis,
+        badges: [labelTypeLogement(l.type), `${l.capacite} voyageurs`, `${l.chambres} chambre${l.chambres > 1 ? 's' : ''}`,
+                 `${l.lits} lit${l.lits > 1 ? 's' : ''}`, `${l.sdb} salle de bain`]
+                 .concat(l.superhote && !vrbo ? ['Superhôte'] : [])
+                 .concat(s.reservationInstantanee ? ['Réservation instantanée'] : []),
+      },
+      sections: [
+        { titre: 'Description publiée', type:'texte', blocs: [
+          { label:'Résumé',           texte: nonRenseigne(a.resume) },
+          { label:'Le logement',      texte: nonRenseigne(a.espace) },
+          { label:'Le quartier',      texte: nonRenseigne(a.quartierTxt) },
+          { label:'Se déplacer',      texte: nonRenseigne(a.transports) },
+          { label:'À savoir',         texte: nonRenseigne(a.aSavoir) },
+        ]},
+        { titre: 'Où vous dormirez', type:'couchages', items: lits },
+        { titre: 'Ce que propose ce logement', type:'groupes', groupes: equipements },
+        { titre: 'Notes détaillées', type:'notes', echelle: 5, items: [
+          { k:'Propreté', v:nd.proprete }, { k:'Exactitude', v:nd.precision },
+          { k:'Arrivée', v:nd.arrivee },   { k:'Communication', v:nd.communication },
+          { k:'Emplacement', v:nd.emplacement }, { k:'Qualité-prix', v:nd.qualitePrix },
+        ]},
+        { titre: `Prix voyageur · ${devis.nuits} nuits, ${devis.pers} voyageurs`, type:'prix', lignes: [
+          { k:`${devis.nuits} nuits × ${formatEuro(l.tarifBase)}`, v: formatEuro(devis.nuitees) },
+          devis.remise ? { k:'Réduction séjour à la semaine', v:`− ${formatEuro(devis.remise)}`, positif:true } : null,
+          devis.sup ? { k:'Voyageurs supplémentaires', v: formatEuro(devis.sup) } : null,
+          { k:'Frais de ménage', v: formatEuro(devis.menage) },
+          { k:`Frais de service ${m.label}`, v: formatEuro(devis.fraisService) },
+          { k:'Taxes et impôts', v: formatEuro(devis.taxe) },
+        ].filter(Boolean), total: { k:'Total', v: formatEuro(devis.total) } },
+        { titre: 'Arrivée, départ et règlement', type:'paires', paires: [
+          { k:'Arrivée',                v:`${s.arrivee}${s.arriveeMax ? ` – ${s.arriveeMax}` : ''}` },
+          { k:'Départ',                 v:`avant ${s.depart}` },
+          { k:'Nuits minimum',          v:`${s.nuitsMin}` },
+          { k:'Nuits maximum',          v:`${s.nuitsMax}` },
+          { k:'Animaux',                v: r.animaux ? `Oui, ${r.animauxMax} max` : 'Non' },
+          { k:'Fumeurs',                v: oui(r.fumeurs) },
+          { k:'Fêtes et événements',    v: oui(r.fetes) },
+          { k:'Heures de silence',      v:`${r.silenceDebut} – ${r.silenceFin}` },
+          { k:"Politique d'annulation", v: pol.label || l.politiqueAnnulation },
+        ]},
+      ],
+      brut: [
+        { k: vrbo ? 'propertyId' : 'id',                    v: c.listingId },
+        { k: vrbo ? 'headline' : 'name',                    v: a.titre || l.nom },
+        { k: vrbo ? 'propertyType' : 'property_type',       v: l.type },
+        { k: 'room_type',                                   v: l.typeChambre },
+        { k: vrbo ? 'maxOccupancy' : 'person_capacity',     v: l.capacite },
+        { k: vrbo ? 'bedroomCount' : 'bedrooms',            v: l.chambres },
+        { k: 'beds',                                        v: l.lits },
+        { k: vrbo ? 'bathroomCount' : 'bathrooms',          v: l.sdb },
+        { k: 'square_meters',                               v: l.surface },
+        { k: 'address',                                     v: l.lieu.rue || l.adresse },
+        { k: 'city',                                        v: l.ville },
+        { k: 'zipcode',                                     v: l.lieu.codePostal },
+        { k: 'state',                                       v: l.lieu.region },
+        { k: 'country_code',                                v: 'FR' },
+        { k: 'lat / lng',                                   v: l.lieu.latitude ? `${l.lieu.latitude}, ${l.lieu.longitude}` : null },
+        { k: 'listing_currency',                            v: t.devise },
+        { k: 'listing_price',                               v: l.tarifBase },
+        { k: 'cleaning_fee',                                v: l.menageTarif },
+        { k: 'security_deposit',                            v: t.caution },
+        { k: 'guests_included',                             v: t.personnesIncluses },
+        { k: 'extra_guest_fee',                             v: t.personneSup },
+        { k: 'check_in_time',                               v: s.arrivee },
+        { k: 'check_out_time',                              v: s.depart },
+        { k: vrbo ? 'minStay' : 'min_nights',               v: s.nuitsMin },
+        { k: vrbo ? 'maxStay' : 'max_nights',               v: s.nuitsMax },
+        { k: 'booking_lead_time',                           v: `${s.preavis} d` },
+        { k: 'cancellation_policy_category',                v: l.politiqueAnnulation },
+        { k: 'instant_book',                                v: String(s.reservationInstantanee) },
+        { k: 'amenities',                                   v: `${l.equipements.length} identifiants` },
+        { k: 'photos',                                      v: `${l.photos.length} fichiers` },
+        { k: vrbo ? 'averageRating' : 'star_rating',        v: c.note },
+        { k: vrbo ? 'reviewCount' : 'reviews_count',        v: c.avis },
+        { k: 'is_superhost',                                v: String(!!l.superhote) },
+        { k: 'permit_or_tax_id',                            v: l.conformite.numeroEnregistrement },
+        { k: 'status',                                      v: l.statut === 'publie' ? 'listed' : 'unlisted' },
+        { k: 'host_fee_percent',                            v: `${c.commission} %` },
+        { k: 'listing_url',                                 v: c.url },
+        { k: 'last_sync_at',                                v: c.derniereSynchro },
+      ],
+    };
+  }
+
+  /* --- Booking.com, Expedia : établissement + unité, note sur 10 --- */
+  if (canalId === 'booking' || canalId === 'expedia') {
+    const sur10 = v => Math.round(v * 2 * 10) / 10;
+    return {
+      canal: canalId, meta: m, connexion: c,
+      entete: {
+        titre: `${labelTypeLogement(l.type)} ${l.nom}`,
+        sousTitre: `${l.lieu.rue || l.adresse}, ${l.lieu.codePostal || ''} ${l.ville}`.trim(),
+        note: c.note, echelle: 10, avis: c.avis, mention: mentionBooking(c.note),
+        badges: [`${l.surface ? l.surface + ' m²' : labelTypeLogement(l.type)}`, `${l.capacite} personnes`,
+                 `${l.chambres} chambre${l.chambres > 1 ? 's' : ''}`, `${l.sdb} salle de bain`,
+                 r.fumeurs ? 'Fumeurs autorisés' : 'Non-fumeurs'],
+      },
+      sections: [
+        { titre: "Description de l'établissement", type:'texte', blocs: [
+          { label:'Présentation',        texte: nonRenseigne([a.resume, a.espace].filter(Boolean).join('\n\n')) },
+          { label:'Quartier et environs', texte: nonRenseigne(a.quartierTxt) },
+          { label:'Informations utiles', texte: nonRenseigne([a.transports, a.aSavoir].filter(Boolean).join('\n\n')) },
+        ]},
+        { titre: 'Configuration du logement', type:'couchages', items: lits },
+        { titre: 'Équipements et services', type:'groupes', groupes: equipements },
+        { titre: 'Note des voyageurs', type:'notes', echelle: 10, items: [
+          { k:'Personnel',                 v: sur10(nd.communication) },
+          { k:'Équipements',               v: sur10(nd.qualitePrix) },
+          { k:'Propreté',                  v: sur10(nd.proprete) },
+          { k:'Confort',                   v: sur10(nd.precision) },
+          { k:'Rapport qualité/prix',      v: sur10(nd.qualitePrix) },
+          { k:'Situation géographique',    v: sur10(nd.emplacement) },
+        ]},
+        { titre: `Prix voyageur · ${devis.nuits} nuits, ${devis.pers} personnes`, type:'prix', lignes: [
+          { k:`${devis.nuits} nuits × ${formatEuro(l.tarifBase)}`, v: formatEuro(devis.nuitees) },
+          devis.remise ? { k:'Réduction longue durée', v:`− ${formatEuro(devis.remise)}`, positif:true } : null,
+          devis.sup ? { k:'Personnes supplémentaires', v: formatEuro(devis.sup) } : null,
+          { k:'Frais de nettoyage', v: formatEuro(devis.menage) },
+          { k:'Taxe de séjour',     v: formatEuro(devis.taxe) },
+        ].filter(Boolean), total: { k:'Prix total', v: formatEuro(devis.total) } },
+        { titre: 'Conditions', type:'paires', paires: [
+          { k:'Arrivée',                  v:`de ${s.arrivee} à ${s.arriveeMax || '00:00'}` },
+          { k:'Départ',                   v:`jusqu'à ${s.depart}` },
+          { k:'Séjour minimum',           v:`${s.nuitsMin} nuits` },
+          { k:'Séjour maximum',           v:`${s.nuitsMax} nuits` },
+          { k:'Annulation',               v: pol.label || l.politiqueAnnulation },
+          { k:'Enfants',                  v: r.enfants ? 'Tous les âges sont acceptés' : 'Non acceptés' },
+          { k:'Lits bébé',                v: oui(r.bebes) },
+          { k:'Animaux domestiques',      v: r.animaux ? `Acceptés (${r.animauxMax} max)` : 'Non acceptés' },
+          { k:'Fêtes',                    v: r.fetes ? 'Autorisées' : 'Interdites' },
+          { k:'Caution',                  v: t.caution ? formatEuro(t.caution) : 'Aucune' },
+          { k:'Commission Booking',       v:`${c.commission} %` },
+        ]},
+      ],
+      brut: [
+        { k: 'hotel_id',            v: c.listingId },
+        { k: 'hotel_name',          v: `${labelTypeLogement(l.type)} ${l.nom}` },
+        { k: 'room_id',             v: `${c.listingId}-01` },
+        { k: 'room_name',           v: `${labelTypeChambre(l.typeChambre)} — ${l.chambres} ch.` },
+        { k: 'property_type',       v: l.type },
+        { k: 'max_persons',         v: l.capacite },
+        { k: 'nr_bedrooms',         v: l.chambres },
+        { k: 'nr_bathrooms',        v: l.sdb },
+        { k: 'unit_size',           v: l.surface ? `${l.surface} m²` : null },
+        { k: 'address',             v: l.lieu.rue || l.adresse },
+        { k: 'zip',                 v: l.lieu.codePostal },
+        { k: 'city',                v: l.ville },
+        { k: 'countrycode',         v: 'fr' },
+        { k: 'currencycode',        v: t.devise },
+        { k: 'rate',                v: l.tarifBase },
+        { k: 'cleaning_fee',        v: l.menageTarif },
+        { k: 'city_tax',            v: `${t.taxeSejour.montant} (${t.taxeSejour.mode})` },
+        { k: 'checkin_from',        v: s.arrivee },
+        { k: 'checkin_until',       v: s.arriveeMax },
+        { k: 'checkout_until',      v: s.depart },
+        { k: 'min_los',             v: s.nuitsMin },
+        { k: 'max_los',             v: s.nuitsMax },
+        { k: 'cancellation_policy', v: l.politiqueAnnulation },
+        { k: 'smoking',             v: r.fumeurs ? 'allowed' : 'not_allowed' },
+        { k: 'pets_allowed',        v: String(!!r.animaux) },
+        { k: 'children_allowed',    v: String(!!r.enfants) },
+        { k: 'facilities',          v: `${l.equipements.length} identifiants` },
+        { k: 'photos',              v: `${l.photos.length} fichiers` },
+        { k: 'review_score',        v: c.note },
+        { k: 'review_score_word',   v: mentionBooking(c.note) },
+        { k: 'review_nr',           v: c.avis },
+        { k: 'license_number',      v: l.conformite.numeroEnregistrement },
+        { k: 'is_bookable',         v: String(l.statut === 'publie') },
+        { k: 'commission_percent',  v: c.commission },
+        { k: 'hotel_url',           v: c.url },
+        { k: 'last_sync_at',        v: c.derniereSynchro },
+      ],
+    };
+  }
+
+  /* --- Réservation directe : votre propre site, aucune commission --- */
+  return {
+    canal: canalId, meta: m, connexion: c,
+    entete: {
+      titre: a.titre || l.nom,
+      sousTitre: `${l.quartier}, ${l.ville} — page de réservation directe`,
+      note: l.note, echelle: 5, avis: l.avis,
+      badges: [labelTypeLogement(l.type), `${l.capacite} voyageurs`, `${l.chambres} chambre${l.chambres > 1 ? 's' : ''}`,
+               'Sans commission', 'Paiement direct'],
+    },
+    sections: [
+      { titre: 'Contenu de la page', type:'texte', blocs: [
+        { label:'Accroche',      texte: nonRenseigne(a.resume) },
+        { label:'Le logement',   texte: nonRenseigne(a.espace) },
+        { label:'Le quartier',   texte: nonRenseigne(a.quartierTxt) },
+        { label:'Accès',         texte: nonRenseigne(a.transports) },
+        { label:'Bon à savoir',  texte: nonRenseigne(a.aSavoir) },
+      ]},
+      { titre: 'Couchages', type:'couchages', items: lits },
+      { titre: 'Équipements affichés', type:'groupes', groupes: equipements },
+      { titre: 'Notes reprises de vos canaux', type:'notes', echelle: 5, items: [
+        { k:'Propreté', v:nd.proprete }, { k:'Exactitude', v:nd.precision },
+        { k:'Arrivée', v:nd.arrivee },   { k:'Communication', v:nd.communication },
+        { k:'Emplacement', v:nd.emplacement }, { k:'Qualité-prix', v:nd.qualitePrix },
+      ]},
+      { titre: `Prix voyageur · ${devis.nuits} nuits, ${devis.pers} voyageurs`, type:'prix', lignes: [
+        { k:`${devis.nuits} nuits × ${formatEuro(l.tarifBase)}`, v: formatEuro(devis.nuitees) },
+        devis.remise ? { k:'Remise séjour à la semaine', v:`− ${formatEuro(devis.remise)}`, positif:true } : null,
+        devis.sup ? { k:'Voyageurs supplémentaires', v: formatEuro(devis.sup) } : null,
+        { k:'Forfait ménage', v: formatEuro(devis.menage) },
+        { k:'Taxe de séjour', v: formatEuro(devis.taxe) },
+        { k:'Frais de service', v:'Aucun', positif:true },
+      ].filter(Boolean), total: { k:'Total voyageur', v: formatEuro(devis.total) } },
+      { titre: 'Conditions affichées', type:'paires', paires: [
+        { k:'Arrivée',                v:`à partir de ${s.arrivee}` },
+        { k:'Départ',                 v:`avant ${s.depart}` },
+        { k:'Nuits minimum',          v:`${s.nuitsMin}` },
+        { k:"Politique d'annulation", v: pol.label || l.politiqueAnnulation },
+        { k:'Caution',                v: t.caution ? formatEuro(t.caution) : 'Aucune' },
+        { k:'Commission',             v:'0 % — vous encaissez la totalité' },
+      ]},
+    ],
+    brut: [
+      { k: 'slug',            v: (c.url || '').split('/').pop() },
+      { k: 'listing_id',      v: c.listingId },
+      { k: 'titre',           v: a.titre || l.nom },
+      { k: 'type',            v: l.type },
+      { k: 'capacite',        v: l.capacite },
+      { k: 'tarif_base',      v: l.tarifBase },
+      { k: 'frais_menage',    v: l.menageTarif },
+      { k: 'caution',         v: t.caution },
+      { k: 'devise',          v: t.devise },
+      { k: 'arrivee',         v: s.arrivee },
+      { k: 'depart',          v: s.depart },
+      { k: 'nuits_min',       v: s.nuitsMin },
+      { k: 'annulation',      v: l.politiqueAnnulation },
+      { k: 'photos',          v: `${l.photos.length} fichiers` },
+      { k: 'publie',          v: String(l.statut === 'publie') },
+      { k: 'url',             v: c.url },
+      { k: 'derniere_synchro', v: c.derniereSynchro },
+    ],
+  };
+}
+
 // Le plafond de nuitées est une obligation légale dans les grandes villes :
 // on veut pouvoir alerter avant de le dépasser.
 function conformiteStatut(l) {
@@ -3764,6 +4227,35 @@ function supprimerTache(id) {
   return supprimerEntite('TACHES', id);
 }
 
+/* La restauration fusionne les logements à plat (`Object.assign`). Sur les
+   champs de premier niveau, l'instantané ne peut qu'écraser une valeur par une
+   autre — sans dégât. Sur un SOUS-OBJET, en revanche, il remplace l'objet
+   entier : un `acces` enregistré avant l'éclatement en trois modes efface donc
+   `serrure`, `boiteCles` et `personne` de la fiche fraîche. La fiche détail
+   plantait alors au rendu, et le clic sur la carte ne faisait plus rien.
+
+   Vider le cache HTTP n'y change rien — l'instantané est dans localStorage.
+   On répare donc l'accès ici, après restauration, comme pour les autres
+   migrations de ce fichier. */
+function _migrerAcces() {
+  // Les modes retirés du référentiel se ramènent à celui qui leur ressemble.
+  const REMPLACES = { digicode: 'boite_cles', accueil: 'personne', concierge: 'personne' };
+  const D = DEFAUTS_LOGEMENT.acces;
+  LOGEMENTS.forEach(l => {
+    const a = l.acces || {};
+    l.acces = {
+      ...D, ...a,
+      type: REMPLACES[a.type] || a.type || D.type,
+      serrure:   { ...D.serrure,   ...(a.serrure   || {}) },
+      boiteCles: { ...D.boiteCles, ...(a.boiteCles || {}) },
+      personne:  { ...D.personne,  ...(a.personne  || {}) },
+    };
+    // Même logique pour les canaux : un instantané d'avant l'ajout de la mise
+    // en pause n'a pas de `actif`, et un canal branché synchronise par défaut.
+    Object.values(l.canaux || {}).forEach(c => { if (c && c.actif === undefined) c.actif = true; });
+  });
+}
+
 (function _oyviaRestoreState() {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(OYVIA_STATE_KEY)); } catch { saved = null; }
@@ -3817,6 +4309,10 @@ _migrerDeclencheurs();
 // Contrats propriétaires enregistrés sous l'ancien champ modeFacturation,
 // qui mélangeait « qui encaisse » et « comment on est rémunéré ».
 _migrerFacturation();
+// Accès enregistrés avant l'éclatement en trois modes (serrure / boîte /
+// personne). Voir la fonction pour le détail : c'est la restauration
+// elle-même qui abîme ces fiches, il faut donc les réparer juste après.
+_migrerAcces();
 // Déroulé complet sur les messages qui signalent un besoin d'intervention :
 // Vivi répond, puis prépare la tâche. Appelé APRÈS la restauration, pour que
 // les signalements déjà traités soient connus — un rechargement ne renvoie
