@@ -78,7 +78,7 @@ Layout.init('reservations');
     renderBandeau();
     const list = filtered();
     document.getElementById('resa-count').textContent =
-      `${list.length} réservation${list.length > 1 ? 's' : ''} · ${formatEuro(list.reduce((s, r) => s + r.montant, 0))} de volume`;
+      `${list.length} réservation${list.length > 1 ? 's' : ''} · ${formatMontant(list.reduce((s, r) => s + r.montant, 0))} de volume`;
 
     if (!list.length) {
       tbody.innerHTML = `<tr><td colspan="8"><div class="empty">
@@ -94,7 +94,7 @@ Layout.init('reservations');
         <td><span class="badge-canal badge-canal--${r.canal}"><span class="dot"></span>${CANAL_LABEL[r.canal]}</span></td>
         <td class="text-soft">${formatPlage(r.arrivee, r.depart)}<br><small class="text-muted">${r.pers} pers · réf ${r.ref}</small></td>
         <td class="num">${r.nuits}</td>
-        <td class="num money">${formatEuro(r.montant)}</td>
+        <td class="num money">${formatMontant(r.montant)}</td>
         <td><span class="badge ${PAY_BADGE[r.paiement]}">${PAIEMENT_LABEL[r.paiement]}</span></td>
         <td><span class="badge ${STA_BADGE[r.statut]}">${STATUT_LABEL[r.statut]}</span></td>
       </tr>`;
@@ -104,10 +104,10 @@ Layout.init('reservations');
   document.getElementById('resa-export').addEventListener('click', () => {
     const rows = filtered().map(r => {
       const l = getLogement(r.logementId);
-      return [r.voyageur, l.nom, l.ville, CANAL_LABEL[r.canal], r.arrivee, r.depart, r.nuits, r.pers, r.montant, PAIEMENT_LABEL[r.paiement], STATUT_LABEL[r.statut], r.ref];
+      return [r.voyageur, l.nom, l.ville, CANAL_LABEL[r.canal], r.arrivee, r.depart, r.nuits, r.pers, Math.round(versAffichage(r.montant)), PAIEMENT_LABEL[r.paiement], STATUT_LABEL[r.statut], r.ref];
     });
     UI.exportCSV('cleo-reservations.csv',
-      ['Voyageur', 'Logement', 'Ville', 'Canal', 'Arrivée', 'Départ', 'Nuits', 'Voyageurs', 'Montant (€)', 'Paiement', 'Statut', 'Référence'],
+      ['Voyageur', 'Logement', 'Ville', 'Canal', 'Arrivée', 'Départ', 'Nuits', 'Voyageurs', `Montant (${symboleDevise()})`, 'Paiement', 'Statut', 'Référence'],
       rows);
   });
 
@@ -122,7 +122,8 @@ Layout.init('reservations');
   function suggestMontant() {
     const l = getLogement(RF.log.value); if (!l) return;
     const n = nuitsEntre(RF.arrivee.value, RF.depart.value);
-    if (n > 0) RF.montant.value = l.tarifBase * n + l.menageTarif;
+    // Suggestion calculée en euros, présentée dans la devise d'affichage.
+    if (n > 0) RF.montant.value = montantSaisie(l.tarifBase * n + l.menageTarif);
   }
   [RF.log, RF.arrivee, RF.depart].forEach(el => el.addEventListener('change', suggestMontant));
 
@@ -166,7 +167,7 @@ Layout.init('reservations');
     RESERVATIONS.push({
       id: 'R' + Date.now(), logementId: RF.log.value, voyageurId: null, voyageur: nom, canal,
       arrivee: RF.arrivee.value, depart: RF.depart.value, pers: parseInt(RF.pers.value, 10) || 1,
-      montant: parseInt(RF.montant.value, 10) || 0, paiement: RF.paiement.value, statut: 'confirme',
+      montant: lireMontantSaisi(RF.montant.value, null) || 0, paiement: RF.paiement.value, statut: 'confirme',
       ref: prefix + Math.floor(1000 + Math.random() * 9000), nuits: nuitsEntre(RF.arrivee.value, RF.depart.value),
     });
     UI.closeAll(); document.dispatchEvent(new Event('resaChanged')); UI.toast('Réservation créée');

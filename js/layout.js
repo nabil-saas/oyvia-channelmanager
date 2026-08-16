@@ -177,6 +177,12 @@ const Layout = (function () {
     const nav = NAV.find(n => n.id === active) || NAV[0];
     document.title = `Oyvia — ${nav.title}`;
 
+    /* Symbole de devise dans les libellés écrits en dur dans le HTML : les
+       gabarits portent <span data-devise></span> plutôt qu'un « € ». Une
+       ligne ici suffit à faire suivre toutes les pages quand l'hôte change
+       de devise ; les libellés générés en JS appellent symboleDevise(). */
+    document.querySelectorAll('[data-devise]').forEach(el => { el.textContent = symboleDevise(); });
+
     const sidebar = document.getElementById('app-sidebar');
     const topbar = document.getElementById('app-topbar');
     if (sidebar) sidebar.innerHTML = sidebarHTML(active);
@@ -704,7 +710,7 @@ const UI = {
       <div class="rp-row"><span>E-mail</span><span>${v.email}</span></div>
       <div class="rp-row"><span>Téléphone</span><span>${v.tel}</span></div>
       <div class="rp-row"><span>Pays</span><span>${v.pays}</span></div>
-      <div class="rp-row"><span>Historique</span><span>${v.nbSejours} séjour${v.nbSejours > 1 ? 's' : ''} · ${formatEuro(v.totalDepense)}</span></div>` : '';
+      <div class="rp-row"><span>Historique</span><span>${v.nbSejours} séjour${v.nbSejours > 1 ? 's' : ''} · ${formatMontant(v.totalDepense)}</span></div>` : '';
     const tacheRows = taches.length ? taches.map(t =>
       `<div class="rp-row"><span>${TACHE_LABEL[t.type]} · ${formatDate(t.date)} ${t.heure}</span><span>${getPrestataire(t.prestataireId) ? getPrestataire(t.prestataireId).nom : '—'}</span></div>`).join('')
       : '<p class="text-muted text-sm">Aucune tâche liée.</p>';
@@ -761,7 +767,7 @@ const UI = {
         </div>
         <p class="rp-decision__txt">
           Les dates sont retenues en attendant votre réponse : personne d'autre ne peut les réserver.
-          ${acompte ? `En acceptant, vous demandez un acompte de <b>${formatEuro(acompte)}</b>.` : ''}
+          ${acompte ? `En acceptant, vous demandez un acompte de <b>${formatMontant(acompte)}</b>.` : ''}
         </p>
         <div class="rp-decision__actions">
           <button type="button" class="btn btn--primary grow" data-demande-ok="${r.id}">Accepter la réservation</button>
@@ -787,7 +793,7 @@ const UI = {
           <div class="rp-row"><span>Voyageurs</span><span>${r.pers} personne${r.pers > 1 ? 's' : ''}</span></div>
           <div class="rp-row"><span>Référence</span><span>${r.ref}</span></div></div>
         <div class="rp-section"><p class="eyebrow mb-2">Paiement</p>
-          <div class="rp-row"><span>Montant total</span><span class="fw-semibold">${formatEuro(r.montant)}</span></div>
+          <div class="rp-row"><span>Montant total</span><span class="fw-semibold">${formatMontant(r.montant)}</span></div>
           <div class="rp-row"><span>Statut</span><span><span class="badge ${payBadge}">${PAIEMENT_LABEL[r.paiement]}</span></span></div></div>
         <div class="rp-section"><p class="eyebrow mb-2">Voyageur</p>${guestRows}</div>
         <div class="rp-section"><p class="eyebrow mb-2">Fiches de police (${ficheDone}/${totalVoy})</p>${ficheRows}</div>

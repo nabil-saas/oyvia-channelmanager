@@ -20,9 +20,9 @@ Layout.init('statistiques');
 
   const icon = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
   const KPIS = [
-    { label: 'CA total (6 mois)', value: formatEuro(totalCA), ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
+    { label: 'CA total (6 mois)', value: formatMontant(totalCA), ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
     { label: 'Occupation moyenne', value: avg(STATS.occupation) + ' %', ic: icon('<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>') },
-    { label: 'ADR moyen', value: formatEuro(avg(STATS.adr)), ic: icon('<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>') },
+    { label: 'ADR moyen', value: formatMontant(avg(STATS.adr)), ic: icon('<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>') },
     { label: 'Nuitées vendues', value: nuitees, ic: icon('<path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8V4"/>') },
   ];
   document.getElementById('st-kpi').innerHTML = KPIS.map(k => `
@@ -31,11 +31,13 @@ Layout.init('statistiques');
 
   /* Export CSV : synthèse mensuelle + occupation par logement */
   document.getElementById('st-export').addEventListener('click', () => {
-    const rows = STATS.moisLabels.map((m, i) => [m, STATS.ca[i], STATS.occupation[i] + ' %', STATS.adr[i]]);
+    // Colonnes monétaires exportées dans la devise d'affichage, comme à l'écran.
+    const m$ = v => Math.round(versAffichage(v));
+    const rows = STATS.moisLabels.map((m, i) => [m, m$(STATS.ca[i]), STATS.occupation[i] + ' %', m$(STATS.adr[i])]);
     rows.push([]);
     rows.push(['Occupation par logement', '', '', '']);
-    STATS.parLogement.forEach(x => rows.push([getLogement(x.id).nom, x.ca, x.occ + ' %', '']));
-    UI.exportCSV('cleo-statistiques.csv', ['Mois', 'CA (€)', 'Occupation', 'ADR (€)'], rows);
+    STATS.parLogement.forEach(x => rows.push([getLogement(x.id).nom, m$(x.ca), x.occ + ' %', '']));
+    UI.exportCSV('cleo-statistiques.csv', ['Mois', `CA (${symboleDevise()})`, 'Occupation', `ADR (${symboleDevise()})`], rows);
   });
 
   /* CA par mois — barres */
@@ -44,8 +46,8 @@ Layout.init('statistiques');
     data: { labels: STATS.moisLabels, datasets: [{ data: STATS.ca, backgroundColor: BLUE, borderRadius: 8, maxBarThickness: 44 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + formatEuro(c.parsed.y) } } },
-      scales: { y: { ticks: { callback: v => (v / 1000) + 'k€' }, grid: { color: GRID }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + formatMontant(c.parsed.y) } } },
+      scales: { y: { ticks: { callback: v => Math.round(versAffichage(v) / 1000) + 'k' + symboleDevise() }, grid: { color: GRID }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } },
     },
   });
 
@@ -84,8 +86,8 @@ Layout.init('statistiques');
     data: { labels: STATS.moisLabels, datasets: [{ data: STATS.adr, borderColor: BLUE, backgroundColor: grad, fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: BLUE, pointBorderColor: '#fff', pointBorderWidth: 2 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + formatEuro(c.parsed.y) + ' / nuit' } } },
-      scales: { y: { ticks: { callback: v => v + ' €' }, grid: { color: GRID }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + formatMontant(c.parsed.y) + ' / nuit' } } },
+      scales: { y: { ticks: { callback: v => Math.round(versAffichage(v)) + ' ' + symboleDevise() }, grid: { color: GRID }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } },
     },
   });
 })();

@@ -311,8 +311,8 @@ ${S.sections.filter(x => x.actif).map(sectionHTML).join('')}`;
           <div class="pub-card__foot">
             <span class="pub-card__prix">
               ${nuits
-                ? `<b>${formatEuro(prix * nuits + (l.menageTarif || 0))}</b> <em>· ${nuits} nuit${nuits > 1 ? 's' : ''}</em>`
-                : `${r.remiseDirecte ? `<s>${formatEuro(l.tarifBase)}</s>` : ''}<b>${formatEuro(prix)}</b> <em>/ nuit</em>`}
+                ? `<b>${formatMontant(prix * nuits + (l.menageTarif || 0))}</b> <em>· ${nuits} nuit${nuits > 1 ? 's' : ''}</em>`
+                : `${r.remiseDirecte ? `<s>${formatMontant(l.tarifBase)}</s>` : ''}<b>${formatMontant(prix)}</b> <em>/ nuit</em>`}
             </span>
             ${r.actif
               ? `<button class="btn btn--primary btn--sm" data-reserver="${l.id}" data-du="${a || ''}" data-au="${d || ''}">Réserver</button>`
@@ -445,12 +445,12 @@ ${S.sections.filter(x => x.actif).map(sectionHTML).join('')}`;
     const via = l.tarifBase * n + menage;
 
     zone.innerHTML = `
-      <div class="pub-recap__ligne"><span>${formatEuro(nuit)} × ${n} nuit${n > 1 ? 's' : ''}</span><span>${formatEuro(sejour)}</span></div>
-      ${menage ? `<div class="pub-recap__ligne"><span>Frais de ménage</span><span>${formatEuro(menage)}</span></div>` : ''}
-      <div class="pub-recap__ligne pub-recap__total"><span>Total</span><b>${formatEuro(total)}</b></div>
+      <div class="pub-recap__ligne"><span>${formatMontant(nuit)} × ${n} nuit${n > 1 ? 's' : ''}</span><span>${formatMontant(sejour)}</span></div>
+      ${menage ? `<div class="pub-recap__ligne"><span>Frais de ménage</span><span>${formatMontant(menage)}</span></div>` : ''}
+      <div class="pub-recap__ligne pub-recap__total"><span>Total</span><b>${formatMontant(total)}</b></div>
       ${r.remiseDirecte && via > total
-        ? `<p class="pub-recap__eco">Vous économisez ${formatEuro(via - total)} par rapport au prix affiché sur les plateformes.</p>` : ''}
-      ${acompte ? `<p class="pub-recap__acompte">À régler maintenant : <b>${formatEuro(acompte)}</b> (${r.acompte} %). Le solde ${formatEuro(total - acompte)} avant l'arrivée.</p>` : ''}`;
+        ? `<p class="pub-recap__eco">Vous économisez ${formatMontant(via - total)} par rapport au prix affiché sur les plateformes.</p>` : ''}
+      ${acompte ? `<p class="pub-recap__acompte">À régler maintenant : <b>${formatMontant(acompte)}</b> (${r.acompte} %). Le solde ${formatMontant(total - acompte)} avant l'arrivée.</p>` : ''}`;
   }
 
   /* ---------- Validation ---------- */
@@ -515,7 +515,7 @@ ${S.sections.filter(x => x.actif).map(sectionHTML).join('')}`;
           <div><span>Logement</span><b>${esc(l.nom)}</b></div>
           <div><span>Séjour</span><b>${formatPlage(a, d)}</b></div>
           <div><span>Voyageurs</span><b>${pers}</b></div>
-          <div><span>Total</span><b>${formatEuro(total)}</b></div>
+          <div><span>Total</span><b>${formatMontant(total)}</b></div>
           <div><span>Référence</span><b>${resa.ref}</b></div>
         </div>
         <p class="pub-ok__note">Cette réservation apparaît dès maintenant dans le calendrier Oyvia.</p>

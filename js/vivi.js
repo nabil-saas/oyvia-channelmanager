@@ -63,7 +63,7 @@ const Vivi = (function () {
         return {
           texte: `Votre offre <b>${p.nom}</b> n'inclut pas d'IA pour répondre aux voyageurs. Vivi reste disponible ici, en revanche, pour répondre à <em>vos</em> questions.
             <br><br>Attention à ne pas confondre : vos <b>automatisations</b> (confirmation, rappel avant arrivée, demande d'avis) sont bien actives — ce sont des règles déclenchées par la réservation, pas de l'IA.
-            <br><br>Pour que Vivi réponde d'elle-même aux messages entrants, il faut l'offre <b>Business</b> à ${formatMAD(prixParLogement('business', COMPTE.nbLogements))} par logement et par mois, pour votre parc de ${COMPTE.nbLogements} logements.`,
+            <br><br>Pour que Vivi réponde d'elle-même aux messages entrants, il faut l'offre <b>Business</b> à ${formatPrixAbo(prixParLogement('business', COMPTE.nbLogements))} par logement et par mois, pour votre parc de ${COMPTE.nbLogements} logements.`,
           actions: btn('Comparer les offres', lien('abonnement.html')),
         };
       },
@@ -135,8 +135,8 @@ const Vivi = (function () {
         const meilleur = [...STATS.parLogement].sort((a, b) => b.ca - a.ca)[0];
         const l = getLogement(meilleur.id);
         return {
-          texte: `Sur le mois en cours, votre chiffre d'affaires est de <b>${formatEuro(ca)}</b>, soit ${evo >= 0 ? '+' : ''}${evo} % par rapport au mois dernier.
-            <br><br>Votre meilleur bien est <b>${l ? l.nom : meilleur.id}</b> avec ${formatEuro(meilleur.ca)} et ${meilleur.occ} % d'occupation. Le taux d'occupation moyen du parc est de ${STATS.occupation[i]} %.`,
+          texte: `Sur le mois en cours, votre chiffre d'affaires est de <b>${formatMontant(ca)}</b>, soit ${evo >= 0 ? '+' : ''}${evo} % par rapport au mois dernier.
+            <br><br>Votre meilleur bien est <b>${l ? l.nom : meilleur.id}</b> avec ${formatMontant(meilleur.ca)} et ${meilleur.occ} % d'occupation. Le taux d'occupation moyen du parc est de ${STATS.occupation[i]} %.`,
           actions: btn('Voir les statistiques', lien('statistiques.html')),
         };
       },
@@ -172,7 +172,7 @@ const Vivi = (function () {
             <br><br>Côté facturation : vous gérez ${COMPTE.nbLogements} logements en <b>${p.nom}</b>. ${
               debordement
                 ? `Un logement de plus dépasse la limite de ${p.maxLog} de votre offre : il faudra passer à l'offre suivante.`
-                : `Avec un logement de plus, votre abonnement passerait à ${formatMAD(total)} par mois.`}
+                : `Avec un logement de plus, votre abonnement passerait à ${formatPrixAbo(total)} par mois.`}
             <br><br>Pensez aussi à l'affecter à un propriétaire, sinon il n'apparaîtra dans aucun relevé.`,
           actions: btn('Ajouter un logement', lien('logements.html')) + btn('Affecter un propriétaire', lien('proprietaires.html')),
         };
@@ -185,7 +185,7 @@ const Vivi = (function () {
         const p = getPlan(COMPTE.plan);
         const prix = planPrixTexte(p.id, COMPTE.nbLogements);
         return {
-          texte: `Vous êtes en <b>${p.nom}</b> : ${prix.montant} ${prix.suffixe}. Pour ${COMPTE.nbLogements} logements gérés, cela fait <b>${formatMAD(planTotal(p.id, COMPTE.nbLogements))} par mois</b>.
+          texte: `Vous êtes en <b>${p.nom}</b> : ${prix.montant} ${prix.suffixe}. Pour ${COMPTE.nbLogements} logements gérés, cela fait <b>${formatPrixAbo(planTotal(p.id, COMPTE.nbLogements))} par mois</b>.
             <br><br>Sans engagement, résiliable à tout moment. L'option WhatsApp voyageur, si elle est active, est facturée au message envoyé — les réponses dans la fenêtre de 24 h restent gratuites.`,
           actions: btn('Voir mon abonnement', lien('abonnement.html')),
         };

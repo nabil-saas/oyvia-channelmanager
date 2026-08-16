@@ -60,10 +60,10 @@
         <div class="field"><label class="field__label" for="eq-t-nom">Nom</label><input class="input" id="eq-t-nom" placeholder="Prénom Nom" /></div>
         <div class="field"><label class="field__label" for="eq-t-role">Rôle</label><select class="select" id="eq-t-role"><option>Ménage</option><option>Polyvalent</option><option>Maintenance</option></select></div>
       </div>
-      <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
-        <div class="field"><label class="field__label" for="eq-t-zone">Zone</label><input class="input" id="eq-t-zone" placeholder="Lyon" /></div>
-        <div class="field"><label class="field__label" for="eq-t-tarif">Tarif ménage (€)</label><input class="input" type="number" min="0" id="eq-t-tarif" value="35" /></div>
+      <div class="field" style="margin-top:var(--sp-4)">
+        <label class="field__label" for="eq-t-zone">Zone</label><input class="input" id="eq-t-zone" placeholder="Lyon" />
       </div>
+      <p class="text-xs text-muted" style="margin-top:var(--sp-4)">Le prix d'une intervention se définit sur le logement, pas sur le prestataire : il dépend du bien à traiter.</p>
     </div>
     <div class="modal__foot">
       <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>

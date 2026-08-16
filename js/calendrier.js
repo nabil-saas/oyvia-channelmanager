@@ -133,14 +133,14 @@ Layout.init('calendrier');
         <div class="cal-tt__row"><span>Quand</span><span>${quand}</span></div>
         <div class="cal-tt__row"><span>Prestataire</span><span>${p ? p.nom : '—'}</span></div>
         <div class="cal-tt__row"><span>Statut</span><span>${stLabel}</span></div>
-        ${t.montant ? `<div class="cal-tt__row"><span>Montant</span><span>${formatEuro(t.montant)}</span></div>` : ''}`;
+        ${t.montant ? `<div class="cal-tt__row"><span>Montant</span><span>${formatMontant(t.montant)}</span></div>` : ''}`;
       tt.classList.add('is-open');
       return;
     }
     const bar = e.target.closest('.cal-bar'); if (!bar) return;
     const r = getReservation(bar.dataset.res); if (!r) return;
     const money = r.canal === 'bloque' ? '' :
-      `<div class="cal-tt__row"><span>Montant</span><span>${formatEuro(r.montant)}</span></div>
+      `<div class="cal-tt__row"><span>Montant</span><span>${formatMontant(r.montant)}</span></div>
        <div class="cal-tt__row"><span>Statut</span><span>${STATUT_LABEL[r.statut]}</span></div>`;
     tt.innerHTML = `<b>${r.canal === 'bloque' ? 'Blocage' : r.voyageur}</b>
       <div class="cal-tt__row"><span>Canal</span><span>${CANAL_LABEL[r.canal]}</span></div>

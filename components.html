@@ -325,7 +325,7 @@
           <td><span class="badge-canal badge-canal--${r.canal}"><span class="dot"></span> ${CANAL_LABEL[r.canal]}</span></td>
           <td class="text-soft">${formatPlage(r.arrivee, r.depart)}</td>
           <td class="num">${r.nuits}</td>
-          <td class="num money">${formatEuro(r.montant)}</td>
+          <td class="num money">${formatMontant(r.montant)}</td>
           <td><span class="badge ${badge}">${PAIEMENT_LABEL[r.paiement]}</span></td>
         </tr>`;
       }).join('');

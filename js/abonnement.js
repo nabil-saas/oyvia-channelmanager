@@ -19,7 +19,7 @@ Layout.init('abonnement');
     const prix = planPrixTexte(p.id, nbLog);
     document.getElementById('ab-hero').innerHTML = `
       <span class="ab-hero__badge">Mois en cours — ${moisCourant.mois}</span>
-      <div class="ab-hero__plan">${formatMAD(planTotal(p.id, nbLog))}</div>
+      <div class="ab-hero__plan">${formatPrixAbo(planTotal(p.id, nbLog))}</div>
       <p style="opacity:.85;font-size:var(--fs-sm);position:relative">Offre <b>${p.nom}</b> — ${prix.montant} ${prix.suffixe}.</p>
       <div class="ab-hero__row">
         <div class="ab-hero__stat"><small>Logements gérés</small><b>${nbLog}</b></div>
@@ -33,11 +33,11 @@ Layout.init('abonnement');
     const base = planTotal(p.id, nbLog);
     // Le prix unitaire vient de la grille dégressive : à 10 logements ce
     // n'est pas le même qu'à 40, et la ligne de facture doit le refléter.
-    const ligneBase = `${nbLog} logement${nbLog > 1 ? 's' : ''} × ${formatMAD(prixParLogement(p.id, nbLog))} (${p.nom}) · ${moisCourant.mois}`;
+    const ligneBase = `${nbLog} logement${nbLog > 1 ? 's' : ''} × ${formatPrixAbo(prixParLogement(p.id, nbLog))} (${p.nom}) · ${moisCourant.mois}`;
 
     document.getElementById('ab-summary').innerHTML = `
-      <div class="ab-summline"><span>${ligneBase}</span><span>${formatMAD(base)}</span></div>
-      <div class="ab-summline--total ab-summline"><span>Total mensuel</span><b>${formatMAD(base)}</b></div>
+      <div class="ab-summline"><span>${ligneBase}</span><span>${formatPrixAbo(base)}</span></div>
+      <div class="ab-summline--total ab-summline"><span>Total mensuel</span><b>${formatPrixAbo(base)}</b></div>
       <p class="text-xs text-muted" style="margin-top:var(--sp-2)">Sans engagement, résiliable à tout moment. Aucune option facturée en plus : l'intégration WhatsApp est comprise dans votre offre.</p>`;
   }
 
@@ -70,7 +70,7 @@ Layout.init('abonnement');
         : p.unite === 'devis'
           ? `Tarif construit avec vous`
           : dispo
-            ? `soit ${formatMAD(planTotal(p.id, nbLog))} / mois pour ${nbLog} logement${nbLog > 1 ? 's' : ''}`
+            ? `soit ${formatPrixAbo(planTotal(p.id, nbLog))} / mois pour ${nbLog} logement${nbLog > 1 ? 's' : ''}`
             : `Parc trop grand pour le catalogue`;
 
       return `
@@ -97,7 +97,7 @@ Layout.init('abonnement');
         <span>${m.mois}</span>
         <span>${p.nom}</span>
         <span>${m.nbLogements} logement${m.nbLogements > 1 ? 's' : ''}</span>
-        <span class="ab-hist__amount">${formatMAD(planTotal(planId, m.nbLogements))}</span>
+        <span class="ab-hist__amount">${formatPrixAbo(planTotal(planId, m.nbLogements))}</span>
       </div>`;
     }).join('');
     document.getElementById('ab-historique').innerHTML = `

@@ -61,7 +61,7 @@
         <span class="pr-task__code">Wifi <b>${l.wifi.ssid}</b></span>
       </div>
       <div class="pr-task__foot">
-        <span class="pr-task__pay">${t.montant ? formatEuro(t.montant) : '—'}</span>
+        <span class="pr-task__pay">${t.montant ? formatMontant(t.montant) : '—'}</span>
         <button class="pr-status pr-status--${t.statut}" data-status="${t.id}">${STA_LABEL[t.statut]}</button>
       </div>
       ${t.statut === 'termine' ? photoSection(t) : ''}
@@ -79,7 +79,7 @@
     const due = all.reduce((s, t) => s + t.montant, 0);
     document.getElementById('pr-stats').innerHTML =
       `<div class="pr-stat"><small>Tâches à venir</small><b>${all.length}</b></div>
-       <div class="pr-stat"><small>Montant dû</small><b>${formatEuro(due)}</b></div>`;
+       <div class="pr-stat"><small>Montant dû</small><b>${formatMontant(due)}</b></div>`;
 
     const types = [...new Set(all.map(t => t.type))];
     if (!types.includes(filterType)) filterType = 'all';

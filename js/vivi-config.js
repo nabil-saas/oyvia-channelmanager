@@ -60,7 +60,7 @@ Layout.init('vivi');
           messages entrants de vos voyageurs.</p>
         <ul class="vc-lock__list">${gains.map(g => `<li>${CHECK}<span>${g}</span></li>`).join('')}</ul>
         <p class="text-sm text-muted" style="margin-bottom:var(--sp-5)">
-          Business : ${prix.montant} ${prix.suffixe} — soit ${formatMAD(total)} par mois pour vos ${COMPTE.nbLogements} logements.
+          Business : ${prix.montant} ${prix.suffixe} — soit ${formatPrixAbo(total)} par mois pour vos ${COMPTE.nbLogements} logements.
         </p>
         <div class="vc-lock__cta">
           <a class="btn btn--primary btn--lg" href="abonnement.html">Passer en ${biz.nom}</a>

@@ -378,6 +378,13 @@
 .mn-teamedit .input, .mn-teamedit .select { height: 36px; font-size: var(--fs-sm); }
 .mn-teamedit__actions { display: flex; gap: var(--sp-2); justify-content: flex-end; }
 
+/* Charge d'un prestataire (page Équipe) : le nombre de tâches réalisées est
+   ce qui qualifie un collaborateur, une fois le tarif sorti de sa fiche. */
+.eq-charge { display: flex; align-items: baseline; gap: 5px; flex-shrink: 0; margin-right: var(--sp-2); font-size: var(--fs-xs); color: var(--c-text-muted); white-space: nowrap; }
+.eq-charge b { font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--c-text); }
+.eq-charge em { font-style: normal; padding: 2px var(--sp-2); border-radius: var(--r-full); background: var(--c-accent-soft); color: var(--blue-700); font-weight: var(--fw-medium); }
+@media (max-width: 720px) { .eq-charge span { display: none; } }
+
 /* ============================================================
    AUTOMATISATIONS  (.auto-)
    ============================================================ */
@@ -532,12 +539,6 @@
 .ota-head__note svg { width: 14px; height: 14px; fill: var(--c-accent); align-self: center; flex-shrink: 0; }
 .ota-head__note b { font-size: var(--fs-lg); color: var(--c-text); }
 .ota-head__note em { font-style: normal; font-weight: var(--fw-semibold); color: var(--green-700); }
-
-/* Charge utile brute : nom de champ natif à gauche, valeur reçue à droite */
-.ota-brut { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 var(--sp-6); }
-.ota-brut__row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--c-border); font-size: var(--fs-sm); }
-.ota-brut__row code { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-muted); white-space: nowrap; }
-.ota-brut__row span { text-align: right; overflow-wrap: anywhere; }
 
 /* Onglet Accès  (.acc-) */
 .acc-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }

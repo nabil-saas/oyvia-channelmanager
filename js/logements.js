@@ -83,7 +83,7 @@ Layout.init('logements');
           ${alerte}
           <div class="lg-card__row">
             <div class="lg-card__channels">${channelsHTML(l)}</div>
-            <div class="lg-card__price"><b>${formatEuro(l.tarifBase)}</b> <span>/ nuit</span></div>
+            <div class="lg-card__price"><b>${formatMontant(l.tarifBase)}</b> <span>/ nuit</span></div>
           </div>
         </div>
       </article>`;
@@ -119,7 +119,8 @@ Layout.init('logements');
     document.getElementById('lg-f-type').value = l ? l.type : 'appartement';
     document.getElementById('lg-f-typechambre').value = l ? l.typeChambre : 'entier';
     document.getElementById('lg-f-cap').value = l ? l.capacite : 2;
-    document.getElementById('lg-f-tarif').value = l ? l.tarifBase : 80;
+    // Les tarifs sont stockés en euros : on les présente dans la devise choisie.
+    document.getElementById('lg-f-tarif').value = montantSaisie(l ? l.tarifBase : 80);
     document.getElementById('lg-f-surface').value = l && l.surface ? l.surface : '';
     document.getElementById('lg-modal-title').textContent = l ? 'Modifier le logement' : 'Ajouter un logement';
     document.getElementById('lg-create').textContent = l ? 'Enregistrer' : 'Créer le logement';
@@ -132,13 +133,22 @@ Layout.init('logements');
     const ville = document.getElementById('lg-f-ville').value.trim();
     if (!nom || !ville) { UI.toast('Renseignez au moins le nom et la ville', false); return; }
     const cap = parseInt(document.getElementById('lg-f-cap').value, 10) || 2;
-    const tarif = parseInt(document.getElementById('lg-f-tarif').value, 10) || 80;
+    // Retour vers l'euro, devise de stockage. lireMontantSaisi() laisse le
+    // montant d'origine intact s'il n'a pas été modifié : pas de dérive
+    // d'arrondi à force d'ouvrir et de refermer la fiche.
+    const ancien = editLogementId ? getLogement(editLogementId).tarifBase : null;
+    const tarif = lireMontantSaisi(document.getElementById('lg-f-tarif').value, ancien) || 80;
     const type = document.getElementById('lg-f-type').value;
     const typeChambre = document.getElementById('lg-f-typechambre').value;
     const surface = parseInt(document.getElementById('lg-f-surface').value, 10) || null;
 
     if (editLogementId) {
-      Object.assign(getLogement(editLogementId), { nom, ville, type, typeChambre, surface, capacite: cap, tarifBase: tarif, menageTarif: Math.round(tarif * 0.4) });
+      // Le forfait ménage n'est PAS recalculé ici. Il est dérivé du tarif de
+      // base à la création, faute de mieux, mais il se règle ensuite pour de
+      // bon ailleurs. Le réécrire à chaque modification effaçait sans prévenir
+      // un forfait ajusté à la main — cette modale ne propose même pas le
+      // champ, l'hôte n'avait donc aucun moyen de s'en apercevoir.
+      Object.assign(getLogement(editLogementId), { nom, ville, type, typeChambre, surface, capacite: cap, tarifBase: tarif });
       const id = editLogementId; editLogementId = null;
       UI.closeAll(); renderCards();
       if (!detail.classList.contains('hidden')) showDetail(id);
@@ -301,7 +311,7 @@ Layout.init('logements');
         <div class="card card--pad">
           <p class="eyebrow mb-4">Performance</p>
           ${row('Réservations', resas.length)}
-          ${row("Chiffre d'affaires", `<span class="fw-semibold">${formatEuro(ca)}</span>`)}
+          ${row("Chiffre d'affaires", `<span class="fw-semibold">${formatMontant(ca)}</span>`)}
           ${row('Note globale', `${l.note.toFixed(1)} / 5 · ${l.avis} avis`)}
           ${row('Statut Superhôte', oui(l.superhote))}
         </div>
@@ -314,17 +324,17 @@ Layout.init('logements');
     const taxeTxt = t.taxeSejour.mode === 'pourcentage'
       ? `${t.taxeSejour.montant} % du prix de la nuit`
       : t.taxeSejour.mode === 'par_sejour'
-        ? `${formatEuro(t.taxeSejour.montant, 2)} par séjour`
-        : `${formatEuro(t.taxeSejour.montant, 2)} par personne et par nuit`;
+        ? `${formatMontant(t.taxeSejour.montant, 2)} par séjour`
+        : `${formatMontant(t.taxeSejour.montant, 2)} par personne et par nuit`;
 
     return `
       <div class="app-grid app-grid--2">
         <div class="card card--pad">
           <p class="eyebrow mb-4">Prix</p>
-          ${row('Tarif de base', `<span class="fw-semibold">${formatEuro(l.tarifBase)} / nuit</span>`)}
-          ${row('Tarif week-end', t.weekend ? `${formatEuro(t.weekend)} / nuit` : 'Identique à la semaine')}
+          ${row('Tarif de base', `<span class="fw-semibold">${formatMontant(l.tarifBase)} / nuit</span>`)}
+          ${row('Tarif week-end', t.weekend ? `${formatMontant(t.weekend)} / nuit` : 'Identique à la semaine')}
           ${row('Voyageurs inclus', t.personnesIncluses)}
-          ${row('Personne supplémentaire', t.personneSup ? `${formatEuro(t.personneSup)} / nuit` : 'Sans supplément')}
+          ${row('Personne supplémentaire', t.personneSup ? `${formatMontant(t.personneSup)} / nuit` : 'Sans supplément')}
           ${row('Tarification dynamique', tdPilote(l)
             ? `<span class="badge badge--positive">${t.dynamique.source}</span>`
             : (t.dynamique.actif
@@ -332,14 +342,14 @@ Layout.init('logements');
               // « PriceLabs » laisserait croire que des prix partent.
               ? '<span class="badge badge--warning">En attente de connexion</span>'
               : '<span class="badge badge--neutral">Désactivée</span>'))}
-          ${row('Bornes du tarif', t.min && t.max ? `${formatEuro(t.min)} — ${formatEuro(t.max)}` : vide)}
+          ${row('Bornes du tarif', t.min && t.max ? `${formatMontant(t.min)} — ${formatMontant(t.max)}` : vide)}
         </div>
 
         <div class="card card--pad">
           <p class="eyebrow mb-4">Frais &amp; taxes</p>
-          ${row('Forfait ménage', `${formatEuro(l.menageTarif)} <span class="text-muted text-xs">par ${t.fraisMenagePar === 'nuit' ? 'nuit' : 'séjour'}</span>`)}
-          ${row('Caution', t.caution ? formatEuro(t.caution) : 'Aucune')}
-          ${row('Frais animal', t.fraisAnimal ? `${formatEuro(t.fraisAnimal)} par séjour` : (l.regles.animaux ? 'Gratuit' : 'Animaux non acceptés'))}
+          ${row('Forfait ménage', `${formatMontant(l.menageTarif)} <span class="text-muted text-xs">par ${t.fraisMenagePar === 'nuit' ? 'nuit' : 'séjour'}</span>`)}
+          ${row('Caution', t.caution ? formatMontant(t.caution) : 'Aucune')}
+          ${row('Frais animal', t.fraisAnimal ? `${formatMontant(t.fraisAnimal)} par séjour` : (l.regles.animaux ? 'Gratuit' : 'Animaux non acceptés'))}
           ${row('Taxe de séjour', taxeTxt)}
           ${row('Plafond taxe', t.taxeSejour.plafondNuits ? `${t.taxeSejour.plafondNuits} nuits` : 'Aucun')}
           ${row('Devise', t.devise)}
@@ -357,12 +367,12 @@ Layout.init('logements');
 
         <div class="card card--pad">
           <p class="eyebrow mb-4">Exemple · ${ex.nuits} nuits, ${ex.pers} voyageurs</p>
-          ${row(`${ex.nuits} nuits × ${formatEuro(l.tarifBase)}`, formatEuro(ex.nuitees))}
-          ${ex.remise ? row('Remise séjour à la semaine', `<span class="text-positive">− ${formatEuro(ex.remise)}</span>`) : ''}
-          ${row('Forfait ménage', formatEuro(ex.menage))}
-          ${row('Taxe de séjour', formatEuro(ex.taxe))}
+          ${row(`${ex.nuits} nuits × ${formatMontant(l.tarifBase)}`, formatMontant(ex.nuitees))}
+          ${ex.remise ? row('Remise séjour à la semaine', `<span class="text-positive">− ${formatMontant(ex.remise)}</span>`) : ''}
+          ${row('Forfait ménage', formatMontant(ex.menage))}
+          ${row('Taxe de séjour', formatMontant(ex.taxe))}
           <div class="rp-row" style="border-top:1px solid var(--c-border);margin-top:var(--sp-2);padding-top:var(--sp-3)">
-            <span class="fw-semibold">Total voyageur</span><span class="fw-semibold">${formatEuro(ex.total)}</span>
+            <span class="fw-semibold">Total voyageur</span><span class="fw-semibold">${formatMontant(ex.total)}</span>
           </div>
           <p class="text-xs text-muted" style="margin-top:var(--sp-3)">Hors caution, restituée après le séjour. Les commissions des plateformes s'appliquent en plus, côté hôte.</p>
         </div>
@@ -619,8 +629,7 @@ Layout.init('logements');
   /* ---------- Canaux ----------
      L'onglet Canaux pilote l'activation ; chaque canal actif obtient sa
      propre page, qui montre l'annonce telle qu'elle existe chez lui — son
-     vocabulaire, son échelle de notes, ses frais — et la charge utile brute
-     avec les noms de champs natifs de son API. */
+     vocabulaire, son échelle de notes, ses frais. */
   const nl2p = txt => String(txt).split('\n').filter(Boolean).map(p => `<p>${p}</p>`).join('');
   const cardWrap = (titre, corps) => `<div class="card card--pad"><p class="eyebrow mb-4">${titre}</p>${corps}</div>`;
 
@@ -697,21 +706,6 @@ Layout.init('logements');
 
       <div class="app-grid app-grid--2 mt-4">
         ${colonnes.map(s => `<div>${sectionCanalHTML(s)}</div>`).join('')}
-      </div>
-
-      <div class="card card--pad mt-4">
-        <div class="row-between mb-4">
-          <p class="eyebrow">Champs reçus de l'API ${meta.label}</p>
-          <span class="text-xs text-muted">Dernière lecture : ${c.derniereSynchro}</span>
-        </div>
-        <div class="ota-brut">
-          ${A.brut.map(f => `
-            <div class="ota-brut__row">
-              <code>${f.k}</code>
-              <span${f.v == null || f.v === '' ? ' class="text-muted"' : ''}>${f.v == null || f.v === '' ? 'null' : f.v}</span>
-            </div>`).join('')}
-        </div>
-        <p class="text-xs text-muted" style="margin-top:var(--sp-4)">Les valeurs sont affichées telles que le canal les renvoie, sans traduction : c'est ce que voit la plateforme, pas ce qu'Oyvia en fait.</p>
       </div>`;
   }
 
@@ -748,7 +742,7 @@ Layout.init('logements');
             <div><small>Identifiant annonce</small><span class="font-mono">${c.listingId}</span></div>
             <div><small>Note sur ce canal</small><span>${note}</span></div>
             <div><small>Commission</small><span>${c.commission} %</span></div>
-            <div><small>Prix voyageur · 7 nuits</small><span>${formatEuro(devisCanal(l, k).total)}</span></div>
+            <div><small>Prix voyageur · 7 nuits</small><span>${formatMontant(devisCanal(l, k).total)}</span></div>
           </div>
           ${actif && c.message ? `<p class="lg-canal__alerte">⚠ ${c.message}</p>` : ''}
         </div>`;

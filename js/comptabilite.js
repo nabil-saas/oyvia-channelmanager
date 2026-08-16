@@ -171,16 +171,16 @@ Layout.init('comptabilite');
     const o = ownerId !== 'all' ? getProprietaire(ownerId) : null;
 
     const honoFoot = o
-      ? (o.remuneration === 'forfait' ? `forfait ${formatEuro(o.forfaitMensuel)}/mois`
-        : o.remuneration === 'mixte' ? `${Math.round(o.commission * 100)} % + forfait ${formatEuro(o.forfaitMensuel)}/mois`
+      ? (o.remuneration === 'forfait' ? `forfait ${formatMontant(o.forfaitMensuel)}/mois`
+        : o.remuneration === 'mixte' ? `${Math.round(o.commission * 100)} % + forfait ${formatMontant(o.forfaitMensuel)}/mois`
         : `taux ${Math.round(o.commission * 100)} %`)
       : `${data.facturesParProprio.length} propriétaire${data.facturesParProprio.length > 1 ? 's' : ''}`;
 
     let depFoot;
     if (!data.depenses) depFoot = 'aucune dépense sur la période';
-    else if (data.depensesAbsorbees) depFoot = `dont ${formatEuro(data.depensesAbsorbees)} à votre charge`;
+    else if (data.depensesAbsorbees) depFoot = `dont ${formatMontant(data.depensesAbsorbees)} à votre charge`;
     else if (data.depensesFacturees >= data.depenses) depFoot = 'intégralement à la charge du propriétaire';
-    else depFoot = `dont ${formatEuro(data.depensesFacturees)} refacturées`;
+    else depFoot = `dont ${formatMontant(data.depensesFacturees)} refacturées`;
 
     /* Le troisième compteur change de NATURE selon le contrat : reverser
        de l'argent et en recevoir ne sont pas la même opération, et un
@@ -190,24 +190,24 @@ Layout.init('comptabilite');
     const mixte = data.aVerser > 0 && data.aRecevoir > 0;
     const fluxLabel = mixte ? 'Mouvements' : (data.aRecevoir > 0 ? 'À recevoir des propriétaires' : 'À verser aux propriétaires');
     const fluxValue = mixte
-      ? `${formatEuro(data.aVerser)} <span class="kpi__sur">versés</span>`
-      : formatEuro(data.aRecevoir > 0 ? data.aRecevoir : data.aVerser);
-    const fluxFoot = mixte ? `et ${formatEuro(data.aRecevoir)} à recevoir` : honoFoot;
+      ? `${formatMontant(data.aVerser)} <span class="kpi__sur">versés</span>`
+      : formatMontant(data.aRecevoir > 0 ? data.aRecevoir : data.aVerser);
+    const fluxFoot = mixte ? `et ${formatMontant(data.aRecevoir)} à recevoir` : honoFoot;
 
     const netFoot = o
       ? (o.encaissement === 'gestionnaire' ? 'après retenue, versé par vos soins' : 'conservé par le propriétaire, après facture')
       : 'selon le contrat de chaque propriétaire';
 
     const KPIS = [
-      { label: 'CA généré', value: formatEuro(data.ca), foot: `${data.rows.length} logement${data.rows.length > 1 ? 's' : ''}`,
+      { label: 'CA généré', value: formatMontant(data.ca), foot: `${data.rows.length} logement${data.rows.length > 1 ? 's' : ''}`,
         ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
-      { label: 'Vos honoraires', value: formatEuro(data.commission + data.forfait), foot: honoFoot,
+      { label: 'Vos honoraires', value: formatMontant(data.commission + data.forfait), foot: honoFoot,
         ic: icon('<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>') },
       { label: fluxLabel, value: fluxValue, foot: fluxFoot,
         ic: icon('<path d="M7 17 17 7M17 7h-6M17 7v6"/>') },
-      { label: 'Dépenses', value: formatEuro(data.depenses), foot: depFoot,
+      { label: 'Dépenses', value: formatMontant(data.depenses), foot: depFoot,
         ic: icon('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-2.4z"/>') },
-      { label: 'Net propriétaire', value: formatEuro(data.net), foot: netFoot,
+      { label: 'Net propriétaire', value: formatMontant(data.net), foot: netFoot,
         ic: icon('<path d="M20 6 9 17l-5-5"/>') },
     ];
     document.getElementById('cp-kpis').innerHTML = KPIS.map(k => `
@@ -227,9 +227,9 @@ Layout.init('comptabilite');
         <div class="cp-bar__seg cp-bar__seg--net" style="width:${pNet}%"></div>
       </div>
       <div class="cp-legend">
-        <span><i class="cp-dot cp-dot--comm"></i>Commission & forfait — ${formatEuro(data.commission + data.forfait)}</span>
-        <span><i class="cp-dot cp-dot--dep"></i>Dépenses refacturées — ${formatEuro(data.depensesFacturees)}</span>
-        <span><i class="cp-dot cp-dot--net"></i>Net propriétaire — ${formatEuro(data.net)}</span>
+        <span><i class="cp-dot cp-dot--comm"></i>Commission & forfait — ${formatMontant(data.commission + data.forfait)}</span>
+        <span><i class="cp-dot cp-dot--dep"></i>Dépenses refacturées — ${formatMontant(data.depensesFacturees)}</span>
+        <span><i class="cp-dot cp-dot--net"></i>Net propriétaire — ${formatMontant(data.net)}</span>
       </div>`;
   }
 
@@ -238,9 +238,9 @@ Layout.init('comptabilite');
       ? data.rows.map(r => `
         <tr>
           <td class="fw-semibold">${r.logement.nom}</td>
-          <td class="num money">${formatEuro(r.ca)}</td>
-          <td class="num text-soft">${r.depenses ? '− ' + formatEuro(r.depenses) : '—'}</td>
-          <td class="num money fw-semibold">${formatEuro(r.commission || 0)}</td>
+          <td class="num money">${formatMontant(r.ca)}</td>
+          <td class="num text-soft">${r.depenses ? '− ' + formatMontant(r.depenses) : '—'}</td>
+          <td class="num money fw-semibold">${formatMontant(r.commission || 0)}</td>
         </tr>`).join('')
       : '<tr><td colspan="4"><div class="empty"><h4>Aucune donnée sur cette période</h4><p>Essayez d\'élargir la période sélectionnée.</p></div></td></tr>';
   }
@@ -343,12 +343,12 @@ Layout.init('comptabilite');
     const signe = isReversement ? '- ' : '';
     const rows = [];
     rows.push([isReversement ? "Chiffre d'affaires encaissé sur la période"
-                             : "Chiffre d'affaires déclaré sur la période", formatEuro(d.ca)]);
-    if (d.commission) rows.push([`${signe}Commission (${Math.round(d.o.commission * 100)} %)`, signe + formatEuro(d.commission)]);
-    if (d.forfait) rows.push([signe + 'Forfait de gestion', signe + formatEuro(d.forfait)]);
+                             : "Chiffre d'affaires déclaré sur la période", formatMontant(d.ca)]);
+    if (d.commission) rows.push([`${signe}Commission (${Math.round(d.o.commission * 100)} %)`, signe + formatMontant(d.commission)]);
+    if (d.forfait) rows.push([signe + 'Forfait de gestion', signe + formatMontant(d.forfait)]);
     if (d.depensesRefacturees) rows.push([
       isReversement ? '- Dépenses avancées' : '+ Dépenses refacturées',
-      (isReversement ? '- ' : '+ ') + formatEuro(d.depensesRefacturees)]);
+      (isReversement ? '- ' : '+ ') + formatMontant(d.depensesRefacturees)]);
 
     doc.setFontSize(10);
     rows.forEach(([label, val], i) => {
@@ -367,16 +367,16 @@ Layout.init('comptabilite');
     doc.roundedRect(14, y - 8, 182, 16, 2, 2, 'F');
     doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 20);
     doc.text(isReversement ? 'Net reversé au propriétaire' : 'Total à régler par le propriétaire', 20, y + 1.5);
-    doc.text(formatEuro(isReversement ? d.aVerser : d.aRecevoir), 190, y + 1.5, { align: 'right' });
+    doc.text(formatMontant(isReversement ? d.aVerser : d.aRecevoir), 190, y + 1.5, { align: 'right' });
 
     y += 24;
     doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.setFont('helvetica', 'normal');
     doc.text(isReversement
-      ? `Net versé = CA (${formatEuro(d.ca)}) − honoraires${d.depensesRefacturees ? ' − dépenses avancées' : ''}.`
-      : `Le propriétaire conserve ${formatEuro(d.netProprietaire)} après règlement de cette facture.`, 14, y);
+      ? `Net versé = CA (${formatMontant(d.ca)}) − honoraires${d.depensesRefacturees ? ' − dépenses avancées' : ''}.`
+      : `Le propriétaire conserve ${formatMontant(d.netProprietaire)} après règlement de cette facture.`, 14, y);
     if (d.depensesAbsorbees) {
       y += 5;
-      doc.text(`${formatEuro(d.depensesAbsorbees)} de frais avancés ne sont pas refacturés : ils restent à la charge du gestionnaire.`, 14, y);
+      doc.text(`${formatMontant(d.depensesAbsorbees)} de frais avancés ne sont pas refacturés : ils restent à la charge du gestionnaire.`, 14, y);
     }
 
     doc.setFontSize(8); doc.setTextColor(170, 170, 170);
@@ -420,28 +420,28 @@ Layout.init('comptabilite');
       const ligne = (lab, val, cls) => `<div class="cp-decompte__l ${cls || ''}"><span>${lab}</span><b>${val}</b></div>`;
       const decompte = d.sens === 'reversement'
         ? [
-            ligne("Chiffre d'affaires encaissé", formatEuro(d.ca)),
-            d.forfait ? ligne('− Forfait de gestion', '− ' + formatEuro(d.forfait)) : '',
-            d.commission ? ligne('− Commission', '− ' + formatEuro(d.commission)) : '',
-            d.depensesRefacturees ? ligne('− Dépenses avancées', '− ' + formatEuro(d.depensesRefacturees)) : '',
-            ligne('= Net à verser au propriétaire', formatEuro(d.aVerser), 'cp-decompte__l--total'),
+            ligne("Chiffre d'affaires encaissé", formatMontant(d.ca)),
+            d.forfait ? ligne('− Forfait de gestion', '− ' + formatMontant(d.forfait)) : '',
+            d.commission ? ligne('− Commission', '− ' + formatMontant(d.commission)) : '',
+            d.depensesRefacturees ? ligne('− Dépenses avancées', '− ' + formatMontant(d.depensesRefacturees)) : '',
+            ligne('= Net à verser au propriétaire', formatMontant(d.aVerser), 'cp-decompte__l--total'),
           ].join('')
         : [
-            ligne("Chiffre d'affaires déclaré", formatEuro(d.ca), 'cp-decompte__l--info'),
-            d.forfait ? ligne('Forfait de gestion', formatEuro(d.forfait)) : '',
-            d.commission ? ligne('Commission', formatEuro(d.commission)) : '',
-            d.depensesRefacturees ? ligne('+ Dépenses à refacturer', '+ ' + formatEuro(d.depensesRefacturees)) : '',
-            ligne('= À régler au gestionnaire', formatEuro(d.aRecevoir), 'cp-decompte__l--total'),
+            ligne("Chiffre d'affaires déclaré", formatMontant(d.ca), 'cp-decompte__l--info'),
+            d.forfait ? ligne('Forfait de gestion', formatMontant(d.forfait)) : '',
+            d.commission ? ligne('Commission', formatMontant(d.commission)) : '',
+            d.depensesRefacturees ? ligne('+ Dépenses à refacturer', '+ ' + formatMontant(d.depensesRefacturees)) : '',
+            ligne('= À régler au gestionnaire', formatMontant(d.aRecevoir), 'cp-decompte__l--total'),
           ].join('');
 
       // Le sort des dépenses non refacturées ne se devine pas : il faut
       // l'écrire, sinon l'écart entre honoraires et marge réelle reste
       // invisible jusqu'au bilan.
       const noteAbsorbees = d.depensesAbsorbees
-        ? `<p class="cp-decompte__note">Le gestionnaire supporte ${formatEuro(d.depensesAbsorbees)} de frais non refacturés : sa marge réelle est de ${formatEuro(d.resultatGestionnaire)}, pas de ${formatEuro(d.honoraires)}.</p>`
+        ? `<p class="cp-decompte__note">Le gestionnaire supporte ${formatMontant(d.depensesAbsorbees)} de frais non refacturés : sa marge réelle est de ${formatMontant(d.resultatGestionnaire)}, pas de ${formatMontant(d.honoraires)}.</p>`
         : '';
       const noteProprio = d.sens === 'facture' && !avance && d.depenses
-        ? `<p class="cp-decompte__note">Le propriétaire règle en plus ${formatEuro(d.depenses)} de frais directement à ses prestataires : il conserve ${formatEuro(d.netProprietaire)}.</p>`
+        ? `<p class="cp-decompte__note">Le propriétaire règle en plus ${formatMontant(d.depenses)} de frais directement à ses prestataires : il conserve ${formatMontant(d.netProprietaire)}.</p>`
         : '';
 
       // Ce que le résumé plié doit porter : de quoi DÉCIDER s'il faut
@@ -450,8 +450,8 @@ Layout.init('comptabilite');
       // en attente derrière un volet fermé.
       const enAttente = getFacturesByProprietaire(o.id).filter(f => f.statut === 'attente').length;
       const montantResume = d.sens === 'reversement'
-        ? `${formatEuro(d.aVerser)} <small>à verser</small>`
-        : `${formatEuro(d.aRecevoir)} <small>à recevoir</small>`;
+        ? `${formatMontant(d.aVerser)} <small>à verser</small>`
+        : `${formatMontant(d.aRecevoir)} <small>à recevoir</small>`;
 
       return `<details class="cp-ownercard" ${ouverts.has(o.id) ? 'open' : ''} data-owner="${o.id}">
         <summary class="cp-ownercard__head">
@@ -471,8 +471,8 @@ Layout.init('comptabilite');
               <span class="cp-contrat__f">
                 <em>Rémunération</em>
                 <b>${o.remuneration === 'commission' ? `Commission ${Math.round((o.commission || 0) * 100)} %`
-                   : o.remuneration === 'forfait' ? `Forfait ${formatEuro(o.forfaitMensuel || 0)}/mois`
-                   : `Commission ${Math.round((o.commission || 0) * 100)} % + forfait ${formatEuro(o.forfaitMensuel || 0)}/mois`}</b>
+                   : o.remuneration === 'forfait' ? `Forfait ${formatMontant(o.forfaitMensuel || 0)}/mois`
+                   : `Commission ${Math.round((o.commission || 0) * 100)} % + forfait ${formatMontant(o.forfaitMensuel || 0)}/mois`}</b>
               </span>
               <span class="cp-contrat__f">
                 <em>Dépenses</em>
@@ -511,8 +511,8 @@ Layout.init('comptabilite');
             <input class="input" type="number" min="0" max="100" step="1" value="${Math.round(o.commission * 100)}" data-rate="${o.id}" aria-label="Taux de commission (%)">
           </div>
           <div class="field" ${(o.remuneration === 'forfait' || o.remuneration === 'mixte') ? '' : 'hidden'}>
-            <label class="field__label">Forfait mensuel (€)</label>
-            <input class="input" type="number" min="0" step="1" value="${o.forfaitMensuel || 0}" data-forfait="${o.id}" aria-label="Forfait mensuel (€)">
+            <label class="field__label">Forfait mensuel (${symboleDevise()})</label>
+            <input class="input" type="number" min="0" step="1" value="${montantSaisie(o.forfaitMensuel || 0)}" data-forfait="${o.id}" aria-label="Forfait mensuel (${symboleDevise()})">
           </div>
         </div>
 
@@ -596,7 +596,7 @@ Layout.init('comptabilite');
       const o = getProprietaire(forfaitInput.dataset.forfait);
       const v = Math.max(0, parseFloat(forfaitInput.value) || 0);
       forfaitInput.value = v;
-      o.forfaitMensuel = v;
+      o.forfaitMensuel = Math.max(0, lireMontantSaisi(v, o.forfaitMensuel));
       saveOyviaState(); renderOwners(); renderSynthese();
       UI.toast(`Forfait mensuel de ${o.societe} mis à jour`);
       return;
@@ -668,7 +668,7 @@ Layout.init('comptabilite');
           <td>${l.nom}</td>
           <td class="text-soft">${o.societe}</td>
           <td>${d.libelle}</td>
-          <td class="num money">${formatEuro(d.montant)}</td>
+          <td class="num money">${formatMontant(d.montant)}</td>
           <td>${facture}</td>
           <td><button class="icon-btn" data-dep-del="${d.id}" aria-label="Supprimer la dépense">${icon('<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/>')}</button></td>
         </tr>`;
@@ -749,10 +749,12 @@ Layout.init('comptabilite');
   document.getElementById('cp-dep-confirm').addEventListener('click', () => {
     const logementId = document.getElementById('cp-f-logement').value;
     const date = document.getElementById('cp-f-date').value;
-    const montant = parseFloat(document.getElementById('cp-f-montant').value);
+    // Champ saisi dans la devise d'affichage, stocké en euros.
+    const montantAffiche = parseFloat(document.getElementById('cp-f-montant').value);
+    const montant = lireMontantSaisi(montantAffiche, null);
     const libelle = document.getElementById('cp-f-libelle').value.trim();
     if (!date) { UI.toast('Choisissez une date', false); return; }
-    if (!montant || montant <= 0) { UI.toast('Indiquez un montant valide', false); return; }
+    if (!montantAffiche || montantAffiche <= 0) { UI.toast('Indiquez un montant valide', false); return; }
     if (!libelle) { UI.toast('Indiquez un libellé', false); return; }
     DEPENSES.push({
       id: 'D' + Date.now(), logementId, date, montant, libelle,

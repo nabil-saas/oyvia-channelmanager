@@ -105,15 +105,16 @@ Layout.init('parametres');
         <p class="eyebrow mb-4">Localisation</p>
 
         <div class="field mb-2">
-          <label class="field__label">Devise par défaut</label>
+          <label class="field__label">Devise</label>
           <select class="select" id="pg-devise">
-            ${opt('MAD', 'MAD — Dirham marocain', g.devise)}
             ${opt('EUR', 'EUR — Euro', g.devise)}
+            ${opt('MAD', 'MAD — Dirham marocain', g.devise)}
             ${opt('USD', 'USD — Dollar américain', g.devise)}
             ${opt('GBP', 'GBP — Livre sterling', g.devise)}
+            ${opt('XOF', 'FCFA — Franc CFA', g.devise)}
           </select>
         </div>
-        <p class="field__hint mb-4">Utilisée pour les séjours manuels et les exports.</p>
+        <p class="field__hint mb-4">S'applique partout : tarifs, réservations, comptabilité, portail propriétaires et abonnement. Vos montants restent enregistrés en euros — la devise choisie sert à l'affichage et à la saisie.</p>
 
         <div class="field mb-4">
           <label class="field__label">Fuseau horaire</label>
@@ -146,10 +147,22 @@ Layout.init('parametres');
       </div>`;
 
     document.getElementById('pg-save-localisation').addEventListener('click', () => {
+      const ancienneDevise = g.devise;
       g.devise = document.getElementById('pg-devise').value;
       g.fuseauHoraire = document.getElementById('pg-fuseau').value;
       g.formatDate = document.getElementById('pg-format-date').value;
       g.premierJourSemaine = document.getElementById('pg-premier-jour').value;
+
+      // Les montants sont rendus au moment où chaque écran se construit : une
+      // page déjà affichée garderait l'ancienne devise. Plutôt que de câbler
+      // un rafraîchissement dans les dix-huit vues concernées, on recharge —
+      // l'état est persisté, donc rien n'est perdu, et TOUT repart juste.
+      if (g.devise !== ancienneDevise) {
+        saveOyviaState();
+        UI.toast(`Devise passée en ${getDevise(g.devise).label} — mise à jour de l'application…`);
+        setTimeout(() => location.reload(), 700);
+        return;
+      }
       UI.toast('Paramètres de localisation mis à jour');
     });
   }

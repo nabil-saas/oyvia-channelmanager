@@ -158,7 +158,7 @@ Layout.init('site');
             <input type="checkbox" data-log="${l.id}" ${on ? 'checked' : ''} />
             <span class="sw-log__thumb" style="background:${l.couleur}">${l.ville.slice(0, 2).toUpperCase()}</span>
             <span class="sw-log__meta"><b>${esc(l.nom)}</b><small>${esc(l.ville)} · ${l.capacite} voyageurs</small></span>
-            <span class="sw-log__prix"><b>${formatEuro(l.tarifBase)}</b><small>/ nuit</small></span>
+            <span class="sw-log__prix"><b>${formatMontant(l.tarifBase)}</b><small>/ nuit</small></span>
           </label>`;
         }).join('')}
       </div>`;
@@ -290,14 +290,14 @@ Layout.init('site');
           <div><b>${nbPub}</b><small>logement${nbPub > 1 ? 's' : ''} publié${nbPub > 1 ? 's' : ''}</small></div>
           <div><b>${S.stats.visites30j.toLocaleString('fr-FR')}</b><small>visites (30 j)</small></div>
           <div><b>${S.stats.demandes30j}</b><small>demandes (30 j)</small></div>
-          <div><b>${formatEuro(st.commissionEvitee)}</b><small>de commission évitée</small></div>
+          <div><b>${formatMontant(st.commissionEvitee)}</b><small>de commission évitée</small></div>
         </div>
         <div class="sw-hero__liens">
           <button class="btn btn--ghost btn--sm" data-wz="rouvrir">Reprendre l'assistant de création</button>
           ${S.statut === 'brouillon' ? '<button class="btn btn--primary btn--sm" data-wz="publier">Publier le site</button>' : ''}
         </div>
         <p class="sw-hero__note">
-          ${st.nombre} réservation${st.nombre > 1 ? 's' : ''} en direct pour ${formatEuro(st.ca)} de chiffre d'affaires.
+          ${st.nombre} réservation${st.nombre > 1 ? 's' : ''} en direct pour ${formatMontant(st.ca)} de chiffre d'affaires.
           La commission évitée est estimée à ${Math.round(COMMISSION_OTA_MOYENNE * 100)} %, taux moyen constaté sur les OTA —
           c'est une hypothèse, pas un montant facturé.
         </p>
@@ -523,10 +523,10 @@ Layout.init('site');
               <span class="sw-log__thumb" style="background:${l.couleur}">${l.ville.slice(0, 2).toUpperCase()}</span>
               <span class="sw-log__meta">
                 <b>${esc(l.nom)}</b>
-                <small>${esc(l.ville)} · ${l.capacite} voyageurs · ${formatEuro(l.tarifBase)} / nuit</small>
+                <small>${esc(l.ville)} · ${l.capacite} voyageurs · ${formatMontant(l.tarifBase)} / nuit</small>
               </span>
               <span class="sw-log__prix">
-                <b>${formatEuro(prixDirect(l))}</b>
+                <b>${formatMontant(prixDirect(l))}</b>
                 <small>en direct</small>
               </span>
             </label>`;
@@ -616,7 +616,7 @@ Layout.init('site');
       const logs = logementsDuSite();
       const moy = logs.length ? Math.round(logs.reduce((s, l) => s + l.tarifBase, 0) / logs.length) : 0;
       h.innerHTML = r.remiseDirecte
-        ? `Nuit moyenne ${formatEuro(moy)} → <b>${formatEuro(Math.round(moy * (1 - r.remiseDirecte / 100)))}</b> en direct. Vous restez gagnant tant que la remise est sous les ${Math.round(COMMISSION_OTA_MOYENNE * 100)} % de commission.`
+        ? `Nuit moyenne ${formatMontant(moy)} → <b>${formatMontant(Math.round(moy * (1 - r.remiseDirecte / 100)))}</b> en direct. Vous restez gagnant tant que la remise est sous les ${Math.round(COMMISSION_OTA_MOYENNE * 100)} % de commission.`
         : `Sans remise, le direct n'a pas d'avantage visible pour le voyageur — mais vous gardez la totalité des ${Math.round(COMMISSION_OTA_MOYENNE * 100)} %.`;
     }
     const m = document.getElementById('sw-mode-hint');

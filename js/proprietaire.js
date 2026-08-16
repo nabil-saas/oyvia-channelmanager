@@ -48,9 +48,9 @@
 
     /* KPIs */
     const KPIS = [
-      { label: 'CA du mois', value: formatEuro(ownerCA), foot: `sur ${biens.length} biens`, ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
-      { label: 'Net propriétaire', value: formatEuro(net),
-        foot: dec.depensesACharge ? `après honoraires et ${formatEuro(dec.depensesACharge)} de frais` : `après honoraires ${formatEuro(commission)}`,
+      { label: 'CA du mois', value: formatMontant(ownerCA), foot: `sur ${biens.length} biens`, ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
+      { label: 'Net propriétaire', value: formatMontant(net),
+        foot: dec.depensesACharge ? `après honoraires et ${formatMontant(dec.depensesACharge)} de frais` : `après honoraires ${formatMontant(commission)}`,
         ic: icon('<path d="M20 6 9 17l-5-5"/>') },
       { label: 'Occupation moyenne', value: avgOcc + ' %', foot: 'ce mois-ci', ic: icon('<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>') },
       { label: 'Réservations à venir', value: upcoming.length, foot: 'sur vos biens', ic: icon('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>') },
@@ -71,9 +71,9 @@
         <td><div class="row gap-3"><span class="op-thumb" style="background:${l.couleur}">${l.ville.slice(0, 2).toUpperCase()}</span>
           <div><b class="fw-semibold">${l.nom}</b><br><small class="text-muted">${l.ville} · ${labelTypeLogement(l.type)}</small></div></div></td>
         <td class="num">${occBien(l)} %</td>
-        <td class="num money">${formatEuro(ca)}</td>
-        <td class="num text-soft">− ${formatEuro(comm)}</td>
-        <td class="num money fw-semibold">${formatEuro(ca - comm)}</td>
+        <td class="num money">${formatMontant(ca)}</td>
+        <td class="num text-soft">− ${formatMontant(comm)}</td>
+        <td class="num money fw-semibold">${formatMontant(ca - comm)}</td>
       </tr>`;
     }).join('');
 
@@ -86,7 +86,7 @@
         <td><span class="badge-canal badge-canal--${r.canal}"><span class="dot"></span>${CANAL_LABEL[r.canal]}</span></td>
         <td class="text-soft">${formatDate(r.arrivee, { jourSemaine: true })}</td>
         <td class="num">${r.nuits}</td>
-        <td class="num money">${formatEuro(r.montant)}</td>
+        <td class="num money">${formatMontant(r.montant)}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="6"><div class="empty"><h4>Aucune réservation à venir</h4></div></td></tr>';
 
@@ -101,8 +101,8 @@
     chartRev = new Chart(ctx, {
       type: 'line',
       data: { labels: STATS.moisLabels, datasets: [{ data: monthlyRev, borderColor: BLUE, backgroundColor: grad, fill: true, tension: 0.4, borderWidth: 3, pointRadius: 3, pointBackgroundColor: BLUE, pointBorderColor: '#fff', pointBorderWidth: 2 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + formatEuro(c.parsed.y) } } },
-        scales: { y: { ticks: { callback: v => (v / 1000).toFixed(0) + 'k€' }, grid: { color: GRID }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + formatMontant(c.parsed.y) } } },
+        scales: { y: { ticks: { callback: v => Math.round(versAffichage(v) / 1000) + 'k' + symboleDevise() }, grid: { color: GRID }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } },
     });
 
     if (chartOcc) chartOcc.destroy();
@@ -115,10 +115,12 @@
 
     /* Relevé CSV */
     document.getElementById('op-releve').onclick = () => {
-      const rows = biens.map(l => { const ca = caBien(l), comm = commBien(ca); return [l.nom, l.ville, occBien(l) + ' %', ca, comm, ca - comm]; });
+      // Colonnes monétaires exportées dans la devise d'affichage, comme à l'écran.
+      const m = v => Math.round(versAffichage(v));
+      const rows = biens.map(l => { const ca = caBien(l), comm = commBien(ca); return [l.nom, l.ville, occBien(l) + ' %', m(ca), m(comm), m(ca - comm)]; });
       rows.push([]);
-      rows.push(['TOTAL', '', avgOcc + ' %', ownerCA, commission, net]);
-      UI.exportCSV(`releve-${o.societe.replace(/\s+/g, '-')}.csv`, ['Bien', 'Ville', 'Occupation', 'CA (€)', 'Commission (€)', 'Net (€)'], rows);
+      rows.push(['TOTAL', '', avgOcc + ' %', m(ownerCA), m(commission), m(net)]);
+      UI.exportCSV(`releve-${o.societe.replace(/\s+/g, '-')}.csv`, ['Bien', 'Ville', 'Occupation', `CA (${symboleDevise()})`, `Commission (${symboleDevise()})`, `Net (${symboleDevise()})`], rows);
     };
   }
 

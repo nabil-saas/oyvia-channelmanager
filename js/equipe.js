@@ -18,7 +18,6 @@ Layout.init('equipe');
           <input class="input" data-f="nom" value="${p.nom}" placeholder="Nom" />
           <select class="select" data-f="role">${ROLES.map(r => `<option ${r === p.role ? 'selected' : ''}>${r}</option>`).join('')}</select>
           <input class="input" data-f="zone" value="${p.zone}" placeholder="Zone" />
-          <input class="input" type="number" min="0" data-f="tarif" value="${p.tarifMenage}" placeholder="Tarif €" />
         </div>
         <div class="mn-teamedit__actions">
           <button class="btn btn--secondary btn--sm" data-cancel>Annuler</button>
@@ -26,9 +25,15 @@ Layout.init('equipe');
         </div>
       </div>`;
     }
+    const s = statsPrestataire(p.id);
     return `<div class="mn-teamrow" data-id="${p.id}">
       <span class="avatar avatar--sm">${p.nom.split(' ').map(m => m[0]).join('').slice(0, 2)}</span>
-      <div class="mn-teamrow__meta"><b>${p.nom}</b><small>${p.role} · ${p.zone} · ${p.tarifMenage ? formatEuro(p.tarifMenage) + ' / ménage' : 'tarif —'}</small></div>
+      <div class="mn-teamrow__meta"><b>${p.nom}</b><small>${p.role} · ${p.zone}</small></div>
+      <div class="eq-charge" title="${s.total} tâche${s.total > 1 ? 's' : ''} assignée${s.total > 1 ? 's' : ''} au total">
+        <b>${s.effectuees}</b>
+        <span>tâche${s.effectuees > 1 ? 's' : ''} effectuée${s.effectuees > 1 ? 's' : ''}</span>
+        ${s.restantes ? `<em>${s.restantes} en cours</em>` : ''}
+      </div>
       <button class="icon-btn" data-edit="${p.id}" aria-label="Modifier">${ICO_EDIT}</button>
       <button class="icon-btn icon-btn--danger" data-del="${p.id}" aria-label="Supprimer">${ICO_DEL}</button>
     </div>`;
@@ -55,7 +60,6 @@ Layout.init('equipe');
       p.nom = nom;
       p.role = row.querySelector('[data-f="role"]').value;
       p.zone = row.querySelector('[data-f="zone"]').value.trim() || '—';
-      p.tarifMenage = parseInt(row.querySelector('[data-f="tarif"]').value, 10) || 0;
       editId = null; renderAll(); UI.toast('Prestataire modifié');
     }
     else if (del) {
@@ -79,7 +83,6 @@ Layout.init('equipe');
       role: document.getElementById('eq-t-role').value,
       zone: document.getElementById('eq-t-zone').value.trim() || '—',
       tel: '+33 6 00 00 00 00',
-      tarifMenage: parseInt(document.getElementById('eq-t-tarif').value, 10) || 0,
     });
     document.getElementById('eq-t-nom').value = '';
     UI.closeAll(); renderAll(); UI.toast('Prestataire ajouté');

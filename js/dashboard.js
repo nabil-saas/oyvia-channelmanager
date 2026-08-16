@@ -75,7 +75,7 @@ Layout.init('dashboard');
       { label: 'Arrivées aujourd\'hui', value: arrivals.length, foot: firstNames(arrivals), ic: icon('<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/>') },
       { label: 'Départs aujourd\'hui', value: departures.length, foot: firstNames(departures), ic: icon('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>') },
       { label: 'Taux d\'occupation', value: m.occ + ' %', foot: m.occFoot, ic: icon('<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>') },
-      { label: 'CA du mois', value: formatEuro(m.ca), foot: m.caFoot, ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
+      { label: 'CA du mois', value: formatMontant(m.ca), foot: m.caFoot, ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
       { label: 'Messages non lus', value: unread, foot: `${convScope.filter(c => c.nonLu > 0).length} conversations à traiter`, ic: icon('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>') },
       { label: 'Ménages à venir', value: menagePending, foot: `dont ${menageToday} prévus aujourd'hui`, ic: icon('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>') },
     ];
@@ -133,7 +133,7 @@ Layout.init('dashboard');
         <td><span class="badge-canal badge-canal--${r.canal}"><span class="dot"></span>${CANAL_LABEL[r.canal]}</span></td>
         <td class="text-soft">${formatDate(r.arrivee, { jourSemaine: true })}</td>
         <td class="num">${r.nuits}</td>
-        <td class="num money">${formatEuro(r.montant)}</td>
+        <td class="num money">${formatMontant(r.montant)}</td>
         <td><span class="badge ${PAY_BADGE[r.paiement]}">${PAIEMENT_LABEL[r.paiement]}</span></td>
       </tr>`;
     }).join('');

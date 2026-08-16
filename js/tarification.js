@@ -91,7 +91,7 @@ Layout.init('tarification');
         <ul class="td-gate__points">
           <li>${ic('<path d="M3 16.5 8 10l4 3.5L21 4"/><path d="M16 4h5v5"/>')}
             <div><b>Un prix par nuit, pas un tarif figé</b>
-            <span>Exemple sur « ${exemple ? exemple.nom : '—'} » : base ${formatEuro(b.base)}, plancher ${formatEuro(b.min)}, plafond ${formatEuro(b.max)}.</span></div></li>
+            <span>Exemple sur « ${exemple ? exemple.nom : '—'} » : base ${formatMontant(b.base)}, plancher ${formatMontant(b.min)}, plafond ${formatMontant(b.max)}.</span></div></li>
           <li>${ic('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>')}
             <div><b>Les nuits orphelines détectées</b>
             <span>Un trou trop court pour votre minimum de séjour est décoté et son minimum assoupli, sinon il reste invendable.</span></div></li>
@@ -134,11 +134,11 @@ Layout.init('tarification');
       kpi('Logements pilotés', `${pilotes}<span class="kpi__sur">/${total}</span>`,
         pilotes === total ? 'Tout le parc est piloté' : `${total - pilotes} encore au prix fixe`,
         '<path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>'),
-      kpi('Prix moyen recommandé', formatEuro(s.prixMoyen),
+      kpi('Prix moyen recommandé', formatMontant(s.prixMoyen),
         `sur ${s.nuits} nuits encore à vendre (30 j)`,
         '<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'),
       kpi('Écart au prix de base', `<span class="${signe}">${pct(s.ecartPct)}</span>`,
-        `base moyenne ${formatEuro(s.baseMoyenne)}`,
+        `base moyenne ${formatMontant(s.baseMoyenne)}`,
         '<path d="M3 16.5 8 10l4 3.5L21 4"/><path d="M16 4h5v5"/>'),
       kpi('Dernière synchronisation', tdDepuis(TARIF_DYNAMIQUE.derniereSync),
         j ? `${TD_STATUT_JOURNAL[j.statut]} — ${j.logements} logements` : '—',
@@ -168,7 +168,7 @@ Layout.init('tarification');
       else if (r.prix > r.base) classes.push('td-cell--haut');
       else if (r.prix < r.base) classes.push('td-cell--bas');
     }
-    const montant = r.reservation && r.reservation.canal === 'bloque' ? '—' : formatEuro(r.prix);
+    const montant = r.reservation && r.reservation.canal === 'bloque' ? '—' : formatMontant(r.prix);
     return `<button type="button" class="${classes.join(' ')}" data-nuit="${l.id}|${date}"
       aria-label="${l.nom}, ${formatDate(date, { annee: true })}, ${montant}">
       <span class="td-cell__prix">${montant}</span>${sup}</button>`;
@@ -206,7 +206,7 @@ Layout.init('tarification');
             <b>${l.nom}</b>
             <span>${erreur
               ? `<span class="text-danger">${erreur}</span>`
-              : `Base ${formatEuro(b.base)} · ${formatEuro(b.min)}–${formatEuro(b.max)}`}</span>
+              : `Base ${formatMontant(b.base)} · ${formatMontant(b.min)}–${formatMontant(b.max)}`}</span>
           </div>
         </div>
         <div class="td-row__cells">${dates.map(d => celluleHTML(l, d)).join('')}</div>
@@ -280,7 +280,7 @@ Layout.init('tarification');
 
     if (r.override) {
       corps += `<div class="td-note td-note--fixe">
-        <b>Prix fixé à la main : ${formatEuro(r.override.prix)}</b>
+        <b>Prix fixé à la main : ${formatMontant(r.override.prix)}</b>
         ${r.override.note ? `<span>${r.override.note}</span>` : ''}
         <span>Il l'emporte sur toutes les règles, y compris le plancher et le plafond.</span>
       </div>`;
@@ -292,20 +292,20 @@ Layout.init('tarification');
         </li>`).join('');
 
       corps += `<div class="td-calc">
-        <div class="td-calc__ligne"><span>Prix de base</span><b>${formatEuro(r.base)}</b></div>
+        <div class="td-calc__ligne"><span>Prix de base</span><b>${formatMontant(r.base)}</b></div>
         <ul class="td-fac">${lignes || '<li class="td-fac__vide">Aucune règle ne s\'applique à cette nuit.</li>'}</ul>
-        <div class="td-calc__ligne td-calc__ligne--brut"><span>Prix calculé</span><b>${formatEuro(r.brut)}</b></div>
+        <div class="td-calc__ligne td-calc__ligne--brut"><span>Prix calculé</span><b>${formatMontant(r.brut)}</b></div>
         ${r.borne ? `<div class="td-calc__borne">
-          Ramené au ${r.borne === 'min' ? 'plancher' : 'plafond'} de ${formatEuro(r.borne === 'min' ? r.min : r.max)} :
+          Ramené au ${r.borne === 'min' ? 'plancher' : 'plafond'} de ${formatMontant(r.borne === 'min' ? r.min : r.max)} :
           vos garde-fous s'appliquent en dernier et l'emportent sur les règles.
         </div>` : ''}
-        <div class="td-calc__total"><span>Prix poussé</span><b>${formatEuro(r.prix)}</b></div>
+        <div class="td-calc__total"><span>Prix poussé</span><b>${formatMontant(r.prix)}</b></div>
       </div>`;
     }
 
     corps += `<div class="td-meta">
-      <div><span>Plancher</span><b>${formatEuro(r.min)}</b></div>
-      <div><span>Plafond</span><b>${formatEuro(r.max)}</b></div>
+      <div><span>Plancher</span><b>${formatMontant(r.min)}</b></div>
+      <div><span>Plafond</span><b>${formatMontant(r.max)}</b></div>
       <div><span>Minimum de nuits</span><b>${r.minNuits}</b></div>
       ${r.tensionPct !== undefined ? `<div><span>Calendrier rempli</span><b>${r.tensionPct} %</b></div>` : ''}
     </div>`;
@@ -318,8 +318,8 @@ Layout.init('tarification');
     }
 
     corps += `<div class="field mt-5">
-      <label class="field__label" for="td-fixe">Fixer le prix de cette nuit (€)</label>
-      <input class="input" type="number" min="0" step="1" id="td-fixe" value="${r.override ? r.override.prix : r.prix}" />
+      <label class="field__label" for="td-fixe">Fixer le prix de cette nuit (${symboleDevise()})</label>
+      <input class="input" type="number" min="0" step="1" id="td-fixe" value="${montantSaisie(r.override ? r.override.prix : r.prix)}" />
       <span class="field__hint">Laissez vide et validez pour revenir au prix calculé.</span>
     </div>
     <div class="field mt-3">
@@ -340,10 +340,11 @@ Layout.init('tarification');
       const note = document.getElementById('td-fixe-note').value.trim();
       if (v === '') { tdRetirerOverride(logementId, date); UI.toast('Prix calculé rétabli'); }
       else {
-        const n = Math.round(Number(v));
+        // Saisi dans la devise d'affichage, stocké en euros.
+        const n = Math.round(versReference(Number(v)));
         if (!isFinite(n) || n <= 0) { UI.toast('Montant invalide', false); return; }
         tdPoserOverride(logementId, date, n, note);
-        UI.toast(`Nuit du ${formatDate(date)} fixée à ${formatEuro(n)}`);
+        UI.toast(`Nuit du ${formatDate(date)} fixée à ${formatMontant(n)}`);
       }
       saveOyviaState(); UI.closeAll(); render();
     });
@@ -375,10 +376,10 @@ Layout.init('tarification');
             <div><b>${l.nom}</b><div class="text-xs text-soft">${l.ville} · minimum ${l.sejour.nuitsMin} nuits</div></div>
           </div>
         </td>
-        <td class="num money">${formatEuro(b.base)}</td>
-        <td class="num money">${formatEuro(b.min)}</td>
-        <td class="num money">${formatEuro(b.max)}</td>
-        <td class="num money">${r ? (r.reservation ? '<span class="text-muted">vendu</span>' : formatEuro(r.prix)) : '<span class="text-muted">—</span>'}</td>
+        <td class="num money">${formatMontant(b.base)}</td>
+        <td class="num money">${formatMontant(b.min)}</td>
+        <td class="num money">${formatMontant(b.max)}</td>
+        <td class="num money">${r ? (r.reservation ? '<span class="text-muted">vendu</span>' : formatMontant(r.prix)) : '<span class="text-muted">—</span>'}</td>
         <td class="num">${s ? `<span class="${ecart > 0 ? 'trend--up' : (ecart < 0 ? 'trend--down' : '')}">${pct(ecart)}</span>` : '<span class="text-muted">—</span>'}</td>
         <td>${erreur && actif ? `<span class="badge badge--danger">${erreur}</span>` : ''}</td>
         <td class="row gap-2" style="justify-content:flex-end">
@@ -435,12 +436,12 @@ Layout.init('tarification');
         de week-end ou de dernière minute ne peut vendre une nuit en dehors de cet intervalle.
       </p>
       <div class="app-grid app-grid--3">
-        <div class="field"><label class="field__label" for="tb-base">Prix de base (€)</label>
-          <input class="input" type="number" min="0" id="tb-base" value="${b.base}" /></div>
-        <div class="field"><label class="field__label" for="tb-min">Plancher (€)</label>
-          <input class="input" type="number" min="0" id="tb-min" value="${b.min}" /></div>
-        <div class="field"><label class="field__label" for="tb-max">Plafond (€)</label>
-          <input class="input" type="number" min="0" id="tb-max" value="${b.max}" /></div>
+        <div class="field"><label class="field__label" for="tb-base">Prix de base (${symboleDevise()})</label>
+          <input class="input" type="number" min="0" id="tb-base" value="${montantSaisie(b.base)}" /></div>
+        <div class="field"><label class="field__label" for="tb-min">Plancher (${symboleDevise()})</label>
+          <input class="input" type="number" min="0" id="tb-min" value="${montantSaisie(b.min)}" /></div>
+        <div class="field"><label class="field__label" for="tb-max">Plafond (${symboleDevise()})</label>
+          <input class="input" type="number" min="0" id="tb-max" value="${montantSaisie(b.max)}" /></div>
       </div>
       <p class="text-xs text-muted mt-4" id="tb-apercu"></p>`;
 
@@ -451,7 +452,7 @@ Layout.init('tarification');
       const el = document.getElementById('tb-apercu');
       if (min > max) { el.innerHTML = '<span class="text-danger">Le plancher dépasse le plafond : rien ne serait envoyé.</span>'; return; }
       if (base < min || base > max) { el.innerHTML = '<span class="text-danger">Le prix de base est hors des bornes.</span>'; return; }
-      el.textContent = `Amplitude de ${formatEuro(max - min)}, soit ${Math.round(((max - min) / base) * 100)} % du prix de base.`;
+      el.textContent = `Amplitude de ${formatMontant(versReference(max - min))}, soit ${Math.round(((max - min) / base) * 100)} % du prix de base.`;
     };
     ['tb-base', 'tb-min', 'tb-max'].forEach(i => document.getElementById(i).addEventListener('input', apercu));
     apercu();
@@ -460,9 +461,10 @@ Layout.init('tarification');
     const frais = ok.cloneNode(true);
     ok.parentNode.replaceChild(frais, ok);
     frais.addEventListener('click', () => {
-      const base = Math.round(Number(document.getElementById('tb-base').value));
-      const min = Math.round(Number(document.getElementById('tb-min').value));
-      const max = Math.round(Number(document.getElementById('tb-max').value));
+      // Saisies dans la devise d'affichage, converties en euros pour le stockage.
+      const base = Math.round(lireMontantSaisi(document.getElementById('tb-base').value, l.tarifBase));
+      const min = Math.round(lireMontantSaisi(document.getElementById('tb-min').value, l.tarifs.min));
+      const max = Math.round(lireMontantSaisi(document.getElementById('tb-max').value, l.tarifs.max));
       if (![base, min, max].every(n => isFinite(n) && n > 0)) { UI.toast('Montants invalides', false); return; }
       if (min > max) { UI.toast('Le plancher doit rester sous le plafond', false); return; }
       if (base < min || base > max) { UI.toast('Le prix de base doit rester entre les bornes', false); return; }

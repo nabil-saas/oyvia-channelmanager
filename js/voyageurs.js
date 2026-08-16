@@ -34,7 +34,7 @@ Layout.init('voyageurs');
         </div></td>
         <td class="text-soft">${v.pays}</td>
         <td class="num">${v.nbSejours}</td>
-        <td class="num money">${formatEuro(v.totalDepense)}</td>
+        <td class="num money">${formatMontant(v.totalDepense)}</td>
         <td class="text-soft">${formatDate(v.dernierSejour, { annee: true })}</td>
         <td class="text-muted" style="text-align:right"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></td>
       </tr>`).join('') ||
@@ -49,7 +49,7 @@ Layout.init('voyageurs');
       return `<div class="app-list__item">
         <span class="chip-canal chip-canal--${r.canal}">${CANAL_LABEL[r.canal]}</span>
         <div class="grow"><b>${l.nom}</b><small>${formatPlage(r.arrivee, r.depart)} · ${r.nuits} nuits</small></div>
-        <span class="money fw-semibold text-sm">${formatEuro(r.montant)}</span>
+        <span class="money fw-semibold text-sm">${formatMontant(r.montant)}</span>
       </div>`;
     }).join('') : '<p class="text-muted text-sm">Aucun séjour enregistré sur cette période.</p>';
 
@@ -64,7 +64,7 @@ Layout.init('voyageurs');
       <div class="panel__body">
         <div class="app-grid app-grid--3" style="gap:var(--sp-3);margin-bottom:var(--sp-4)">
           <div class="kpi"><span class="kpi__label">Séjours</span><span class="kpi__value">${v.nbSejours}</span></div>
-          <div class="kpi"><span class="kpi__label">Dépensé</span><span class="kpi__value" style="font-size:var(--fs-xl)">${formatEuro(v.totalDepense)}</span></div>
+          <div class="kpi"><span class="kpi__label">Dépensé</span><span class="kpi__value" style="font-size:var(--fs-xl)">${formatMontant(v.totalDepense)}</span></div>
           <div class="kpi"><span class="kpi__label">Dernier</span><span class="kpi__value" style="font-size:var(--fs-md)">${formatDate(v.dernierSejour)}</span></div>
         </div>
         <div class="rp-section">

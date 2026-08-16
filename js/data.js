@@ -10,18 +10,88 @@
 
 const AUJOURDHUI = '2026-07-23';
 
-/* ---------- Petits utilitaires de formatage (globaux) ---------- */
-function formatEuro(n, decimales = 0) {
-  if (n === null || n === undefined) return 'Sur devis';
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency', currency: 'EUR',
-    minimumFractionDigits: decimales, maximumFractionDigits: decimales
-  }).format(n);
+/* ---------- Montants & devise (globaux) ------------------------------
+
+   Deux référentiels cohabitent, et il ne faut surtout pas les mélanger :
+
+   - Les données d'EXPLOITATION (tarifs des logements, réservations,
+     dépenses, tâches, factures) sont saisies en euros → DEVISE_REF.
+   - Le catalogue d'ABONNEMENT Oyvia (PLANS) est libellé en MAD, la
+     devise de référence commerciale du produit.
+
+   PARAMETRES_GENERAUX.devise ne modifie aucune donnée stockée : c'est la
+   devise d'AFFICHAGE. Tout ce qui est montré à l'écran est converti
+   depuis son référentiel vers elle, et tout ce qui est saisi refait le
+   chemin inverse avant enregistrement. Les données restent donc dans
+   leur devise d'origine, quoi qu'on affiche.
+
+   Le simulateur de la page d'accueil garde sa propre devise : un visiteur
+   qui compare les offres n'a pas de compte, donc pas de réglage.
+   -------------------------------------------------------------------- */
+const DEVISE_REF = 'EUR';
+
+function deviseAffichee() {
+  return (typeof PARAMETRES_GENERAUX !== 'undefined' && PARAMETRES_GENERAUX.devise) || DEVISE_REF;
 }
-// Tarification landing + abonnement (modèle « prix dégressif par logement géré »)
-function formatMAD(n, decimales = 0) {
+// Taux entre deux devises quelconques, déduits de la table DEVISES (pivot MAD).
+function tauxEntre(depuis, vers) {
+  return getDevise(vers).taux / getDevise(depuis).taux;
+}
+function versAffichage(montantEUR, deviseId = deviseAffichee()) {
+  if (montantEUR === null || montantEUR === undefined) return montantEUR;
+  return montantEUR * tauxEntre(DEVISE_REF, deviseId);
+}
+function versReference(montantAffiche, deviseId = deviseAffichee()) {
+  if (montantAffiche === null || montantAffiche === undefined) return montantAffiche;
+  return montantAffiche * tauxEntre(deviseId, DEVISE_REF);
+}
+
+function _formatDeviseIntl(valeur, deviseId, decimales) {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency', currency: deviseId,
+    // Sans narrowSymbol, le français écrit « 103 $US » et « 82 £GB » : correct
+    // typographiquement, mais inhabituel dans une interface produit.
+    currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: decimales, maximumFractionDigits: decimales
+  }).format(valeur);
+}
+
+// Montant d'exploitation (stocké en euros), rendu dans la devise d'affichage.
+function formatMontant(n, decimales = 0) {
   if (n === null || n === undefined) return 'Sur devis';
-  return n.toLocaleString('fr-FR', { minimumFractionDigits: decimales, maximumFractionDigits: decimales }) + ' MAD';
+  const d = deviseAffichee();
+  return _formatDeviseIntl(versAffichage(n, d), d, decimales);
+}
+
+// Prix d'abonnement (catalogue en MAD), rendu dans la même devise d'affichage.
+function formatPrixAbo(n, decimales = 0) {
+  if (n === null || n === undefined) return 'Sur devis';
+  const d = deviseAffichee();
+  return _formatDeviseIntl(convertirMAD(n, d), d, decimales);
+}
+
+// Symbole seul, pour les libellés de champs : « Tarif de base (€ / nuit) ».
+function symboleDevise(deviseId = deviseAffichee()) { return getDevise(deviseId).symbole; }
+
+// Valeur à pré-remplir dans un <input type="number"> : convertie et arrondie
+// à l'entier, un champ de saisie affichant douze décimales étant inutilisable.
+function montantSaisie(montantEUR, deviseId = deviseAffichee()) {
+  if (montantEUR === null || montantEUR === undefined || montantEUR === '') return '';
+  return Math.round(versAffichage(montantEUR, deviseId));
+}
+
+/* Relecture d'un champ monétaire.
+
+   Si l'utilisateur n'a pas touché à la valeur affichée, on renvoie le montant
+   d'origine INTACT au lieu de le reconvertir. Sans cette précaution, ouvrir
+   puis réenregistrer une fiche dans une devise à fort taux (FCFA, ~652 pour
+   1 €) grignoterait quelques unités à chaque passage, par cumul d'arrondis.
+   On ne reconvertit donc que ce qui a réellement été modifié. */
+function lireMontantSaisi(valeurChamp, montantOrigineEUR, deviseId = deviseAffichee()) {
+  const saisi = parseFloat(valeurChamp);
+  if (!isFinite(saisi)) return montantOrigineEUR == null ? 0 : montantOrigineEUR;
+  if (montantOrigineEUR != null && saisi === montantSaisie(montantOrigineEUR, deviseId)) return montantOrigineEUR;
+  return Math.round(versReference(saisi, deviseId) * 100) / 100;
 }
 const MOIS_COURT = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const MOIS_LONG  = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
@@ -913,8 +983,7 @@ function canauxActifs(l) {
    frais et ses champs obligatoires. `annonceCanal()` refait ce
    chemin dans l'autre sens : à partir du socle et de la connexion,
    il reconstitue l'annonce telle que le voyageur la voit sur la
-   plateforme — et la charge utile brute, avec les noms de champs
-   natifs de l'API, sans traduction.
+   plateforme.
 
    C'est volontairement dérivé et non stocké : une annonce recopiée
    à la main dans data.js serait figée et divergerait du socle dès
@@ -1002,13 +1071,13 @@ function annonceCanal(l, canalId) {
           { k:'Emplacement', v:nd.emplacement }, { k:'Qualité-prix', v:nd.qualitePrix },
         ]},
         { titre: `Prix voyageur · ${devis.nuits} nuits, ${devis.pers} voyageurs`, type:'prix', lignes: [
-          { k:`${devis.nuits} nuits × ${formatEuro(l.tarifBase)}`, v: formatEuro(devis.nuitees) },
-          devis.remise ? { k:'Réduction séjour à la semaine', v:`− ${formatEuro(devis.remise)}`, positif:true } : null,
-          devis.sup ? { k:'Voyageurs supplémentaires', v: formatEuro(devis.sup) } : null,
-          { k:'Frais de ménage', v: formatEuro(devis.menage) },
-          { k:`Frais de service ${m.label}`, v: formatEuro(devis.fraisService) },
-          { k:'Taxes et impôts', v: formatEuro(devis.taxe) },
-        ].filter(Boolean), total: { k:'Total', v: formatEuro(devis.total) } },
+          { k:`${devis.nuits} nuits × ${formatMontant(l.tarifBase)}`, v: formatMontant(devis.nuitees) },
+          devis.remise ? { k:'Réduction séjour à la semaine', v:`− ${formatMontant(devis.remise)}`, positif:true } : null,
+          devis.sup ? { k:'Voyageurs supplémentaires', v: formatMontant(devis.sup) } : null,
+          { k:'Frais de ménage', v: formatMontant(devis.menage) },
+          { k:`Frais de service ${m.label}`, v: formatMontant(devis.fraisService) },
+          { k:'Taxes et impôts', v: formatMontant(devis.taxe) },
+        ].filter(Boolean), total: { k:'Total', v: formatMontant(devis.total) } },
         { titre: 'Arrivée, départ et règlement', type:'paires', paires: [
           { k:'Arrivée',                v:`${s.arrivee}${s.arriveeMax ? ` – ${s.arriveeMax}` : ''}` },
           { k:'Départ',                 v:`avant ${s.depart}` },
@@ -1020,46 +1089,6 @@ function annonceCanal(l, canalId) {
           { k:'Heures de silence',      v:`${r.silenceDebut} – ${r.silenceFin}` },
           { k:"Politique d'annulation", v: pol.label || l.politiqueAnnulation },
         ]},
-      ],
-      brut: [
-        { k: vrbo ? 'propertyId' : 'id',                    v: c.listingId },
-        { k: vrbo ? 'headline' : 'name',                    v: a.titre || l.nom },
-        { k: vrbo ? 'propertyType' : 'property_type',       v: l.type },
-        { k: 'room_type',                                   v: l.typeChambre },
-        { k: vrbo ? 'maxOccupancy' : 'person_capacity',     v: l.capacite },
-        { k: vrbo ? 'bedroomCount' : 'bedrooms',            v: l.chambres },
-        { k: 'beds',                                        v: l.lits },
-        { k: vrbo ? 'bathroomCount' : 'bathrooms',          v: l.sdb },
-        { k: 'square_meters',                               v: l.surface },
-        { k: 'address',                                     v: l.lieu.rue || l.adresse },
-        { k: 'city',                                        v: l.ville },
-        { k: 'zipcode',                                     v: l.lieu.codePostal },
-        { k: 'state',                                       v: l.lieu.region },
-        { k: 'country_code',                                v: 'FR' },
-        { k: 'lat / lng',                                   v: l.lieu.latitude ? `${l.lieu.latitude}, ${l.lieu.longitude}` : null },
-        { k: 'listing_currency',                            v: t.devise },
-        { k: 'listing_price',                               v: l.tarifBase },
-        { k: 'cleaning_fee',                                v: l.menageTarif },
-        { k: 'security_deposit',                            v: t.caution },
-        { k: 'guests_included',                             v: t.personnesIncluses },
-        { k: 'extra_guest_fee',                             v: t.personneSup },
-        { k: 'check_in_time',                               v: s.arrivee },
-        { k: 'check_out_time',                              v: s.depart },
-        { k: vrbo ? 'minStay' : 'min_nights',               v: s.nuitsMin },
-        { k: vrbo ? 'maxStay' : 'max_nights',               v: s.nuitsMax },
-        { k: 'booking_lead_time',                           v: `${s.preavis} d` },
-        { k: 'cancellation_policy_category',                v: l.politiqueAnnulation },
-        { k: 'instant_book',                                v: String(s.reservationInstantanee) },
-        { k: 'amenities',                                   v: `${l.equipements.length} identifiants` },
-        { k: 'photos',                                      v: `${l.photos.length} fichiers` },
-        { k: vrbo ? 'averageRating' : 'star_rating',        v: c.note },
-        { k: vrbo ? 'reviewCount' : 'reviews_count',        v: c.avis },
-        { k: 'is_superhost',                                v: String(!!l.superhote) },
-        { k: 'permit_or_tax_id',                            v: l.conformite.numeroEnregistrement },
-        { k: 'status',                                      v: l.statut === 'publie' ? 'listed' : 'unlisted' },
-        { k: 'host_fee_percent',                            v: `${c.commission} %` },
-        { k: 'listing_url',                                 v: c.url },
-        { k: 'last_sync_at',                                v: c.derniereSynchro },
       ],
     };
   }
@@ -1094,12 +1123,12 @@ function annonceCanal(l, canalId) {
           { k:'Situation géographique',    v: sur10(nd.emplacement) },
         ]},
         { titre: `Prix voyageur · ${devis.nuits} nuits, ${devis.pers} personnes`, type:'prix', lignes: [
-          { k:`${devis.nuits} nuits × ${formatEuro(l.tarifBase)}`, v: formatEuro(devis.nuitees) },
-          devis.remise ? { k:'Réduction longue durée', v:`− ${formatEuro(devis.remise)}`, positif:true } : null,
-          devis.sup ? { k:'Personnes supplémentaires', v: formatEuro(devis.sup) } : null,
-          { k:'Frais de nettoyage', v: formatEuro(devis.menage) },
-          { k:'Taxe de séjour',     v: formatEuro(devis.taxe) },
-        ].filter(Boolean), total: { k:'Prix total', v: formatEuro(devis.total) } },
+          { k:`${devis.nuits} nuits × ${formatMontant(l.tarifBase)}`, v: formatMontant(devis.nuitees) },
+          devis.remise ? { k:'Réduction longue durée', v:`− ${formatMontant(devis.remise)}`, positif:true } : null,
+          devis.sup ? { k:'Personnes supplémentaires', v: formatMontant(devis.sup) } : null,
+          { k:'Frais de nettoyage', v: formatMontant(devis.menage) },
+          { k:'Taxe de séjour',     v: formatMontant(devis.taxe) },
+        ].filter(Boolean), total: { k:'Prix total', v: formatMontant(devis.total) } },
         { titre: 'Conditions', type:'paires', paires: [
           { k:'Arrivée',                  v:`de ${s.arrivee} à ${s.arriveeMax || '00:00'}` },
           { k:'Départ',                   v:`jusqu'à ${s.depart}` },
@@ -1110,47 +1139,9 @@ function annonceCanal(l, canalId) {
           { k:'Lits bébé',                v: oui(r.bebes) },
           { k:'Animaux domestiques',      v: r.animaux ? `Acceptés (${r.animauxMax} max)` : 'Non acceptés' },
           { k:'Fêtes',                    v: r.fetes ? 'Autorisées' : 'Interdites' },
-          { k:'Caution',                  v: t.caution ? formatEuro(t.caution) : 'Aucune' },
+          { k:'Caution',                  v: t.caution ? formatMontant(t.caution) : 'Aucune' },
           { k:'Commission Booking',       v:`${c.commission} %` },
         ]},
-      ],
-      brut: [
-        { k: 'hotel_id',            v: c.listingId },
-        { k: 'hotel_name',          v: `${labelTypeLogement(l.type)} ${l.nom}` },
-        { k: 'room_id',             v: `${c.listingId}-01` },
-        { k: 'room_name',           v: `${labelTypeChambre(l.typeChambre)} — ${l.chambres} ch.` },
-        { k: 'property_type',       v: l.type },
-        { k: 'max_persons',         v: l.capacite },
-        { k: 'nr_bedrooms',         v: l.chambres },
-        { k: 'nr_bathrooms',        v: l.sdb },
-        { k: 'unit_size',           v: l.surface ? `${l.surface} m²` : null },
-        { k: 'address',             v: l.lieu.rue || l.adresse },
-        { k: 'zip',                 v: l.lieu.codePostal },
-        { k: 'city',                v: l.ville },
-        { k: 'countrycode',         v: 'fr' },
-        { k: 'currencycode',        v: t.devise },
-        { k: 'rate',                v: l.tarifBase },
-        { k: 'cleaning_fee',        v: l.menageTarif },
-        { k: 'city_tax',            v: `${t.taxeSejour.montant} (${t.taxeSejour.mode})` },
-        { k: 'checkin_from',        v: s.arrivee },
-        { k: 'checkin_until',       v: s.arriveeMax },
-        { k: 'checkout_until',      v: s.depart },
-        { k: 'min_los',             v: s.nuitsMin },
-        { k: 'max_los',             v: s.nuitsMax },
-        { k: 'cancellation_policy', v: l.politiqueAnnulation },
-        { k: 'smoking',             v: r.fumeurs ? 'allowed' : 'not_allowed' },
-        { k: 'pets_allowed',        v: String(!!r.animaux) },
-        { k: 'children_allowed',    v: String(!!r.enfants) },
-        { k: 'facilities',          v: `${l.equipements.length} identifiants` },
-        { k: 'photos',              v: `${l.photos.length} fichiers` },
-        { k: 'review_score',        v: c.note },
-        { k: 'review_score_word',   v: mentionBooking(c.note) },
-        { k: 'review_nr',           v: c.avis },
-        { k: 'license_number',      v: l.conformite.numeroEnregistrement },
-        { k: 'is_bookable',         v: String(l.statut === 'publie') },
-        { k: 'commission_percent',  v: c.commission },
-        { k: 'hotel_url',           v: c.url },
-        { k: 'last_sync_at',        v: c.derniereSynchro },
       ],
     };
   }
@@ -1181,40 +1172,21 @@ function annonceCanal(l, canalId) {
         { k:'Emplacement', v:nd.emplacement }, { k:'Qualité-prix', v:nd.qualitePrix },
       ]},
       { titre: `Prix voyageur · ${devis.nuits} nuits, ${devis.pers} voyageurs`, type:'prix', lignes: [
-        { k:`${devis.nuits} nuits × ${formatEuro(l.tarifBase)}`, v: formatEuro(devis.nuitees) },
-        devis.remise ? { k:'Remise séjour à la semaine', v:`− ${formatEuro(devis.remise)}`, positif:true } : null,
-        devis.sup ? { k:'Voyageurs supplémentaires', v: formatEuro(devis.sup) } : null,
-        { k:'Forfait ménage', v: formatEuro(devis.menage) },
-        { k:'Taxe de séjour', v: formatEuro(devis.taxe) },
+        { k:`${devis.nuits} nuits × ${formatMontant(l.tarifBase)}`, v: formatMontant(devis.nuitees) },
+        devis.remise ? { k:'Remise séjour à la semaine', v:`− ${formatMontant(devis.remise)}`, positif:true } : null,
+        devis.sup ? { k:'Voyageurs supplémentaires', v: formatMontant(devis.sup) } : null,
+        { k:'Forfait ménage', v: formatMontant(devis.menage) },
+        { k:'Taxe de séjour', v: formatMontant(devis.taxe) },
         { k:'Frais de service', v:'Aucun', positif:true },
-      ].filter(Boolean), total: { k:'Total voyageur', v: formatEuro(devis.total) } },
+      ].filter(Boolean), total: { k:'Total voyageur', v: formatMontant(devis.total) } },
       { titre: 'Conditions affichées', type:'paires', paires: [
         { k:'Arrivée',                v:`à partir de ${s.arrivee}` },
         { k:'Départ',                 v:`avant ${s.depart}` },
         { k:'Nuits minimum',          v:`${s.nuitsMin}` },
         { k:"Politique d'annulation", v: pol.label || l.politiqueAnnulation },
-        { k:'Caution',                v: t.caution ? formatEuro(t.caution) : 'Aucune' },
+        { k:'Caution',                v: t.caution ? formatMontant(t.caution) : 'Aucune' },
         { k:'Commission',             v:'0 % — vous encaissez la totalité' },
       ]},
-    ],
-    brut: [
-      { k: 'slug',            v: (c.url || '').split('/').pop() },
-      { k: 'listing_id',      v: c.listingId },
-      { k: 'titre',           v: a.titre || l.nom },
-      { k: 'type',            v: l.type },
-      { k: 'capacite',        v: l.capacite },
-      { k: 'tarif_base',      v: l.tarifBase },
-      { k: 'frais_menage',    v: l.menageTarif },
-      { k: 'caution',         v: t.caution },
-      { k: 'devise',          v: t.devise },
-      { k: 'arrivee',         v: s.arrivee },
-      { k: 'depart',          v: s.depart },
-      { k: 'nuits_min',       v: s.nuitsMin },
-      { k: 'annulation',      v: l.politiqueAnnulation },
-      { k: 'photos',          v: `${l.photos.length} fichiers` },
-      { k: 'publie',          v: String(l.statut === 'publie') },
-      { k: 'url',             v: c.url },
-      { k: 'derniere_synchro', v: c.derniereSynchro },
     ],
   };
 }
@@ -1438,9 +1410,9 @@ function calculFacture(o, ca, depenses, nbJours = 30) {
 // Résumé d'une ligne de contrat, pour les listes.
 function libelleContrat(o) {
   const remun = o.remuneration === 'forfait'
-    ? `forfait ${formatEuro(o.forfaitMensuel || 0)}/mois`
+    ? `forfait ${formatMontant(o.forfaitMensuel || 0)}/mois`
     : o.remuneration === 'mixte'
-      ? `${Math.round((o.commission || 0) * 100)} % + ${formatEuro(o.forfaitMensuel || 0)}/mois`
+      ? `${Math.round((o.commission || 0) * 100)} % + ${formatMontant(o.forfaitMensuel || 0)}/mois`
       : `${Math.round((o.commission || 0) * 100)} %`;
   return `${ENCAISSEMENT_LABEL[o.encaissement]} · ${remun}`;
 }
@@ -1891,6 +1863,16 @@ function chargePrestataire(prestataireId, date, ignorerTacheId) {
     && t.date === date && t.statut !== 'termine' && t.id !== ignorerTacheId);
 }
 
+// Volume de travail d'un prestataire, toutes dates confondues. `effectuees`
+// est le chiffre qui compte pour juger d'un collaborateur ; `restantes`
+// évite de lire « 0 tâche effectuée » comme « ne fait rien » alors qu'il
+// vient d'arriver et a déjà des interventions au planning.
+function statsPrestataire(prestataireId) {
+  const siennes = TACHES.filter(t => t.prestataireId === prestataireId);
+  const effectuees = siennes.filter(t => t.statut === 'termine').length;
+  return { effectuees, restantes: siennes.length - effectuees, total: siennes.length };
+}
+
 /* ============================================================
    SITE WEB — la vitrine qui alimente les réservations directes
 
@@ -2177,11 +2159,14 @@ function refuserDemande(id, motif) {
    PRESTATAIRES (5) — équipe ménage / maintenance
    ============================================================ */
 const PRESTATAIRES = [
-  { id:'P1', nom:'Sylvie Ménard',  role:'Ménage',      zone:'Lyon',         tel:'+33 6 22 44 11 09', tarifMenage:35 },
-  { id:'P2', nom:'Karim Bouaziz',  role:'Polyvalent',  zone:'Paris',        tel:'+33 6 55 77 22 88', tarifMenage:40 },
-  { id:'P3', nom:'Nadia Lopez',    role:'Ménage',      zone:'Sud-Ouest',    tel:'+33 6 88 33 55 12', tarifMenage:38 },
-  { id:'P4', nom:'Marc Antoine',   role:'Maintenance', zone:'Multi-villes', tel:'+33 6 12 78 90 44', tarifMenage:0 },
-  { id:'P5', nom:'Léna Fritsch',   role:'Ménage',      zone:'Sud-Est',      tel:'+33 6 44 90 11 77', tarifMenage:36 },
+  // Pas de tarif porté par le prestataire : le prix d'une intervention dépend
+  // du bien (un chalet de 5 pièces n'est pas un studio), pas de la personne.
+  // Il se lit donc sur le logement — cf. montantHabituel().
+  { id:'P1', nom:'Sylvie Ménard',  role:'Ménage',      zone:'Lyon',         tel:'+33 6 22 44 11 09' },
+  { id:'P2', nom:'Karim Bouaziz',  role:'Polyvalent',  zone:'Paris',        tel:'+33 6 55 77 22 88' },
+  { id:'P3', nom:'Nadia Lopez',    role:'Ménage',      zone:'Sud-Ouest',    tel:'+33 6 88 33 55 12' },
+  { id:'P4', nom:'Marc Antoine',   role:'Maintenance', zone:'Multi-villes', tel:'+33 6 12 78 90 44' },
+  { id:'P5', nom:'Léna Fritsch',   role:'Ménage',      zone:'Sud-Est',      tel:'+33 6 44 90 11 77' },
 ];
 
 /* ============================================================
@@ -2212,6 +2197,70 @@ const TACHES = [
   { id:'T20', type:'menage',      logementId:'L008', date:'2026-08-01', heure:'11:00', prestataireId:'P3', statut:'a_faire',  montant:50, reservationId:'R26' },
   { id:'T21', type:'menage',      logementId:'L005', date:'2026-08-01', heure:'11:00', prestataireId:'P4', statut:'a_faire',  montant:90, reservationId:'R18' },
   { id:'T22', type:'menage',      logementId:'L001', date:'2026-07-22', heure:'11:00', prestataireId:'P1', statut:'termine',  montant:45, reservationId:'R02' },
+
+  /* --- Historique : interventions déjà réalisées (juin → 21 juillet) ---
+     Sans ce passé, la page Équipe afficherait « 0 tâche effectuée » pour
+     presque tout le monde : le planning ne couvre que la dizaine de jours à
+     venir. Chaque prestataire reste sur sa zone, comme dans le planning. */
+  // P1 — Sylvie Ménard · Lyon (L001, L010)
+  { id:'H01', type:'menage',      logementId:'L001', date:'2026-06-08', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
+  { id:'H02', type:'menage',      logementId:'L010', date:'2026-06-14', heure:'11:30', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
+  { id:'H03', type:'menage',      logementId:'L001', date:'2026-06-21', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
+  { id:'H04', type:'linge',       logementId:'L010', date:'2026-06-25', heure:'09:00', prestataireId:'P1', statut:'termine', montant:15, reservationId:null },
+  { id:'H05', type:'menage',      logementId:'L010', date:'2026-06-28', heure:'11:30', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
+  { id:'H06', type:'menage',      logementId:'L001', date:'2026-07-03', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
+  { id:'H07', type:'checkin',     logementId:'L001', date:'2026-07-03', heure:'16:00', prestataireId:'P1', statut:'termine', montant:20, reservationId:'R01' },
+  { id:'H08', type:'menage',      logementId:'L001', date:'2026-07-07', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:'R01' },
+  { id:'H09', type:'menage',      logementId:'L010', date:'2026-07-12', heure:'11:30', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
+  { id:'H10', type:'menage',      logementId:'L001', date:'2026-07-16', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:'R02' },
+  { id:'H11', type:'linge',       logementId:'L001', date:'2026-07-20', heure:'09:00', prestataireId:'P1', statut:'termine', montant:15, reservationId:null },
+
+  // P2 — Karim Bouaziz · Paris (L002), polyvalent
+  { id:'H12', type:'menage',      logementId:'L002', date:'2026-06-11', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:null },
+  { id:'H13', type:'menage',      logementId:'L002', date:'2026-06-19', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:null },
+  { id:'H14', type:'maintenance', logementId:'L002', date:'2026-06-24', heure:'14:00', prestataireId:'P2', statut:'termine', montant:60, reservationId:null, note:'Remplacement chauffe-eau' },
+  { id:'H15', type:'menage',      logementId:'L002', date:'2026-06-30', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:null },
+  { id:'H16', type:'menage',      logementId:'L002', date:'2026-07-06', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:'R05' },
+  { id:'H17', type:'menage',      logementId:'L002', date:'2026-07-09', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:'R05' },
+  { id:'H18', type:'checkin',     logementId:'L002', date:'2026-07-20', heure:'17:00', prestataireId:'P2', statut:'termine', montant:20, reservationId:'R06' },
+
+  // P3 — Nadia Lopez · Sud-Ouest (L003, L005, L008, L009)
+  { id:'H19', type:'menage',      logementId:'L003', date:'2026-06-06', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:null },
+  { id:'H20', type:'menage',      logementId:'L009', date:'2026-06-13', heure:'11:00', prestataireId:'P3', statut:'termine', montant:38, reservationId:null },
+  { id:'H21', type:'menage',      logementId:'L008', date:'2026-06-17', heure:'12:00', prestataireId:'P3', statut:'termine', montant:50, reservationId:null },
+  { id:'H22', type:'menage',      logementId:'L003', date:'2026-06-22', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:null },
+  { id:'H23', type:'linge',       logementId:'L008', date:'2026-06-26', heure:'09:00', prestataireId:'P3', statut:'termine', montant:15, reservationId:null },
+  { id:'H24', type:'menage',      logementId:'L009', date:'2026-06-29', heure:'11:00', prestataireId:'P3', statut:'termine', montant:38, reservationId:null },
+  { id:'H25', type:'menage',      logementId:'L003', date:'2026-07-01', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:'R09' },
+  { id:'H26', type:'menage',      logementId:'L003', date:'2026-07-05', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:'R09' },
+  { id:'H27', type:'menage',      logementId:'L008', date:'2026-07-08', heure:'12:00', prestataireId:'P3', statut:'termine', montant:50, reservationId:null },
+  { id:'H28', type:'menage',      logementId:'L009', date:'2026-07-13', heure:'11:00', prestataireId:'P3', statut:'termine', montant:38, reservationId:null },
+  { id:'H29', type:'menage',      logementId:'L003', date:'2026-07-18', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:'R10' },
+  { id:'H30', type:'checkin',     logementId:'L009', date:'2026-07-19', heure:'16:30', prestataireId:'P3', statut:'termine', montant:20, reservationId:null },
+  { id:'H31', type:'menage',      logementId:'L008', date:'2026-07-21', heure:'12:00', prestataireId:'P3', statut:'termine', montant:50, reservationId:null },
+
+  // P4 — Marc Antoine · maintenance, toutes villes
+  { id:'H32', type:'maintenance', logementId:'L004', date:'2026-06-10', heure:'10:00', prestataireId:'P4', statut:'termine', montant:120, reservationId:null, note:'Ramonage cheminée' },
+  { id:'H33', type:'maintenance', logementId:'L006', date:'2026-06-16', heure:'14:00', prestataireId:'P4', statut:'termine', montant:80,  reservationId:null, note:'Fuite sous évier' },
+  { id:'H34', type:'maintenance', logementId:'L001', date:'2026-06-23', heure:'09:30', prestataireId:'P4', statut:'termine', montant:65,  reservationId:null, note:'Volet roulant bloqué' },
+  { id:'H35', type:'maintenance', logementId:'L007', date:'2026-07-02', heure:'11:00', prestataireId:'P4', statut:'termine', montant:95,  reservationId:null, note:'Entretien climatisation' },
+  { id:'H36', type:'maintenance', logementId:'L009', date:'2026-07-07', heure:'15:00', prestataireId:'P4', statut:'termine', montant:110, reservationId:null, note:'Remplacement serrure' },
+  { id:'H37', type:'menage',      logementId:'L005', date:'2026-07-11', heure:'11:00', prestataireId:'P4', statut:'termine', montant:90,  reservationId:null },
+  { id:'H38', type:'maintenance', logementId:'L003', date:'2026-07-15', heure:'10:00', prestataireId:'P4', statut:'termine', montant:70,  reservationId:null, note:'Révision lave-vaisselle' },
+  { id:'H39', type:'menage',      logementId:'L005', date:'2026-07-18', heure:'11:00', prestataireId:'P4', statut:'termine', montant:90,  reservationId:'R17' },
+
+  // P5 — Léna Fritsch · Sud-Est (L004, L006, L007)
+  { id:'H40', type:'menage',      logementId:'L006', date:'2026-06-07', heure:'11:00', prestataireId:'P5', statut:'termine', montant:35, reservationId:null },
+  { id:'H41', type:'menage',      logementId:'L007', date:'2026-06-12', heure:'11:00', prestataireId:'P5', statut:'termine', montant:30, reservationId:null },
+  { id:'H42', type:'menage',      logementId:'L004', date:'2026-06-18', heure:'11:00', prestataireId:'P5', statut:'termine', montant:70, reservationId:null },
+  { id:'H43', type:'linge',       logementId:'L007', date:'2026-06-20', heure:'09:00', prestataireId:'P5', statut:'termine', montant:15, reservationId:null },
+  { id:'H44', type:'menage',      logementId:'L006', date:'2026-06-27', heure:'11:00', prestataireId:'P5', statut:'termine', montant:35, reservationId:null },
+  { id:'H45', type:'menage',      logementId:'L007', date:'2026-07-04', heure:'11:00', prestataireId:'P5', statut:'termine', montant:30, reservationId:null },
+  { id:'H46', type:'menage',      logementId:'L004', date:'2026-07-11', heure:'11:00', prestataireId:'P5', statut:'termine', montant:70, reservationId:'R13' },
+  { id:'H47', type:'checkin',     logementId:'L004', date:'2026-07-11', heure:'16:00', prestataireId:'P5', statut:'termine', montant:25, reservationId:'R13' },
+  { id:'H48', type:'menage',      logementId:'L004', date:'2026-07-18', heure:'11:00', prestataireId:'P5', statut:'termine', montant:70, reservationId:'R13' },
+  { id:'H49', type:'menage',      logementId:'L006', date:'2026-07-19', heure:'11:00', prestataireId:'P5', statut:'termine', montant:35, reservationId:null },
+  { id:'H50', type:'menage',      logementId:'L007', date:'2026-07-21', heure:'11:00', prestataireId:'P5', statut:'termine', montant:30, reservationId:null },
 ];
 
 /* ============================================================
@@ -2344,6 +2393,7 @@ const PLANS = [
         { titre:'Messages automatiques',             desc:"Confirmation, avant arrivée, check-out, demande d'avis — envoyés sur Airbnb, Booking, e-mail et WhatsApp" },
         { titre:'Réservations directes sans commission' },
         { titre:'Gestion du ménage et des équipes',  desc:"Tâches automatiques, assignation, check-list mobile" },
+        { titre:'Serrures connectées',               desc:"Nuki, TTLock, Yale et plus de 20 autres marques — codes d'accès créés et révoqués à distance" },
         { titre:'Tableau de bord & statistiques' },
         { titre:'Portail propriétaires' },
         { titre:'Comptabilité' },
@@ -2421,6 +2471,7 @@ const DEVISES = [
   { id:'EUR',  label:'EUR',   symbole:'€',    taux:0.092, avant:false, arrondi:1 },
   { id:'MAD',  label:'MAD',   symbole:'MAD',  taux:1,     avant:false, arrondi:5 },
   { id:'USD',  label:'USD',   symbole:'$',    taux:0.10,  avant:true,  arrondi:1 },
+  { id:'GBP',  label:'GBP',   symbole:'£',    taux:0.079, avant:true,  arrondi:1 },
   { id:'XOF',  label:'FCFA',  symbole:'FCFA', taux:60,    avant:false, arrondi:500 },
 ];
 function getDevise(id) { return DEVISES.find(d => d.id === id) || DEVISES[1]; }
@@ -2495,9 +2546,9 @@ function planTotal(planId, nbLogements) {
 // Il dépend du parc : sans lui, on ne saurait pas quel palier citer.
 function planPrixTexte(planId, nbLogements) {
   const p = getPlan(planId);
-  if (p.unite === 'essai') return { montant:'0 MAD', suffixe:`pendant ${p.essaiJours} jours` };
+  if (p.unite === 'essai') return { montant:formatPrixAbo(0), suffixe:`pendant ${p.essaiJours} jours` };
   if (p.unite === 'devis') return { montant:'Sur devis', suffixe:`au-delà de ${PARC_MAX_CATALOGUE} logements` };
-  return { montant:formatMAD(prixParLogement(planId, nbLogements)), suffixe:'par logement et par mois' };
+  return { montant:formatPrixAbo(prixParLogement(planId, nbLogements)), suffixe:'par logement et par mois' };
 }
 
 /* Une offre est-elle proposable pour ce nombre de logements ?
@@ -3579,8 +3630,10 @@ function getPrestataire(id) { return PRESTATAIRES.find(p => p.id === id) || null
 function montantHabituel(logementId, type, prestataireId) {
   const passees = TACHES.filter(t => t.logementId === logementId && t.type === type && t.montant > 0);
   if (passees.length) return passees[passees.length - 1].montant;
-  const p = getPrestataire(prestataireId);
-  return type === 'menage' && p ? p.tarifMenage : 0;
+  // À défaut d'historique, on prend le forfait ménage du logement plutôt
+  // qu'un tarif attaché au prestataire : c'est le bien qui détermine le prix.
+  const l = getLogement(logementId);
+  return type === 'menage' && l ? (l.menageTarif || 0) : 0;
 }
 
 /* ---------- Date proposée ----------
@@ -3832,7 +3885,9 @@ const VIVI_FAQ = [
    (page Paramètres > Général)
    ============================================================ */
 const PARAMETRES_GENERAUX = {
-  devise:'MAD',
+  // Les données de démonstration sont des biens français tarifés en euros :
+  // c'est aussi DEVISE_REF, donc l'app s'ouvre sans conversion.
+  devise:'EUR',
   fuseauHoraire:'Europe/Paris',
   formatDate:'dd/MM/yyyy',
   premierJourSemaine:'lundi',

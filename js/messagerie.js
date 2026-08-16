@@ -288,7 +288,7 @@ Layout.init('messagerie');
       </div>
       <p class="msg-tache__cible">
         ${TACHE_LABEL[prop.tache.type] || prop.tache.type} · <b>${l.nom}</b> ·
-        ${formatDate(prop.tache.date)} à ${prop.tache.heure}${prest ? ` · ${prest.nom}` : ' · à assigner'}${prop.tache.montant ? ` · ${formatEuro(prop.tache.montant)}` : ''}
+        ${formatDate(prop.tache.date)} à ${prop.tache.heure}${prest ? ` · ${prest.nom}` : ' · à assigner'}${prop.tache.montant ? ` · ${formatMontant(prop.tache.montant)}` : ''}
       </p>
       ${enEdition ? `
         <div class="msg-tache__grid">
@@ -428,7 +428,7 @@ Layout.init('messagerie');
       <div class="rp-row"><span>Séjour</span><span>${formatPlage(r.arrivee, r.depart)}</span></div>
       <div class="rp-row"><span>Nuits</span><span>${r.nuits}</span></div>
       <div class="rp-row"><span>Voyageurs</span><span>${r.pers}</span></div>
-      <div class="rp-row"><span>Montant</span><span class="fw-semibold">${formatEuro(r.montant)}</span></div>
+      <div class="rp-row"><span>Montant</span><span class="fw-semibold">${formatMontant(r.montant)}</span></div>
       <div class="rp-row"><span>Paiement</span><span><span class="badge ${PAY_BADGE[r.paiement]}">${PAIEMENT_LABEL[r.paiement]}</span></span></div>
       <hr class="divider" style="margin:var(--sp-4) 0;">
       <p class="eyebrow mb-2">Accès</p>

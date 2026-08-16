@@ -15,7 +15,7 @@
    parc-là plutôt qu'un prix unitaire à multiplier de tête.
    ============================================================ */
 (function () {
-  // formatMAD(), PLANS, planTotal(), planPrixTexte(), planEligible(),
+  // formatPrixAbo(), PLANS, planTotal(), planPrixTexte(), planEligible(),
   // planRecommande(), planGroupes() et getPlan() viennent de data.js.
 
   const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
