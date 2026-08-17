@@ -99,7 +99,6 @@ Layout.init('menage');
         ${spanBadge}
       </div>
       <div class="mn-task__prest"><select class="select" data-assign="${t.id}">${options}</select></div>
-      <span class="mn-task__amount">${t.montant ? formatMontant(t.montant) : '—'}</span>
       <div class="mn-task__status"><span class="badge ${STATUT_BADGE[t.statut]} mn-statusbtn" data-status="${t.id}" title="Cliquer pour changer">${STATUT_TXT[t.statut]}</span></div>
       <button class="icon-btn icon-btn--danger" data-del="${t.id}" title="Supprimer cette tâche" aria-label="Supprimer la tâche ${TACHE_LABEL[t.type]} du ${formatDate(t.date)}">
         ${icon('<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6"/><path d="M10 11v6M14 11v6"/>')}
@@ -245,7 +244,6 @@ Layout.init('menage');
       heure: document.getElementById('mn-f-heure').value || '11:00',
       prestataireId: document.getElementById('mn-f-prest').value,
       statut: 'a_faire',
-      montant: 0,
       reservationId: found ? found.r.id : null,
     });
     UI.closeAll(); render(); UI.toast('Tâche créée');

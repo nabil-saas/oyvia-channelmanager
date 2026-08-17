@@ -336,11 +336,14 @@ Layout.init('logements');
           ${row('Voyageurs inclus', t.personnesIncluses)}
           ${row('Personne supplémentaire', t.personneSup ? `${formatMontant(t.personneSup)} / nuit` : 'Sans supplément')}
           ${row('Tarification dynamique', tdPilote(l)
-            ? `<span class="badge badge--positive">${t.dynamique.source}</span>`
+            // Le nom vient du moteur réellement en service, jamais d'une
+            // valeur figée sur la fiche : afficher « PriceLabs » alors que
+            // c'est Oyvia qui calcule laisserait croire l'inverse.
+            ? `<span class="badge badge--positive">${tdMoteur().nom}</span>`
             : (t.dynamique.actif
-              // Activée sur la fiche mais passerelle débranchée : afficher
-              // « PriceLabs » laisserait croire que des prix partent.
-              ? '<span class="badge badge--warning">En attente de connexion</span>'
+              // Activée sur la fiche mais aucun moteur choisi : nommer une
+              // plateforme laisserait croire que des prix partent.
+              ? '<span class="badge badge--warning">En attente d\'un moteur</span>'
               : '<span class="badge badge--neutral">Désactivée</span>'))}
           ${row('Bornes du tarif', t.min && t.max ? `${formatMontant(t.min)} — ${formatMontant(t.max)}` : vide)}
         </div>

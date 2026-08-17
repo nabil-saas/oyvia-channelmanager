@@ -102,7 +102,17 @@
 /* Carte KPI */
 .kpi { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl); box-shadow: var(--shadow-sm); padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-2); position: relative; }
 .kpi__label { font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); padding-right: 44px; min-height: 15px; }
-.kpi__value { font-size: var(--fs-2xl); font-weight: var(--fw-bold); line-height: 1; letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; }
+/* La taille s'adapte à la place disponible : un compteur affiche « 34 600 € »
+   en euros mais « 22 565 217 F CFA » en francs CFA, qui débordait de la carte.
+   clamp() garde la pleine taille quand la valeur tient et la réduit juste ce
+   qu'il faut sur les devises à gros nombres ; `anywhere` sert de dernier
+   recours plutôt que de laisser le texte sortir de sa boîte. */
+.kpi__value { font-size: clamp(var(--fs-lg), 2.1vw, var(--fs-2xl)); font-weight: var(--fw-bold); line-height: 1.15;
+  letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums;
+  /* Même réserve que le libellé pour l'icône en haut à droite, sinon la
+     valeur passe dessous. Coupure aux espaces uniquement : « anywhere »
+     tronçonnait « F CFA » en « F C » + « FA ». */
+  padding-right: 44px; }
 .kpi__foot  { font-size: var(--fs-xs); color: var(--c-text-soft); display: flex; align-items: center; gap: var(--sp-1); }
 .kpi__icon  { position: absolute; top: var(--sp-5); right: var(--sp-5); width: 38px; height: 38px; border-radius: var(--r-md); display: grid; place-items: center; background: var(--c-accent-soft); color: var(--c-accent); }
 .kpi__icon svg { width: 19px; height: 19px; }

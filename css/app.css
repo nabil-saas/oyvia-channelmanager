@@ -273,25 +273,17 @@
   .ab-hist__row span:nth-child(2), .ab-hist__row span:nth-child(3) { grid-column: 1; font-size: var(--fs-xs); color: var(--c-text-muted); }
 }
 
-/* Comparatif des offres (Abonnement > Changer d'offre) */
-.ab-plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); align-items: stretch; }
-.ab-plan { display: flex; flex-direction: column; border: 1px solid var(--c-border); border-radius: var(--r-xl); padding: var(--sp-4); background: var(--c-surface); }
-.ab-plan.is-current { border-color: var(--blue-600); background: var(--c-accent-soft); }
-.ab-plan__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); }
-.ab-plan__top b { font-size: var(--fs-md); font-weight: var(--fw-bold); }
-.ab-plan__top > span { text-align: right; font-size: var(--fs-sm); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; color: var(--blue-600); white-space: nowrap; }
-.ab-plan__top small { display: block; font-size: 10px; font-weight: var(--fw-regular); color: var(--c-text-muted); white-space: normal; }
-.ab-plan__total { margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--c-text-soft); }
-.ab-plan__feats { margin-top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
-.ab-plan__feats li { font-size: var(--fs-xs); color: var(--c-text-soft); padding-left: var(--sp-4); position: relative; }
-.ab-plan__feats li::before { content: "✓"; position: absolute; left: 0; color: var(--c-accent); font-weight: var(--fw-bold); }
-/* Intertitre de groupe : pas de coche, c'est un libellé de section */
-.ab-plan__group { font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); margin-top: var(--sp-2); }
-.ab-plan__group::before { content: none !important; }
-.ab-plan__feats em { display: block; font-style: normal; color: var(--c-text-muted); margin-top: 2px; }
-.ab-plan__action { margin-top: auto; padding-top: var(--sp-4); }
-@media (max-width: 900px) { .ab-plans { grid-template-columns: 1fr; } }
-@media (max-width: 620px) { .ab-plans { grid-template-columns: 1fr; } }
+/* Changer d'offre (Abonnement) — la grille des offres a été retirée : ne
+   reste que le contact du support, qui devient donc une carte à part entière
+   et non plus un encart posé sous des cartes. */
+.ab-support { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-5); flex-wrap: wrap;
+  padding: var(--sp-6); background: var(--c-surface);
+  border: 1px solid var(--c-border); border-radius: var(--r-xl); box-shadow: var(--shadow-sm); }
+.ab-support__txt { min-width: 0; flex: 1 1 320px; }
+.ab-support__txt b { display: block; font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); }
+.ab-support__txt p { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-soft); max-width: 62ch; }
+.ab-support__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; flex-shrink: 0; }
+.ab-support__actions .btn svg { width: 17px; height: 17px; }
 
 /* ============================================================
    STATISTIQUES  (.st-)
@@ -346,14 +338,12 @@
 .mn-task__time--continuation svg { width: 17px; height: 17px; }
 .mn-task__prest { width: 190px; flex-shrink: 0; }
 .mn-task__prest .select { height: 36px; font-size: var(--fs-sm); }
-.mn-task__amount { width: 64px; text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); font-size: var(--fs-sm); flex-shrink: 0; }
 .mn-task__status { width: 118px; flex-shrink: 0; display: flex; justify-content: flex-end; }
 @media (max-width: 640px) {
-  /* Sans ce wrap, les 5 colonnes à largeur fixe dépassent le viewport et
+  /* Sans ce wrap, les colonnes à largeur fixe dépassent le viewport et
      provoquent un scroll horizontal sur toute la page. */
   .mn-task { flex-wrap: wrap; row-gap: var(--sp-3); }
   .mn-task__prest { flex: 1 1 100%; width: auto; order: 1; }
-  .mn-task__amount { order: 2; }
   /* La corbeille suit le statut sur la même ligne : c'est « margin-left:auto »
      qui pousse le groupe à droite, il passe donc du statut au bouton. */
   .mn-task__status { order: 3; margin-left: auto; }
@@ -526,6 +516,17 @@
 
 /* Pastille du canal dans la barre d'onglets */
 .lg-tabcanal { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+
+/* Moteur de tarification en service, dans l'en-tête de la page : sans lui, on
+   ne sait plus qui calcule les prix une fois le choix fait — l'information ne
+   vivait que dans le sous-titre, en prose. */
+.td-moteur-actif { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 5px var(--sp-3) 5px 5px;
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-full); white-space: nowrap; }
+.td-moteur-actif__pastille { display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--r-full);
+  background: var(--c-accent); color: #fff; font-style: normal; font-weight: var(--fw-bold); font-size: var(--fs-xs); flex-shrink: 0; }
+.td-moteur-actif__pastille[data-externe] { background: var(--ink-600); }
+.td-moteur-actif small { display: block; font-size: 10px; line-height: 1.1; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.td-moteur-actif b { display: block; font-size: var(--fs-sm); line-height: 1.2; }
 
 /* Annonce telle qu'elle existe chez la plateforme  (.ota-) */
 .ota-head { display: flex; gap: var(--sp-4); align-items: flex-start; padding: var(--sp-5); margin-bottom: var(--sp-4); background: var(--c-surface); border: 1px solid var(--c-border); border-top: 3px solid var(--ota, var(--c-accent)); border-radius: var(--r-lg); }
@@ -1158,24 +1159,44 @@
    TARIFICATION DYNAMIQUE (Intégrations)
    ============================================================ */
 
-/* --- Écran d'accroche : passerelle non connectée --- */
-.td-gate { display: grid; grid-template-columns: 1.15fr 1fr; gap: 0; overflow: hidden; }
-.td-gate__main { padding: var(--sp-8); }
-.td-gate__logo { display: grid; place-items: center; width: 46px; height: 46px; border-radius: var(--r-lg);
-  background: var(--ch-pricelabs); color: #fff; font-weight: var(--fw-bold); font-size: var(--fs-lg); margin-bottom: var(--sp-4); }
-.td-gate__main h2 { font-size: var(--fs-xl); letter-spacing: var(--tracking-tight); margin-bottom: var(--sp-3); }
-.td-gate__main p { line-height: var(--lh-base); max-width: 54ch; }
-.td-gate__actions { display: flex; gap: var(--sp-3); align-items: center; flex-wrap: wrap; margin-top: var(--sp-6); }
-.td-gate__points { background: var(--c-surface-alt); border-left: 1px solid var(--c-border);
-  padding: var(--sp-8) var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-5); justify-content: center; }
-.td-gate__points li { display: flex; gap: var(--sp-3); align-items: flex-start; }
-.td-gate__points svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--ch-pricelabs); margin-top: 2px; }
-.td-gate__points b { display: block; font-size: var(--fs-sm); }
-.td-gate__points span { display: block; font-size: var(--fs-xs); color: var(--c-text-soft); line-height: var(--lh-snug); margin-top: 2px; }
+/* --- Écran de choix du moteur de tarification --- */
+.td-choix { display: grid; gap: var(--sp-4); }
+.td-choix__intro h2 { font-size: var(--fs-xl); letter-spacing: var(--tracking-tight); margin-bottom: var(--sp-2); }
+.td-choix__intro p { line-height: var(--lh-base); max-width: 76ch; }
+
+.td-moteur { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
+.td-moteur--interne { padding: var(--sp-6); border-color: var(--c-accent); box-shadow: var(--shadow-sm); }
+.td-moteur__head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.td-moteur__head b { display: block; font-size: var(--fs-lg); }
+.td-moteur__head small { display: block; font-size: var(--fs-sm); color: var(--c-text-soft); }
+.td-moteur__logo { display: grid; place-items: center; width: 46px; height: 46px; border-radius: var(--r-lg);
+  background: var(--c-accent); color: #fff; font-weight: var(--fw-bold); font-size: var(--fs-lg); flex-shrink: 0; }
+.td-moteur__logo--sm { width: 36px; height: 36px; font-size: var(--fs-base); background: var(--ink-600); }
+.td-moteur__points { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-5);
+  margin: var(--sp-5) 0; padding: var(--sp-5) 0; border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border); }
+.td-moteur__points li { display: flex; gap: var(--sp-3); align-items: flex-start; }
+.td-moteur__points svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--c-accent); margin-top: 2px; }
+.td-moteur__points b { display: block; font-size: var(--fs-sm); }
+.td-moteur__points span { display: block; font-size: var(--fs-xs); color: var(--c-text-soft); line-height: var(--lh-snug); margin-top: 2px; }
+
+.td-choix__externes { background: var(--c-surface-alt); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-5); }
+.td-moteur--externe { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-2); }
+.td-moteur--externe b { display: block; font-size: var(--fs-sm); }
+.td-moteur--externe small { display: block; font-size: var(--fs-xs); color: var(--c-text-soft); }
+
+/* Bandeau « règles gérées chez la plateforme » */
+.td-externe { border-left: 3px solid var(--c-accent); }
+.td-externe b { font-size: var(--fs-sm); }
+
+/* Aperçu chiffré de la grille de durée */
+.td-apercu { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--sp-2); }
+.td-apercu li { background: var(--bg-subtle); border: 1px solid var(--c-border); border-radius: var(--r-md); padding: var(--sp-3); text-align: center; }
+.td-apercu span { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.td-apercu b { display: block; font-size: var(--fs-lg); font-weight: var(--fw-semibold); margin-top: 2px; }
+.td-apercu small { font-size: var(--fs-xs); color: var(--c-text-muted); }
+
 @media (max-width: 900px) {
-  .td-gate { grid-template-columns: 1fr; }
-  .td-gate__main { padding: var(--sp-6); }
-  .td-gate__points { border-left: 0; border-top: 1px solid var(--c-border); padding: var(--sp-6); }
+  .td-moteur__points { grid-template-columns: 1fr; gap: var(--sp-4); }
 }
 
 /* Le « /5 » du compteur ne doit pas peser autant que le chiffre lui-même */
@@ -1209,9 +1230,15 @@
 
 .td-cell { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px; min-height: 52px; padding: var(--sp-2) 2px; border-left: 1px solid var(--c-border);
-  background: var(--c-surface); transition: background var(--t-fast), box-shadow var(--t-fast); cursor: pointer; }
+  background: var(--c-surface); transition: background var(--t-fast), box-shadow var(--t-fast); cursor: pointer;
+  /* Garde-fou : sans ces deux lignes, un montant trop long pour sa colonne
+     déborde sur les cases voisines au lieu d'être rogné, et toute la ligne
+     devient illisible. Le nombre de colonnes s'adapte déjà à la devise
+     (cf. nbJours), ceci n'est que le filet en cas de cas extrême. */
+  overflow: hidden; min-width: 0; }
 .td-cell:hover { box-shadow: inset 0 0 0 2px var(--c-accent); z-index: 2; }
-.td-cell__prix { font-size: var(--fs-sm); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; line-height: 1; }
+.td-cell__prix { font-size: var(--fs-sm); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; line-height: 1;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .td-cell__tag { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; font-weight: var(--fw-semibold);
   line-height: 1; opacity: .85; }
 
@@ -1219,7 +1246,6 @@
 .td-cell--bas      { background: var(--blue-50);   color: var(--c-accent-ink); }
 .td-cell--plancher { background: var(--red-100);   color: var(--c-danger-ink); }
 .td-cell--plafond  { background: var(--amber-100); color: var(--c-warning-ink); }
-.td-cell--orphelin { background: var(--ch-pricelabs-soft); color: var(--ch-pricelabs-ink); }
 .td-cell--fixe     { background: var(--ink-100);   color: var(--ink-800); box-shadow: inset 0 0 0 1px var(--ink-300); }
 /* Une nuit vendue n'est plus pilotée : elle doit se lire comme inerte,
    sinon on croit que le moteur agit encore dessus. */
@@ -1235,7 +1261,6 @@
 .td-dot--bas { background: var(--blue-50); box-shadow: inset 0 0 0 1px var(--c-accent); }
 .td-dot--plancher { background: var(--red-100); box-shadow: inset 0 0 0 1px var(--c-danger); }
 .td-dot--plafond { background: var(--amber-100); box-shadow: inset 0 0 0 1px var(--c-warning); }
-.td-dot--orphelin { background: var(--ch-pricelabs-soft); box-shadow: inset 0 0 0 1px var(--ch-pricelabs); }
 .td-dot--fixe { background: var(--ink-100); box-shadow: inset 0 0 0 1px var(--ink-400); }
 .td-dot--vendu { background: repeating-linear-gradient(135deg, var(--ink-50) 0 3px, var(--ink-200) 3px 6px); box-shadow: inset 0 0 0 1px var(--ink-300); }
 
@@ -1282,24 +1307,27 @@
 .td-note span { display: block; margin-top: 2px; }
 .td-note--info { background: var(--ink-50); color: var(--c-text-soft); border: 1px solid var(--c-border); }
 .td-note--fixe { background: var(--c-accent-soft); color: var(--c-accent-ink); }
-.td-note--orphelin { background: var(--ch-pricelabs-soft); color: var(--ch-pricelabs-ink); margin-top: var(--sp-4); margin-bottom: 0; }
 
 /* --- Onglet Règles --- */
 .td-regles { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: var(--sp-4); align-items: start; }
 .td-regle .card__title { font-size: var(--fs-md); }
 .td-pcts { display: grid; gap: var(--sp-2); }
-.td-pcts--12 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.td-pcts--7  { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+/* Les cartes de règles font ~340 px : au-delà de 4 colonnes, le nombre saisi
+   est rogné (« 25 » devenait « 2E »). On préfère plusieurs rangées lisibles
+   à une seule rangée illisible. */
+.td-pcts--12 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.td-pcts--7  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.td-pcts--5  { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .td-pcts--4  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .td-pct { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .td-pct > span { font-size: 11px; color: var(--c-text-muted); text-align: center; text-transform: capitalize; }
-.input--pct { height: 34px; padding: 0 var(--sp-2); text-align: center; font-size: var(--fs-sm);
+.input--pct { height: 34px; padding: 0 4px; text-align: center; font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums; width: 100%; }
 .td-liste { font-size: var(--fs-sm); color: var(--c-text-soft); line-height: var(--lh-base); }
 .td-liste li { position: relative; padding-left: var(--sp-4); }
 .td-liste li::before { content: ''; position: absolute; left: 0; top: 9px; width: 5px; height: 5px;
   border-radius: var(--r-full); background: var(--c-border-strong); }
-@media (max-width: 560px) { .td-pcts--12 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .td-pcts--12, .td-pcts--7, .td-pcts--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* ============================================================
    AVIS

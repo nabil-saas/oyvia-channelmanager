@@ -133,7 +133,7 @@ Layout.init('calendrier');
         <div class="cal-tt__row"><span>Quand</span><span>${quand}</span></div>
         <div class="cal-tt__row"><span>Prestataire</span><span>${p ? p.nom : '—'}</span></div>
         <div class="cal-tt__row"><span>Statut</span><span>${stLabel}</span></div>
-        ${t.montant ? `<div class="cal-tt__row"><span>Montant</span><span>${formatMontant(t.montant)}</span></div>` : ''}`;
+`;
       tt.classList.add('is-open');
       return;
     }
@@ -224,7 +224,7 @@ Layout.init('calendrier');
         id: 'T' + Date.now() + i, type: 'maintenance',
         logementId: logId, date: from, dateFin,
         heure: '10:00',
-        prestataireId, statut: 'a_faire', montant: 0,
+        prestataireId, statut: 'a_faire',
         reservationId: blockId, note: motif,
       });
     });

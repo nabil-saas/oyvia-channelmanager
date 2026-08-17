@@ -1,7 +1,8 @@
 /* ============================================================
-   OYVIA — Abonnement : offre en cours, comparatif, options, historique
+   OYVIA — Abonnement : offre en cours, contact support, historique
    Modèle : 4 offres (PLANS dans js/data.js), les mêmes que la landing.
-     · Découverte → essai de 15 jours, 5 logements
+     · Gratuit    → création de compte, découverte de la plateforme
+     · Découverte → ~1 €/logement/mois, 2 logements, 6 mois
      · Smart / Business → grille dégressive × nombre de logements gérés
      · Entreprise → sur devis au-delà du catalogue
    L'offre du compte est COMPTE.plan ; on peut en changer depuis cette
@@ -12,6 +13,7 @@ Layout.init('abonnement');
 
 (function () {
   const nbLog = COMPTE.nbLogements;
+  const ICO_WA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2z"/><path d="M8.6 8.2c.2-.4.4-.4.6-.4h.5c.2 0 .4 0 .6.4l.8 1.8c.1.2 0 .4-.1.6l-.4.4c-.1.2-.2.3 0 .5a6 6 0 0 0 2.9 2.6c.2.1.4 0 .5-.1l.5-.6c.2-.2.3-.2.5-.1l1.7.8c.2.1.3.2.3.4 0 .5-.2 1.2-.8 1.6-.5.3-1.4.5-2.4.2a9.6 9.6 0 0 1-5.5-5.3c-.4-1-.2-1.9.1-2.4z"/></svg>';
   const moisCourant = HISTORIQUE_FACTURATION[HISTORIQUE_FACTURATION.length - 1];
 
   function renderHero() {
@@ -41,49 +43,41 @@ Layout.init('abonnement');
       <p class="text-xs text-muted" style="margin-top:var(--sp-2)">Sans engagement, résiliable à tout moment. Aucune option facturée en plus : l'intégration WhatsApp est comprise dans votre offre.</p>`;
   }
 
-  /* ---------- Comparatif des offres, avec changement d'offre ---------- */
-  function renderPlans() {
-    const zone = document.getElementById('ab-plans');
+  /* ---------- Changer d'offre : contact du support ----------
+     La grille des offres a été retirée de cette page : l'hôte connaît déjà
+     la sienne (rappelée en tête), et le comparatif complet vit sur la
+     landing. Ne reste donc que l'action utile — joindre l'équipe.
+
+     Deux chemins volontairement : WhatsApp pour qui veut une réponse tout de
+     suite, formulaire pour qui préfère cadrer sa demande. Le message est
+     pré-rempli avec l'offre en cours et la taille du parc — sans quoi
+     l'échange commence par trois questions que nous connaissons déjà. */
+  function messagePreRempli(cible) {
+    const actuel = getPlan(COMPTE.plan);
+    return `Bonjour, je suis ${UTILISATEUR.nom} (${COMPTE.societe}). `
+         + `Je suis actuellement en offre ${actuel.nom} avec ${nbLog} logement${nbLog > 1 ? 's' : ''}. `
+         + (cible ? `Je souhaite passer en offre ${cible}. ` : `Je souhaite faire évoluer mon offre. `)
+         + `Pouvez-vous m'accompagner ?`;
+  }
+
+  function renderContactSupport() {
+    const zone = document.getElementById('ab-support');
     if (!zone) return;
-    const actuel = COMPTE.plan;
+    zone.innerHTML = `
+      <div class="ab-support">
+        <div class="ab-support__txt">
+          <b>Vous souhaitez changer d'offre ?</b>
+          <p>Notre équipe s'en occupe avec vous : ajustement du parc, bascule de facturation et reprise de vos données. ${SUPPORT_OYVIA.delaiReponse}.</p>
+        </div>
+        <div class="ab-support__actions">
+          <a class="btn btn--primary" id="ab-wa" href="${lienWhatsAppSupport(messagePreRempli(null))}" target="_blank" rel="noopener">
+            ${ICO_WA} Écrire sur WhatsApp
+          </a>
+          <button type="button" class="btn btn--secondary" id="ab-form-open">Remplir le formulaire</button>
+        </div>
+      </div>`;
 
-    zone.innerHTML = PLANS.map(p => {
-      const prix = planPrixTexte(p.id, nbLog);
-      const isActuel = p.id === actuel;
-      const dispo = planEligible(p.id, nbLog);
-
-      // Même découpage par groupes que la landing, mais sans les descriptions :
-      // la carte est deux fois plus étroite ici.
-      const feats = planGroupes(p.id).map(g => `
-        ${g.titre ? `<li class="ab-plan__group">${g.titre}</li>` : ''}
-        ${g.items.map(f => `<li>${f.titre}</li>`).join('')}`).join('');
-
-      let action;
-      if (isActuel) action = `<span class="badge badge--positive">Offre actuelle</span>`;
-      else if (p.unite === 'essai') action = `<span class="text-xs text-muted">Essai consommé</span>`;
-      else if (p.unite === 'devis') action = `<a class="btn btn--secondary btn--sm btn--block" href="mailto:contact@oyvia.com?subject=${encodeURIComponent('Demande de devis — ' + nbLog + ' logements')}">Demander un devis</a>`;
-      else if (!dispo) action = `<span class="text-xs text-muted">Au-delà de ${PARC_MAX_CATALOGUE} logements</span>`;
-      else action = `<button type="button" class="btn btn--secondary btn--sm btn--block" data-choisir="${p.id}">Passer en ${p.nom}</button>`;
-
-      const total = p.unite === 'essai'
-        ? `Gratuit ${p.essaiJours} jours, jusqu'à ${p.essaiLogements} logements`
-        : p.unite === 'devis'
-          ? `Tarif construit avec vous`
-          : dispo
-            ? `soit ${formatPrixAbo(planTotal(p.id, nbLog))} / mois pour ${nbLog} logement${nbLog > 1 ? 's' : ''}`
-            : `Parc trop grand pour le catalogue`;
-
-      return `
-        <article class="ab-plan ${isActuel ? 'is-current' : ''} ${!dispo && p.unite === 'logement_mois' ? 'is-locked' : ''}">
-          <div class="ab-plan__top">
-            <b>${p.nom}</b>
-            <span>${prix.montant}<small>${prix.suffixe}</small></span>
-          </div>
-          <p class="ab-plan__total">${total}</p>
-          <ul class="ab-plan__feats">${feats}</ul>
-          <div class="ab-plan__action">${action}</div>
-        </article>`;
-    }).join('');
+    document.getElementById('ab-form-open').addEventListener('click', ouvrirFormulaire);
   }
 
   function renderHistorique() {
@@ -105,36 +99,40 @@ Layout.init('abonnement');
       ${rows}`;
   }
 
-  function renderAll() { renderHero(); renderSummary(); renderPlans(); renderHistorique(); }
+  function renderAll() { renderHero(); renderSummary(); renderContactSupport(); renderHistorique(); }
 
-  /* ---------- Changement d'offre ---------- */
-  // Quitter Business coupe l'IA Avancée : on prévient explicitement, car
-  // Vivi cesse de répondre aux voyageurs et sa configuration devient inactive.
-  document.addEventListener('click', e => {
-    const btn = e.target.closest('[data-choisir]');
-    if (!btn) return;
-    const cible = getPlan(btn.dataset.choisir);
-    const perdIA = getPlan(COMPTE.plan).ia && !cible.ia;
+  /* ---------- Formulaire de demande ----------
+     Rien n'est appliqué au compte : la demande part au support, qui procède
+     au changement. Faire basculer l'offre ici donnerait l'illusion d'un
+     changement acté alors que rien n'a été facturé ni validé. */
+  function ouvrirFormulaire() {
+    const sel = document.getElementById('ab-f-offre');
+    // On ne propose que des offres différentes de l'actuelle, et éligibles au
+    // parc — proposer ce qui ne peut pas être souscrit ferait perdre du temps
+    // à l'hôte comme au support.
+    const cibles = PLANS.filter(p => p.id !== COMPTE.plan && (planEligible(p.id, nbLog) || p.unite === 'devis'));
+    sel.innerHTML = cibles.map(p => `<option value="${p.id}">${p.nom}</option>`).join('')
+      + '<option value="autre">Je ne sais pas encore / autre demande</option>';
 
-    const appliquer = () => {
-      COMPTE.plan = cible.id;
-      if (typeof saveOyviaState === 'function') saveOyviaState();
-      renderAll();
-      UI.toast(`Offre ${cible.nom} activée`);
-    };
+    document.getElementById('ab-f-parc').value = nbLog;
+    document.getElementById('ab-f-msg').value = '';
+    document.getElementById('ab-f-offre-actuelle').textContent = getPlan(COMPTE.plan).nom;
+    UI.openPanel('ab-form-modal');
+  }
 
-    if (perdIA) {
-      UI.confirm({
-        title: `Passer en ${cible.nom} ?`,
-        message: `Vivi cessera de répondre aux messages entrants de vos voyageurs, et les réponses en attente de relecture ne partiront plus.\n\nVos automatisations de règles (confirmation, rappels, demande d'avis) continuent de fonctionner, et la configuration de Vivi est conservée : elle redeviendra active si vous repassez en Business.`,
-        confirmText: `Passer en ${cible.nom}`,
-        cancelText: 'Annuler',
-        danger: true,
-        onConfirm: appliquer,
-      });
-    } else {
-      appliquer();
-    }
+  document.getElementById('ab-form-send').addEventListener('click', () => {
+    const offreId = document.getElementById('ab-f-offre').value;
+    const parc = parseInt(document.getElementById('ab-f-parc').value, 10) || nbLog;
+    const cible = offreId === 'autre' ? null : getPlan(offreId);
+    const msg = document.getElementById('ab-f-msg').value.trim();
+
+    UI.closeAll();
+    UI.toast(`Demande envoyée au support — ${SUPPORT_OYVIA.delaiReponse.toLowerCase()}`);
+    // Aucune écriture sur COMPTE : l'offre ne change qu'une fois traitée par
+    // l'équipe. Le récapitulatif reste donc celui de l'offre en cours.
+    console.info('[abonnement] demande de changement d\'offre', {
+      de: COMPTE.plan, vers: offreId, parc, message: msg,
+    });
   });
 
   renderAll();

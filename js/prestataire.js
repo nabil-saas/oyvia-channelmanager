@@ -61,7 +61,6 @@
         <span class="pr-task__code">Wifi <b>${l.wifi.ssid}</b></span>
       </div>
       <div class="pr-task__foot">
-        <span class="pr-task__pay">${t.montant ? formatMontant(t.montant) : '—'}</span>
         <button class="pr-status pr-status--${t.statut}" data-status="${t.id}">${STA_LABEL[t.statut]}</button>
       </div>
       ${t.statut === 'termine' ? photoSection(t) : ''}
@@ -76,10 +75,12 @@
       `<b>Bonjour ${p.nom.split(' ')[0]} 👋</b><span>Voici vos interventions à venir.</span>`;
 
     const all = myTasks();
-    const due = all.reduce((s, t) => s + t.montant, 0);
+    // Plus de montant : une intervention n'est plus chiffrée. On montre le
+    // travail accompli, seul indicateur qui a du sens côté prestataire.
+    const faites = statsPrestataire(p.id).effectuees;
     document.getElementById('pr-stats').innerHTML =
       `<div class="pr-stat"><small>Tâches à venir</small><b>${all.length}</b></div>
-       <div class="pr-stat"><small>Montant dû</small><b>${formatMontant(due)}</b></div>`;
+       <div class="pr-stat"><small>Tâches effectuées</small><b>${faites}</b></div>`;
 
     const types = [...new Set(all.map(t => t.type))];
     if (!types.includes(filterType)) filterType = 'all';

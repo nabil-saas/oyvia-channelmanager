@@ -41,11 +41,10 @@
           </div>
         </div>
 
-        <!-- Comparatif des 4 offres + changement d'offre -->
-        <div class="card card--pad mt-4">
-          <p class="eyebrow mb-4">Changer d'offre</p>
-          <div class="ab-plans" id="ab-plans"><!-- injecté --></div>
-        </div>
+        <!-- Changer d'offre : uniquement le contact du support. La grille des
+             offres a été retirée — l'offre en cours est rappelée en tête de
+             page, et le comparatif complet vit sur la landing. -->
+        <div id="ab-support" class="mt-4"><!-- injecté --></div>
 
         <!-- Historique de facturation -->
         <div class="card card--pad mt-4">
@@ -54,6 +53,29 @@
         </div>
 
       </main>
+    </div>
+  </div>
+
+  <!-- Modale : demande de changement d'offre -->
+  <div class="modal" id="ab-form-modal" role="dialog" aria-modal="true" aria-labelledby="ab-form-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="ab-form-title">Demander un changement d'offre</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <p class="text-sm text-soft mb-4">Votre offre actuelle : <b id="ab-f-offre-actuelle">—</b>. Rien n'est modifié à l'envoi : notre équipe vous recontacte pour valider avec vous.</p>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="ab-f-offre">Offre souhaitée</label>
+          <select class="select" id="ab-f-offre"></select></div>
+        <div class="field"><label class="field__label" for="ab-f-parc">Logements à gérer</label>
+          <input class="input" type="number" min="1" id="ab-f-parc" /></div>
+      </div>
+      <div class="field mt-4"><label class="field__label" for="ab-f-msg">Votre message</label>
+        <textarea class="textarea" id="ab-f-msg" rows="4" placeholder="Échéance souhaitée, contraintes particulières, questions sur la facturation…"></textarea></div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="ab-form-send">Envoyer la demande</button>
     </div>
   </div>
 

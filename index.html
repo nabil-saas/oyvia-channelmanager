@@ -19,7 +19,7 @@
 
   <!-- Bandeau d'annonce -->
   <div class="lp-topbar">
-    <span>✦ <strong>15 jours offerts</strong> — sans carte bancaire.</span>
+    <span>✦ <strong>Compte gratuit</strong> — sans carte bancaire.</span>
     <a href="#tarifs">Voir les offres →</a>
   </div>
 
@@ -73,11 +73,11 @@
       <h1>Toutes vos réservations Airbnb, Booking.com et de vos autres canaux, <span class="accent">au même endroit</span>.</h1>
       <p class="lp-hero__sub">Oyvia synchronise Airbnb et Booking.com, automatise vos messages voyageurs et vous laisse encaisser des réservations directes sans commission. Fini les doubles réservations.</p>
       <div class="lp-hero__cta">
-        <a class="btn btn--primary btn--lg" href="app/dashboard.html">Commencer gratuitement — 15 jours offerts</a>
+        <a class="btn btn--primary btn--lg" href="app/dashboard.html">Créer mon compte gratuitement</a>
         <a class="btn btn--secondary btn--lg" href="app/calendrier.html">Voir la démo</a>
       </div>
       <ul class="lp-hero__trust">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>15 jours gratuits</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Compte gratuit</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sans carte bancaire</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sans engagement</li>
       </ul>
@@ -610,8 +610,8 @@
     <div class="lp-shell">
       <div class="lp-head">
         <span class="eyebrow">Tarifs</span>
-        <h2>Quatre offres, une progression naturelle</h2>
-        <p>Choisissez votre devise et la taille de votre parc : les tarifs ci-dessous se recalculent, et le prix par logement baisse à mesure que votre parc grandit. Créez votre compte gratuitement et explorez Oyvia pendant 15 jours.</p>
+        <h2>Cinq offres, une progression naturelle</h2>
+        <p>Choisissez votre devise et la taille de votre parc : les tarifs ci-dessous se recalculent, et le prix par logement baisse à mesure que votre parc grandit. La création de compte est gratuite, sans carte bancaire.</p>
       </div>
 
       <!-- Barre de réglage : devise, taille du parc, périodicité. Les cartes
@@ -640,8 +640,15 @@
 
       <p class="lp-devis" id="lp-devis" hidden></p>
 
-      <!-- Les 4 offres, générées depuis PLANS (js/data.js) : une seule source de vérité -->
+      <!-- Les offres, générées depuis PLANS (js/data.js) : une seule source de vérité.
+           Les cartes ne portent que le montant et l'action ; le détail suit juste après. -->
       <div class="lp-plans" id="lp-plans"><!-- injecté par js/simulateur.js --></div>
+
+      <div class="lp-details__head">
+        <h3>Comparer les offres en détail</h3>
+        <p class="text-soft">Ligne par ligne, ce que contient chaque offre.</p>
+      </div>
+      <div class="lp-details" id="lp-details"><!-- injecté par js/simulateur.js --></div>
 
     </div>
   </section>
@@ -687,7 +694,7 @@
   <section class="lp-cta">
     <div class="lp-cta__glow"></div>
     <h2>Centralisez, automatisez et développez votre location — en quelques minutes.</h2>
-    <p>Créez votre compte et testez Oyvia pendant 15 jours. Sans carte bancaire, sans engagement.</p>
+    <p>Créez votre compte gratuitement et découvrez la plateforme. Sans carte bancaire, sans engagement.</p>
     <div class="lp-cta__btns">
       <a class="btn btn--primary btn--lg" href="app/dashboard.html">Commencer gratuitement</a>
       <a class="btn btn--secondary btn--lg" href="app/calendrier.html">Explorer la démo</a>

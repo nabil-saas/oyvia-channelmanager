@@ -47,13 +47,20 @@ function versReference(montantAffiche, deviseId = deviseAffichee()) {
 }
 
 function _formatDeviseIntl(valeur, deviseId, decimales) {
-  return new Intl.NumberFormat('fr-FR', {
+  const texte = new Intl.NumberFormat('fr-FR', {
     style: 'currency', currency: deviseId,
     // Sans narrowSymbol, le français écrit « 103 $US » et « 82 £GB » : correct
     // typographiquement, mais inhabituel dans une interface produit.
     currencyDisplay: 'narrowSymbol',
     minimumFractionDigits: decimales, maximumFractionDigits: decimales
   }).format(valeur);
+  /* Intl sépare le montant de la devise par une espace INSÉCABLE (U+00A0) :
+     « 7 099 565 F CFA » devient alors un seul mot que rien ne peut couper, et
+     il déborde de sa boîte au lieu de passer à la ligne. On la rend sécable
+     pour offrir ce point de coupure — et un seul.
+     Les séparateurs de milliers restent en espace fine insécable (U+202F) :
+     eux ne doivent jamais casser, sous peine de lire « 7 099 » puis « 565 ». */
+  return texte.replace(/ /g, ' ');
 }
 
 // Montant d'exploitation (stocké en euros), rendu dans la devise d'affichage.
@@ -72,6 +79,17 @@ function formatPrixAbo(n, decimales = 0) {
 
 // Symbole seul, pour les libellés de champs : « Tarif de base (€ / nuit) ».
 function symboleDevise(deviseId = deviseAffichee()) { return getDevise(deviseId).symbole; }
+
+/* Montant converti mais SANS symbole, pour les grilles denses où la devise
+   est déjà nommée une fois en en-tête. Répéter « F CFA » dans chaque case
+   d'un calendrier de 21 colonnes rend les chiffres illisibles alors que
+   c'est justement eux qu'on vient lire. */
+function formatMontantNu(n, decimales = 0) {
+  if (n === null || n === undefined) return '—';
+  return versAffichage(n).toLocaleString('fr-FR', {
+    minimumFractionDigits: decimales, maximumFractionDigits: decimales,
+  });
+}
 
 // Valeur à pré-remplir dans un <input type="number"> : convertie et arrondie
 // à l'entier, un champ de saisie affichant douze décimales étant inutilisable.
@@ -2159,9 +2177,9 @@ function refuserDemande(id, motif) {
    PRESTATAIRES (5) — équipe ménage / maintenance
    ============================================================ */
 const PRESTATAIRES = [
-  // Pas de tarif porté par le prestataire : le prix d'une intervention dépend
-  // du bien (un chalet de 5 pièces n'est pas un studio), pas de la personne.
-  // Il se lit donc sur le logement — cf. montantHabituel().
+  // Aucun tarif, ni ici ni sur les tâches : la rémunération d'une intervention
+  // dépend du bien (un chalet de 5 pièces n'est pas un studio), pas de la
+  // personne — et son modèle reste à définir.
   { id:'P1', nom:'Sylvie Ménard',  role:'Ménage',      zone:'Lyon',         tel:'+33 6 22 44 11 09' },
   { id:'P2', nom:'Karim Bouaziz',  role:'Polyvalent',  zone:'Paris',        tel:'+33 6 55 77 22 88' },
   { id:'P3', nom:'Nadia Lopez',    role:'Ménage',      zone:'Sud-Ouest',    tel:'+33 6 88 33 55 12' },
@@ -2175,92 +2193,92 @@ const PRESTATAIRES = [
    statut : a_faire | en_cours | termine
    ============================================================ */
 const TACHES = [
-  { id:'T01', type:'menage',      logementId:'L002', date:'2026-07-23', heure:'11:00', prestataireId:'P2', statut:'en_cours', montant:35, reservationId:'R06', note:'Rotation same-day : départ 11h → arrivée 15h' },
-  { id:'T02', type:'menage',      logementId:'L003', date:'2026-07-23', heure:'11:30', prestataireId:'P3', statut:'a_faire',  montant:40, reservationId:'R10' },
-  { id:'T03', type:'checkin',     logementId:'L010', date:'2026-07-23', heure:'18:30', prestataireId:'P1', statut:'a_faire',  montant:20, reservationId:'R32', note:'Accueil en personne demandé' },
-  { id:'T04', type:'menage',      logementId:'L006', date:'2026-07-24', heure:'11:00', prestataireId:'P5', statut:'a_faire',  montant:35, reservationId:'R20' },
-  { id:'T05', type:'linge',       logementId:'L007', date:'2026-07-24', heure:'09:00', prestataireId:'P5', statut:'a_faire',  montant:15, reservationId:null,  note:'Livraison linge propre' },
-  { id:'T06', type:'menage',      logementId:'L009', date:'2026-07-24', heure:'12:00', prestataireId:'P3', statut:'a_faire',  montant:38, reservationId:'R29' },
-  { id:'T07', type:'maintenance', logementId:'L005', date:'2026-07-24', heure:'15:00', prestataireId:'P4', statut:'a_faire',  montant:0,  reservationId:null,  note:'Vérifier pompe piscine' },
-  { id:'T08', type:'menage',      logementId:'L004', date:'2026-07-25', heure:'11:00', prestataireId:'P5', statut:'a_faire',  montant:70, reservationId:'R14' },
-  { id:'T09', type:'checkin',     logementId:'L004', date:'2026-07-25', heure:'16:00', prestataireId:'P5', statut:'a_faire',  montant:25, reservationId:'R14', note:'Installer lit bébé' },
-  { id:'T10', type:'menage',      logementId:'L007', date:'2026-07-27', heure:'11:00', prestataireId:'P5', statut:'a_faire',  montant:30, reservationId:'R23' },
-  { id:'T11', type:'menage',      logementId:'L010', date:'2026-07-27', heure:'11:30', prestataireId:'P1', statut:'a_faire',  montant:45, reservationId:'R32' },
-  { id:'T12', type:'menage',      logementId:'L003', date:'2026-07-27', heure:'12:00', prestataireId:'P3', statut:'a_faire',  montant:40, reservationId:'R11', note:'Arrivée anticipée 13h possible' },
-  { id:'T13', type:'menage',      logementId:'L002', date:'2026-07-26', heure:'11:00', prestataireId:'P2', statut:'a_faire',  montant:35, reservationId:'R07' },
-  { id:'T14', type:'menage',      logementId:'L005', date:'2026-07-26', heure:'11:00', prestataireId:'P4', statut:'a_faire',  montant:90, reservationId:'R17' },
-  { id:'T15', type:'menage',      logementId:'L008', date:'2026-07-26', heure:'12:00', prestataireId:'P3', statut:'a_faire',  montant:50, reservationId:'R26' },
-  { id:'T16', type:'maintenance', logementId:'L001', date:'2026-07-28', heure:'10:00', prestataireId:'P4', statut:'a_faire',  montant:0,  reservationId:null,  note:'Changer joint robinet cuisine' },
-  { id:'T17', type:'menage',      logementId:'L001', date:'2026-07-28', heure:'11:30', prestataireId:'P1', statut:'a_faire',  montant:45, reservationId:'R03' },
-  { id:'T18', type:'menage',      logementId:'L009', date:'2026-07-29', heure:'11:00', prestataireId:'P3', statut:'a_faire',  montant:38, reservationId:'R29' },
-  { id:'T19', type:'menage',      logementId:'L004', date:'2026-07-30', heure:'11:00', prestataireId:'P5', statut:'a_faire',  montant:70, reservationId:'R14' },
-  { id:'T20', type:'menage',      logementId:'L008', date:'2026-08-01', heure:'11:00', prestataireId:'P3', statut:'a_faire',  montant:50, reservationId:'R26' },
-  { id:'T21', type:'menage',      logementId:'L005', date:'2026-08-01', heure:'11:00', prestataireId:'P4', statut:'a_faire',  montant:90, reservationId:'R18' },
-  { id:'T22', type:'menage',      logementId:'L001', date:'2026-07-22', heure:'11:00', prestataireId:'P1', statut:'termine',  montant:45, reservationId:'R02' },
+  { id:'T01', type:'menage',      logementId:'L002', date:'2026-07-23', heure:'11:00', prestataireId:'P2', statut:'en_cours', reservationId:'R06', note:'Rotation same-day : départ 11h → arrivée 15h' },
+  { id:'T02', type:'menage',      logementId:'L003', date:'2026-07-23', heure:'11:30', prestataireId:'P3', statut:'a_faire', reservationId:'R10' },
+  { id:'T03', type:'checkin',     logementId:'L010', date:'2026-07-23', heure:'18:30', prestataireId:'P1', statut:'a_faire', reservationId:'R32', note:'Accueil en personne demandé' },
+  { id:'T04', type:'menage',      logementId:'L006', date:'2026-07-24', heure:'11:00', prestataireId:'P5', statut:'a_faire', reservationId:'R20' },
+  { id:'T05', type:'linge',       logementId:'L007', date:'2026-07-24', heure:'09:00', prestataireId:'P5', statut:'a_faire', reservationId:null,  note:'Livraison linge propre' },
+  { id:'T06', type:'menage',      logementId:'L009', date:'2026-07-24', heure:'12:00', prestataireId:'P3', statut:'a_faire', reservationId:'R29' },
+  { id:'T07', type:'maintenance', logementId:'L005', date:'2026-07-24', heure:'15:00', prestataireId:'P4', statut:'a_faire',  reservationId:null,  note:'Vérifier pompe piscine' },
+  { id:'T08', type:'menage',      logementId:'L004', date:'2026-07-25', heure:'11:00', prestataireId:'P5', statut:'a_faire', reservationId:'R14' },
+  { id:'T09', type:'checkin',     logementId:'L004', date:'2026-07-25', heure:'16:00', prestataireId:'P5', statut:'a_faire', reservationId:'R14', note:'Installer lit bébé' },
+  { id:'T10', type:'menage',      logementId:'L007', date:'2026-07-27', heure:'11:00', prestataireId:'P5', statut:'a_faire', reservationId:'R23' },
+  { id:'T11', type:'menage',      logementId:'L010', date:'2026-07-27', heure:'11:30', prestataireId:'P1', statut:'a_faire', reservationId:'R32' },
+  { id:'T12', type:'menage',      logementId:'L003', date:'2026-07-27', heure:'12:00', prestataireId:'P3', statut:'a_faire', reservationId:'R11', note:'Arrivée anticipée 13h possible' },
+  { id:'T13', type:'menage',      logementId:'L002', date:'2026-07-26', heure:'11:00', prestataireId:'P2', statut:'a_faire', reservationId:'R07' },
+  { id:'T14', type:'menage',      logementId:'L005', date:'2026-07-26', heure:'11:00', prestataireId:'P4', statut:'a_faire', reservationId:'R17' },
+  { id:'T15', type:'menage',      logementId:'L008', date:'2026-07-26', heure:'12:00', prestataireId:'P3', statut:'a_faire', reservationId:'R26' },
+  { id:'T16', type:'maintenance', logementId:'L001', date:'2026-07-28', heure:'10:00', prestataireId:'P4', statut:'a_faire',  reservationId:null,  note:'Changer joint robinet cuisine' },
+  { id:'T17', type:'menage',      logementId:'L001', date:'2026-07-28', heure:'11:30', prestataireId:'P1', statut:'a_faire', reservationId:'R03' },
+  { id:'T18', type:'menage',      logementId:'L009', date:'2026-07-29', heure:'11:00', prestataireId:'P3', statut:'a_faire', reservationId:'R29' },
+  { id:'T19', type:'menage',      logementId:'L004', date:'2026-07-30', heure:'11:00', prestataireId:'P5', statut:'a_faire', reservationId:'R14' },
+  { id:'T20', type:'menage',      logementId:'L008', date:'2026-08-01', heure:'11:00', prestataireId:'P3', statut:'a_faire', reservationId:'R26' },
+  { id:'T21', type:'menage',      logementId:'L005', date:'2026-08-01', heure:'11:00', prestataireId:'P4', statut:'a_faire', reservationId:'R18' },
+  { id:'T22', type:'menage',      logementId:'L001', date:'2026-07-22', heure:'11:00', prestataireId:'P1', statut:'termine', reservationId:'R02' },
 
   /* --- Historique : interventions déjà réalisées (juin → 21 juillet) ---
      Sans ce passé, la page Équipe afficherait « 0 tâche effectuée » pour
      presque tout le monde : le planning ne couvre que la dizaine de jours à
      venir. Chaque prestataire reste sur sa zone, comme dans le planning. */
   // P1 — Sylvie Ménard · Lyon (L001, L010)
-  { id:'H01', type:'menage',      logementId:'L001', date:'2026-06-08', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
-  { id:'H02', type:'menage',      logementId:'L010', date:'2026-06-14', heure:'11:30', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
-  { id:'H03', type:'menage',      logementId:'L001', date:'2026-06-21', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
-  { id:'H04', type:'linge',       logementId:'L010', date:'2026-06-25', heure:'09:00', prestataireId:'P1', statut:'termine', montant:15, reservationId:null },
-  { id:'H05', type:'menage',      logementId:'L010', date:'2026-06-28', heure:'11:30', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
-  { id:'H06', type:'menage',      logementId:'L001', date:'2026-07-03', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
-  { id:'H07', type:'checkin',     logementId:'L001', date:'2026-07-03', heure:'16:00', prestataireId:'P1', statut:'termine', montant:20, reservationId:'R01' },
-  { id:'H08', type:'menage',      logementId:'L001', date:'2026-07-07', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:'R01' },
-  { id:'H09', type:'menage',      logementId:'L010', date:'2026-07-12', heure:'11:30', prestataireId:'P1', statut:'termine', montant:45, reservationId:null },
-  { id:'H10', type:'menage',      logementId:'L001', date:'2026-07-16', heure:'11:00', prestataireId:'P1', statut:'termine', montant:45, reservationId:'R02' },
-  { id:'H11', type:'linge',       logementId:'L001', date:'2026-07-20', heure:'09:00', prestataireId:'P1', statut:'termine', montant:15, reservationId:null },
+  { id:'H01', type:'menage',      logementId:'L001', date:'2026-06-08', heure:'11:00', prestataireId:'P1', statut:'termine', reservationId:null },
+  { id:'H02', type:'menage',      logementId:'L010', date:'2026-06-14', heure:'11:30', prestataireId:'P1', statut:'termine', reservationId:null },
+  { id:'H03', type:'menage',      logementId:'L001', date:'2026-06-21', heure:'11:00', prestataireId:'P1', statut:'termine', reservationId:null },
+  { id:'H04', type:'linge',       logementId:'L010', date:'2026-06-25', heure:'09:00', prestataireId:'P1', statut:'termine', reservationId:null },
+  { id:'H05', type:'menage',      logementId:'L010', date:'2026-06-28', heure:'11:30', prestataireId:'P1', statut:'termine', reservationId:null },
+  { id:'H06', type:'menage',      logementId:'L001', date:'2026-07-03', heure:'11:00', prestataireId:'P1', statut:'termine', reservationId:null },
+  { id:'H07', type:'checkin',     logementId:'L001', date:'2026-07-03', heure:'16:00', prestataireId:'P1', statut:'termine', reservationId:'R01' },
+  { id:'H08', type:'menage',      logementId:'L001', date:'2026-07-07', heure:'11:00', prestataireId:'P1', statut:'termine', reservationId:'R01' },
+  { id:'H09', type:'menage',      logementId:'L010', date:'2026-07-12', heure:'11:30', prestataireId:'P1', statut:'termine', reservationId:null },
+  { id:'H10', type:'menage',      logementId:'L001', date:'2026-07-16', heure:'11:00', prestataireId:'P1', statut:'termine', reservationId:'R02' },
+  { id:'H11', type:'linge',       logementId:'L001', date:'2026-07-20', heure:'09:00', prestataireId:'P1', statut:'termine', reservationId:null },
 
   // P2 — Karim Bouaziz · Paris (L002), polyvalent
-  { id:'H12', type:'menage',      logementId:'L002', date:'2026-06-11', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:null },
-  { id:'H13', type:'menage',      logementId:'L002', date:'2026-06-19', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:null },
-  { id:'H14', type:'maintenance', logementId:'L002', date:'2026-06-24', heure:'14:00', prestataireId:'P2', statut:'termine', montant:60, reservationId:null, note:'Remplacement chauffe-eau' },
-  { id:'H15', type:'menage',      logementId:'L002', date:'2026-06-30', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:null },
-  { id:'H16', type:'menage',      logementId:'L002', date:'2026-07-06', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:'R05' },
-  { id:'H17', type:'menage',      logementId:'L002', date:'2026-07-09', heure:'11:00', prestataireId:'P2', statut:'termine', montant:35, reservationId:'R05' },
-  { id:'H18', type:'checkin',     logementId:'L002', date:'2026-07-20', heure:'17:00', prestataireId:'P2', statut:'termine', montant:20, reservationId:'R06' },
+  { id:'H12', type:'menage',      logementId:'L002', date:'2026-06-11', heure:'11:00', prestataireId:'P2', statut:'termine', reservationId:null },
+  { id:'H13', type:'menage',      logementId:'L002', date:'2026-06-19', heure:'11:00', prestataireId:'P2', statut:'termine', reservationId:null },
+  { id:'H14', type:'maintenance', logementId:'L002', date:'2026-06-24', heure:'14:00', prestataireId:'P2', statut:'termine', reservationId:null, note:'Remplacement chauffe-eau' },
+  { id:'H15', type:'menage',      logementId:'L002', date:'2026-06-30', heure:'11:00', prestataireId:'P2', statut:'termine', reservationId:null },
+  { id:'H16', type:'menage',      logementId:'L002', date:'2026-07-06', heure:'11:00', prestataireId:'P2', statut:'termine', reservationId:'R05' },
+  { id:'H17', type:'menage',      logementId:'L002', date:'2026-07-09', heure:'11:00', prestataireId:'P2', statut:'termine', reservationId:'R05' },
+  { id:'H18', type:'checkin',     logementId:'L002', date:'2026-07-20', heure:'17:00', prestataireId:'P2', statut:'termine', reservationId:'R06' },
 
   // P3 — Nadia Lopez · Sud-Ouest (L003, L005, L008, L009)
-  { id:'H19', type:'menage',      logementId:'L003', date:'2026-06-06', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:null },
-  { id:'H20', type:'menage',      logementId:'L009', date:'2026-06-13', heure:'11:00', prestataireId:'P3', statut:'termine', montant:38, reservationId:null },
-  { id:'H21', type:'menage',      logementId:'L008', date:'2026-06-17', heure:'12:00', prestataireId:'P3', statut:'termine', montant:50, reservationId:null },
-  { id:'H22', type:'menage',      logementId:'L003', date:'2026-06-22', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:null },
-  { id:'H23', type:'linge',       logementId:'L008', date:'2026-06-26', heure:'09:00', prestataireId:'P3', statut:'termine', montant:15, reservationId:null },
-  { id:'H24', type:'menage',      logementId:'L009', date:'2026-06-29', heure:'11:00', prestataireId:'P3', statut:'termine', montant:38, reservationId:null },
-  { id:'H25', type:'menage',      logementId:'L003', date:'2026-07-01', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:'R09' },
-  { id:'H26', type:'menage',      logementId:'L003', date:'2026-07-05', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:'R09' },
-  { id:'H27', type:'menage',      logementId:'L008', date:'2026-07-08', heure:'12:00', prestataireId:'P3', statut:'termine', montant:50, reservationId:null },
-  { id:'H28', type:'menage',      logementId:'L009', date:'2026-07-13', heure:'11:00', prestataireId:'P3', statut:'termine', montant:38, reservationId:null },
-  { id:'H29', type:'menage',      logementId:'L003', date:'2026-07-18', heure:'12:00', prestataireId:'P3', statut:'termine', montant:40, reservationId:'R10' },
-  { id:'H30', type:'checkin',     logementId:'L009', date:'2026-07-19', heure:'16:30', prestataireId:'P3', statut:'termine', montant:20, reservationId:null },
-  { id:'H31', type:'menage',      logementId:'L008', date:'2026-07-21', heure:'12:00', prestataireId:'P3', statut:'termine', montant:50, reservationId:null },
+  { id:'H19', type:'menage',      logementId:'L003', date:'2026-06-06', heure:'12:00', prestataireId:'P3', statut:'termine', reservationId:null },
+  { id:'H20', type:'menage',      logementId:'L009', date:'2026-06-13', heure:'11:00', prestataireId:'P3', statut:'termine', reservationId:null },
+  { id:'H21', type:'menage',      logementId:'L008', date:'2026-06-17', heure:'12:00', prestataireId:'P3', statut:'termine', reservationId:null },
+  { id:'H22', type:'menage',      logementId:'L003', date:'2026-06-22', heure:'12:00', prestataireId:'P3', statut:'termine', reservationId:null },
+  { id:'H23', type:'linge',       logementId:'L008', date:'2026-06-26', heure:'09:00', prestataireId:'P3', statut:'termine', reservationId:null },
+  { id:'H24', type:'menage',      logementId:'L009', date:'2026-06-29', heure:'11:00', prestataireId:'P3', statut:'termine', reservationId:null },
+  { id:'H25', type:'menage',      logementId:'L003', date:'2026-07-01', heure:'12:00', prestataireId:'P3', statut:'termine', reservationId:'R09' },
+  { id:'H26', type:'menage',      logementId:'L003', date:'2026-07-05', heure:'12:00', prestataireId:'P3', statut:'termine', reservationId:'R09' },
+  { id:'H27', type:'menage',      logementId:'L008', date:'2026-07-08', heure:'12:00', prestataireId:'P3', statut:'termine', reservationId:null },
+  { id:'H28', type:'menage',      logementId:'L009', date:'2026-07-13', heure:'11:00', prestataireId:'P3', statut:'termine', reservationId:null },
+  { id:'H29', type:'menage',      logementId:'L003', date:'2026-07-18', heure:'12:00', prestataireId:'P3', statut:'termine', reservationId:'R10' },
+  { id:'H30', type:'checkin',     logementId:'L009', date:'2026-07-19', heure:'16:30', prestataireId:'P3', statut:'termine', reservationId:null },
+  { id:'H31', type:'menage',      logementId:'L008', date:'2026-07-21', heure:'12:00', prestataireId:'P3', statut:'termine', reservationId:null },
 
   // P4 — Marc Antoine · maintenance, toutes villes
-  { id:'H32', type:'maintenance', logementId:'L004', date:'2026-06-10', heure:'10:00', prestataireId:'P4', statut:'termine', montant:120, reservationId:null, note:'Ramonage cheminée' },
-  { id:'H33', type:'maintenance', logementId:'L006', date:'2026-06-16', heure:'14:00', prestataireId:'P4', statut:'termine', montant:80,  reservationId:null, note:'Fuite sous évier' },
-  { id:'H34', type:'maintenance', logementId:'L001', date:'2026-06-23', heure:'09:30', prestataireId:'P4', statut:'termine', montant:65,  reservationId:null, note:'Volet roulant bloqué' },
-  { id:'H35', type:'maintenance', logementId:'L007', date:'2026-07-02', heure:'11:00', prestataireId:'P4', statut:'termine', montant:95,  reservationId:null, note:'Entretien climatisation' },
-  { id:'H36', type:'maintenance', logementId:'L009', date:'2026-07-07', heure:'15:00', prestataireId:'P4', statut:'termine', montant:110, reservationId:null, note:'Remplacement serrure' },
-  { id:'H37', type:'menage',      logementId:'L005', date:'2026-07-11', heure:'11:00', prestataireId:'P4', statut:'termine', montant:90,  reservationId:null },
-  { id:'H38', type:'maintenance', logementId:'L003', date:'2026-07-15', heure:'10:00', prestataireId:'P4', statut:'termine', montant:70,  reservationId:null, note:'Révision lave-vaisselle' },
-  { id:'H39', type:'menage',      logementId:'L005', date:'2026-07-18', heure:'11:00', prestataireId:'P4', statut:'termine', montant:90,  reservationId:'R17' },
+  { id:'H32', type:'maintenance', logementId:'L004', date:'2026-06-10', heure:'10:00', prestataireId:'P4', statut:'termine', reservationId:null, note:'Ramonage cheminée' },
+  { id:'H33', type:'maintenance', logementId:'L006', date:'2026-06-16', heure:'14:00', prestataireId:'P4', statut:'termine',  reservationId:null, note:'Fuite sous évier' },
+  { id:'H34', type:'maintenance', logementId:'L001', date:'2026-06-23', heure:'09:30', prestataireId:'P4', statut:'termine',  reservationId:null, note:'Volet roulant bloqué' },
+  { id:'H35', type:'maintenance', logementId:'L007', date:'2026-07-02', heure:'11:00', prestataireId:'P4', statut:'termine',  reservationId:null, note:'Entretien climatisation' },
+  { id:'H36', type:'maintenance', logementId:'L009', date:'2026-07-07', heure:'15:00', prestataireId:'P4', statut:'termine', reservationId:null, note:'Remplacement serrure' },
+  { id:'H37', type:'menage',      logementId:'L005', date:'2026-07-11', heure:'11:00', prestataireId:'P4', statut:'termine',  reservationId:null },
+  { id:'H38', type:'maintenance', logementId:'L003', date:'2026-07-15', heure:'10:00', prestataireId:'P4', statut:'termine',  reservationId:null, note:'Révision lave-vaisselle' },
+  { id:'H39', type:'menage',      logementId:'L005', date:'2026-07-18', heure:'11:00', prestataireId:'P4', statut:'termine',  reservationId:'R17' },
 
   // P5 — Léna Fritsch · Sud-Est (L004, L006, L007)
-  { id:'H40', type:'menage',      logementId:'L006', date:'2026-06-07', heure:'11:00', prestataireId:'P5', statut:'termine', montant:35, reservationId:null },
-  { id:'H41', type:'menage',      logementId:'L007', date:'2026-06-12', heure:'11:00', prestataireId:'P5', statut:'termine', montant:30, reservationId:null },
-  { id:'H42', type:'menage',      logementId:'L004', date:'2026-06-18', heure:'11:00', prestataireId:'P5', statut:'termine', montant:70, reservationId:null },
-  { id:'H43', type:'linge',       logementId:'L007', date:'2026-06-20', heure:'09:00', prestataireId:'P5', statut:'termine', montant:15, reservationId:null },
-  { id:'H44', type:'menage',      logementId:'L006', date:'2026-06-27', heure:'11:00', prestataireId:'P5', statut:'termine', montant:35, reservationId:null },
-  { id:'H45', type:'menage',      logementId:'L007', date:'2026-07-04', heure:'11:00', prestataireId:'P5', statut:'termine', montant:30, reservationId:null },
-  { id:'H46', type:'menage',      logementId:'L004', date:'2026-07-11', heure:'11:00', prestataireId:'P5', statut:'termine', montant:70, reservationId:'R13' },
-  { id:'H47', type:'checkin',     logementId:'L004', date:'2026-07-11', heure:'16:00', prestataireId:'P5', statut:'termine', montant:25, reservationId:'R13' },
-  { id:'H48', type:'menage',      logementId:'L004', date:'2026-07-18', heure:'11:00', prestataireId:'P5', statut:'termine', montant:70, reservationId:'R13' },
-  { id:'H49', type:'menage',      logementId:'L006', date:'2026-07-19', heure:'11:00', prestataireId:'P5', statut:'termine', montant:35, reservationId:null },
-  { id:'H50', type:'menage',      logementId:'L007', date:'2026-07-21', heure:'11:00', prestataireId:'P5', statut:'termine', montant:30, reservationId:null },
+  { id:'H40', type:'menage',      logementId:'L006', date:'2026-06-07', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:null },
+  { id:'H41', type:'menage',      logementId:'L007', date:'2026-06-12', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:null },
+  { id:'H42', type:'menage',      logementId:'L004', date:'2026-06-18', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:null },
+  { id:'H43', type:'linge',       logementId:'L007', date:'2026-06-20', heure:'09:00', prestataireId:'P5', statut:'termine', reservationId:null },
+  { id:'H44', type:'menage',      logementId:'L006', date:'2026-06-27', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:null },
+  { id:'H45', type:'menage',      logementId:'L007', date:'2026-07-04', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:null },
+  { id:'H46', type:'menage',      logementId:'L004', date:'2026-07-11', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:'R13' },
+  { id:'H47', type:'checkin',     logementId:'L004', date:'2026-07-11', heure:'16:00', prestataireId:'P5', statut:'termine', reservationId:'R13' },
+  { id:'H48', type:'menage',      logementId:'L004', date:'2026-07-18', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:'R13' },
+  { id:'H49', type:'menage',      logementId:'L006', date:'2026-07-19', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:null },
+  { id:'H50', type:'menage',      logementId:'L007', date:'2026-07-21', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:null },
 ];
 
 /* ============================================================
@@ -2309,16 +2327,18 @@ const RECURRENTES = [
 ];
 
 /* ============================================================
-   TARIFS — 4 offres. Source unique de vérité, partagée par la
+   TARIFS — 5 offres. Source unique de vérité, partagée par la
    landing (index.html#tarifs) et l'abonnement de l'app
    (app/abonnement.html), pour qu'elles ne divergent jamais.
 
    Trois façons de facturer :
-     - unite:'essai'         → gratuit, limité dans le temps ET en
-                               parc (Découverte : 15 jours dès la
-                               création du compte, 5 logements)
-     - unite:'logement_mois' → grille dégressive × nombre de
-                               logements gérés (Smart, Business)
+     - unite:'gratuit'       → sans contrepartie ni limite affichée
+                               (Gratuit)
+     - unite:'logement_mois' → prix par logement géré. Grille dégressive
+                               pour Smart et Business ; prix unique pour
+                               Découverte, qui plafonne en plus le nombre
+                               de logements facturés (logementsInclus) et
+                               la durée de l'offre (dureeMois).
      - unite:'devis'         → hors catalogue (Entreprise)
 
    Ce qui sépare Smart de Business est UNIQUEMENT l'intelligence
@@ -2367,15 +2387,41 @@ const PALIERS_BUSINESS = [
 
 const PLANS = [
   {
-    id:'decouverte', nom:'Découverte', unite:'essai', essaiJours:15, essaiLogements:5,
+    id:'gratuit', nom:'Gratuit', unite:'gratuit',
     minLog:1, maxLog:Infinity,
-    accroche:"Créez votre compte et explorez Oyvia pendant 15 jours, sans carte bancaire. Le compteur démarre à la création du compte.",
-    idealPour:"Découvrir Oyvia avant de choisir votre offre.",
+    accroche:"Créez votre compte et découvrez la plateforme.",
+    idealPour:"Voir concrètement ce que fait Oyvia, avant de vous engager.",
     herite:null,
     groupes:[
       { titre:null, items:[
-        { titre:'Accès complet pendant 15 jours', desc:"Toutes les fonctionnalités du socle, sur 5 logements." },
-        { titre:'Aucun engagement',               desc:"À la fin des 15 jours, vous choisissez votre offre — ou vous vous arrêtez là." },
+        { titre:'Création de compte immédiate', desc:"Aucune carte bancaire demandée." },
+        { titre:'Découverte de la plateforme',  desc:"Parcourez les écrans et la mécanique du produit." },
+        { titre:'Aucun engagement',             desc:"Vous passez à une offre payante quand vous le décidez." },
+      ] },
+    ],
+    ia:null,
+  },
+  {
+    /* Offre d'entrée, pensée pour lever le frein du premier mois : un prix
+       symbolique par logement, plafonné aux `logementsInclus` premiers, et
+       borné dans le temps. Au-delà du plafond ou de la durée, on bascule
+       sur Smart — c'est dit sur la carte plutôt que découvert à la facture. */
+    id:'decouverte', nom:'Découverte', unite:'logement_mois',
+    paliers:[{ min:1, max:PARC_MAX_CATALOGUE, prix:11 }],   // ≈ 1 € / logement / mois
+    logementsInclus:2, dureeMois:6,
+    // maxLog aligné sur logementsInclus : au-delà de 2 logements l'offre ne
+    // couvre plus le parc, elle est donc proposée comme indisponible plutôt
+    // que d'afficher un prix qui ne financerait qu'une partie des biens.
+    minLog:1, maxLog:2,
+    accroche:"Lancez-vous pour le prix d'un café, sur vos deux premiers logements.",
+    idealPour:"Démarrer avec un ou deux biens, sans risque.",
+    herite:null,
+    groupes:[
+      { titre:'Inclus', items:[
+        { titre:'Tout le socle Smart',        desc:"Calendrier unifié, messagerie, messages automatiques, ménage, serrures connectées, comptabilité." },
+        { titre:'Vos 2 premiers logements',   desc:"Au-delà de 2 logements, le passage à Smart est nécessaire." },
+        { titre:'Pendant 6 mois',             desc:"À l'issue des 6 mois, l'offre bascule automatiquement sur Smart, au tarif du catalogue." },
+        { titre:'Sans engagement',            desc:"Résiliable à tout moment pendant les 6 mois." },
       ] },
     ],
     ia:null,
@@ -2388,18 +2434,16 @@ const PLANS = [
     herite:null,
     groupes:[
       { titre:'Inclus', items:[
-        { titre:'Calendrier unifié multi-canaux',    desc:"Airbnb et Booking.com" },
+        { titre:'Calendrier unifié multi-canaux',    desc:"Airbnb, Booking, Expedia… plus de 60 OTA" },
         { titre:'Messagerie centralisée',            desc:"Airbnb, Booking, e-mail et WhatsApp" },
         { titre:'Messages automatiques',             desc:"Confirmation, avant arrivée, check-out, demande d'avis — envoyés sur Airbnb, Booking, e-mail et WhatsApp" },
         { titre:'Réservations directes sans commission' },
         { titre:'Gestion du ménage et des équipes',  desc:"Tâches automatiques, assignation, check-list mobile" },
         { titre:'Serrures connectées',               desc:"Nuki, TTLock, Yale et plus de 20 autres marques — codes d'accès créés et révoqués à distance" },
         { titre:'Tableau de bord & statistiques' },
-        { titre:'Portail propriétaires' },
         { titre:'Comptabilité' },
         { titre:'Intégration WhatsApp' },
         { titre:'Création de site web',              desc:"Pour vos réservations directes" },
-        { titre:'App mobile complète' },
         { titre:'Support standard' },
       ] },
     ],
@@ -2504,7 +2548,7 @@ function prixMensuelParLogement(planId, periodicite, nbLogements) {
   return periodicite === 'annuel' ? base * (1 - REMISE_ANNUELLE / 100) : base;
 }
 function totalMensuel(planId, nbLogements, periodicite) {
-  return prixMensuelParLogement(planId, periodicite, nbLogements) * nbLogements;
+  return prixMensuelParLogement(planId, periodicite, nbLogements) * logementsFactures(planId, nbLogements);
 }
 // Ce qui est réellement débité : douze mois d'un coup en annuel.
 function totalFacture(planId, nbLogements, periodicite) {
@@ -2533,22 +2577,37 @@ function tarifAffiche(planId, nbLogements, deviseId, periodicite) {
   const unite = periodicite === 'annuel'
     ? Math.round(plein * (1 - REMISE_ANNUELLE / 100) / d.arrondi) * d.arrondi
     : plein;
-  const total = unite * n;
-  return { unite, total, plein: plein * n, annuel: total * 12, palier: pal };
+  // Découverte ne facture que ses deux premiers logements : le total doit
+  // suivre ce plafond, sinon l'écran promet un prix qui n'est pas celui-là.
+  const factures = logementsFactures(planId, n);
+  const total = unite * factures;
+  return { unite, total, factures, plein: plein * factures, annuel: total * 12, palier: pal };
 }
 
 function planTotal(planId, nbLogements) {
   const n = Math.max(1, nbLogements);
-  return prixParLogement(planId, n) * n;
+  return prixParLogement(planId, n) * logementsFactures(planId, n);
 }
 
 // Le prix affiché « à l'unité », tel qu'on le lit sur une carte d'offre.
 // Il dépend du parc : sans lui, on ne saurait pas quel palier citer.
 function planPrixTexte(planId, nbLogements) {
   const p = getPlan(planId);
-  if (p.unite === 'essai') return { montant:formatPrixAbo(0), suffixe:`pendant ${p.essaiJours} jours` };
-  if (p.unite === 'devis') return { montant:'Sur devis', suffixe:`au-delà de ${PARC_MAX_CATALOGUE} logements` };
-  return { montant:formatPrixAbo(prixParLogement(planId, nbLogements)), suffixe:'par logement et par mois' };
+  if (p.unite === 'gratuit') return { montant:formatPrixAbo(0), suffixe:'sans engagement' };
+  if (p.unite === 'devis')   return { montant:'Sur devis', suffixe:`au-delà de ${PARC_MAX_CATALOGUE} logements` };
+  const suffixe = p.dureeMois
+    ? `par logement et par mois, pendant ${p.dureeMois} mois`
+    : 'par logement et par mois';
+  return { montant:formatPrixAbo(prixParLogement(planId, nbLogements)), suffixe };
+}
+
+/* Nombre de logements réellement FACTURÉS par une offre. Découverte plafonne
+   aux `logementsInclus` premiers : sans ce plafond, un parc de 8 logements
+   verrait un total de 8 × 1 €, alors que l'offre n'en couvre que 2. */
+function logementsFactures(planId, nbLogements) {
+  const p = getPlan(planId);
+  const n = Math.max(1, Math.round(nbLogements) || 1);
+  return p.logementsInclus ? Math.min(n, p.logementsInclus) : n;
 }
 
 /* Une offre est-elle proposable pour ce nombre de logements ?
@@ -2556,19 +2615,13 @@ function planPrixTexte(planId, nbLogements) {
    Smart et Business s'arrêtent au catalogue (100 logements) : au-delà,
    la grille n'a plus de prix à appliquer et c'est Entreprise qui prend
    le relais. Symétriquement, Entreprise ne s'active qu'au-dessus.
-   Découverte, elle, reste toujours proposable : c'est un essai, il ne
-   se refuse pas à un gros parc — il couvre simplement 5 logements,
-   ce que la carte dit explicitement. */
+   Gratuit et Découverte restent toujours proposables : elles ne se
+   refusent pas à un gros parc. Découverte couvre simplement les deux
+   premiers logements, ce que la carte dit explicitement. */
 function planEligible(planId, nbLogements) {
   const p = getPlan(planId);
   const n = Math.max(1, Math.round(nbLogements) || 1);
   return n >= p.minLog && n <= p.maxLog;
-}
-
-// L'essai couvre-t-il tout le parc annoncé ?
-function essaiCouvreParc(nbLogements) {
-  const p = getPlan('decouverte');
-  return (Math.max(1, nbLogements) <= (p.essaiLogements || Infinity));
 }
 
 // L'offre conseillée, calée sur le « Idéal pour » de chaque offre :
@@ -2588,6 +2641,97 @@ function planGroupes(planId) {
     : [];
   return [...heritage, ...p.groupes];
 }
+
+/* ============================================================
+   MATRICE COMPARATIVE DES OFFRES
+
+   Le tableau « fonctionnalités × offres » de la landing. C'est une
+   SECONDE source à côté des `groupes` de PLANS, et c'est assumé :
+   les `groupes` servent l'argumentaire d'une offre prise seule
+   (« voici ce que vous achetez »), la matrice sert la comparaison
+   (« voici ce qui change d'une offre à l'autre »). Une même liste ne
+   fait pas bien les deux : comparer exige une ligne par fonctionnalité,
+   y compris quand l'offre ne la contient pas.
+
+   Quatre états possibles par cellule :
+     'inclus' → compris dans l'offre        (coche verte)
+     'non'    → non disponible              (gris)
+     'option' → disponible en supplément    (bleu)
+     texte    → une valeur (« 2 max », « 6 mois »), pour les lignes de
+                périmètre où un oui/non ne dirait rien
+
+   L'ordre des valeurs suit MATRICE_COLONNES, calé sur celui de PLANS.
+   ============================================================ */
+const MATRICE_COLONNES = ['gratuit', 'decouverte', 'smart', 'business', 'entreprise'];
+
+const MATRICE_OFFRES = [
+  { groupe: 'Périmètre', lignes: [
+    { nom: 'Logements couverts',        v: ['Découverte', '2 max', '1 à 100', '1 à 100', 'Illimité'] },
+    { nom: "Durée de l'offre",          v: ['15 jours', '6 mois', 'Sans limite', 'Sans limite', 'Sur mesure'] },
+    { nom: 'Création de compte sans carte bancaire', v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Sans engagement',           v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
+  ]},
+
+  { groupe: 'Canaux & réservations', lignes: [
+    { nom: 'Calendrier unifié multi-canaux', desc: 'Airbnb, Booking, Expedia… plus de 60 OTA',
+      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Synchronisation iCal',      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Réservations directes sans commission', v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Création de site web',      desc: 'Pour vos réservations directes',
+      v: ['non', 'option', 'inclus', 'inclus', 'inclus'] },
+  ]},
+
+  { groupe: 'Communication voyageurs', lignes: [
+    { nom: 'Messagerie centralisée',    desc: 'Airbnb, Booking, e-mail et WhatsApp',
+      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Intégration WhatsApp',      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Messages automatiques',     desc: "Confirmation, avant arrivée, check-out, demande d'avis",
+      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Portail voyageur',          desc: 'Page séjour : accès, Wi-Fi, bonnes adresses',
+      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Collecte et suivi des avis', v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+  ]},
+
+  { groupe: 'Opérations terrain', lignes: [
+    { nom: 'Gestion du ménage et des équipes', desc: 'Tâches, assignation, check-list mobile',
+      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Tâches récurrentes',        v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Espace prestataire',        v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Serrures connectées',       desc: 'Nuki, TTLock, Yale et plus de 20 autres marques',
+      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+  ]},
+
+  { groupe: 'Tarification', lignes: [
+    { nom: 'Tarification dynamique Oyvia', desc: 'Occupation, saison, jour, durée, délai',
+      v: ['non', 'option', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Connexion à une plateforme externe', desc: 'PriceLabs, Beyond, Wheelhouse',
+      v: ['non', 'option', 'option', 'option', 'option'] },
+  ]},
+
+  { groupe: 'Pilotage & finance', lignes: [
+    { nom: 'Tableau de bord & statistiques', v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Comptabilité',              v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Exports CSV',               v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+  ]},
+
+  { groupe: 'Vivi — IA voyageur', lignes: [
+    { nom: 'Réponses automatiques aux messages', desc: 'Dans toutes les langues, sur tous les canaux',
+      v: ['non', 'non', 'non', 'inclus', 'inclus'] },
+    { nom: 'Détection des incidents et création des tâches', v: ['non', 'non', 'non', 'inclus', 'inclus'] },
+    { nom: 'Contexte personnalisé par logement', desc: 'Wi-Fi, parking, check-in, équipements, règles',
+      v: ['non', 'non', 'non', 'inclus', 'inclus'] },
+    { nom: 'Ton et personnalité personnalisables', v: ['non', 'non', 'non', 'inclus', 'inclus'] },
+    { nom: 'Garde-fous et escalade automatique', desc: 'Remboursements, réclamations, demandes sensibles',
+      v: ['non', 'non', 'non', 'inclus', 'inclus'] },
+    { nom: 'Seuil de confiance configurable', v: ['non', 'non', 'non', 'inclus', 'inclus'] },
+  ]},
+
+  { groupe: 'Accompagnement', lignes: [
+    { nom: 'Support par e-mail',        v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Support prioritaire',       v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Accompagnement à la mise en route', v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
+  ]},
+];
 
 /* ============================================================
    HISTORIQUE DE FACTURATION (app/abonnement.html) — pour chaque
@@ -2633,11 +2777,30 @@ const UTILISATEUR = {
   role:'Conciergerie Lumia', avatar:null,
 };
 
+/* ============================================================
+   SUPPORT OYVIA — le point de contact commercial
+
+   Un changement d'offre n'est pas un réglage : il engage une facturation,
+   parfois une migration de parc. Il passe donc par l'équipe, jamais par un
+   bouton en libre-service. Coordonnées regroupées ici pour n'avoir qu'un
+   endroit à modifier le jour où elles changent.
+   ============================================================ */
+const SUPPORT_OYVIA = {
+  whatsapp: '+212 6 00 00 00 00',
+  email: 'contact@oyvia.com',
+  delaiReponse: 'Réponse sous 24 h ouvrées',
+};
+// wa.me n'accepte que des chiffres ; le message est pré-rempli côté WhatsApp.
+function lienWhatsAppSupport(message) {
+  const num = SUPPORT_OYVIA.whatsapp.replace(/[^\d]/g, '');
+  return `https://wa.me/${num}?text=${encodeURIComponent(message || '')}`;
+}
+
 const COMPTE = {
   societe:'Conciergerie Lumia',
   nbLogements:10,             // logements gérés au total
   plan:'business',            // cf. PLANS — conditionne l'accès à l'IA Avancée (Vivi)
-  compteCreeLe:'2026-01-14',  // l'essai gratuit de 15 jours est terminé depuis longtemps
+  compteCreeLe:'2026-01-14',  // compte créé bien avant la période couverte par la démo
 };
 
 /* ============================================================
@@ -2741,78 +2904,125 @@ const PLATEFORMES = [
 ];
 
 /* ============================================================
-   TARIFICATION DYNAMIQUE — le pont avec PriceLabs
+   TARIFICATION DYNAMIQUE — moteur Oyvia ou plateforme externe
    (section Intégrations)
 
    Ce que fait PriceLabs, et que l'on reproduit ici : il part d'un
    PRIX DE BASE par logement, lui applique une pile de règles
    (saison, jour de la semaine, proximité de l'arrivée, nuits
-   orphelines, tension sur les dates), puis borne le résultat entre
+   durée du séjour, délai de réservation), puis borne le résultat entre
    un plancher et un plafond décidés par l'hôte. Le prix obtenu est
    poussé chaque nuit vers les canaux connectés.
 
-   Deux partis pris, importants pour ne rien raconter de faux :
+   Trois partis pris, importants pour ne rien raconter de faux :
 
    1. Le plancher et le plafond ne sont pas des règles de plus, ce
       sont des GARDE-FOUS. Ils s'appliquent en dernier et écrasent
       tout le reste : aucune combinaison de règles ne peut vendre
       une nuit sous le prix que l'hôte a fixé comme acceptable.
 
-   2. PriceLabs s'appuie sur des données de MARCHÉ (les comparables
-      du quartier). Oyvia n'a pas ces données. Plutôt que d'inventer
-      une « occupation du marché » qui n'existe pas, la règle de
-      tension se calcule sur VOTRE propre calendrier, autour de la
-      date — et elle est libellée comme telle à l'écran. C'est moins
-      puissant, mais c'est vérifiable.
+   2. Les plateformes du marché (PriceLabs, Beyond…) s'appuient sur
+      des données de COMPARABLES du quartier. Oyvia n'en dispose pas.
+      Le taux d'occupation se mesure donc sur VOTRE parc, et il est
+      libellé comme tel à l'écran. C'est moins puissant qu'une donnée
+      de marché, mais c'est vérifiable.
+
+   3. Quatre des cinq règles portent sur une NUIT (occupation, saison,
+      jour, délai de réservation) : elles se cumulent pour produire le
+      prix affiché au calendrier. La cinquième, la durée du séjour,
+      ne peut pas s'appliquer à une nuit isolée — on ne sait pas, en
+      calculant le mardi, combien de nuits le voyageur réservera. Elle
+      s'applique au DEVIS, une fois la durée connue. Cf. prixSejour().
    ============================================================ */
 
-// Modulation par mois (index 0 = janvier), en pourcentage du prix de base.
+/* Qui calcule les prix. Oyvia sait le faire lui-même ; sinon on se branche
+   sur une plateforme spécialisée, qui garde alors la main sur ses règles. */
+const MOTEURS_TARIFICATION = [
+  { id:'oyvia',      nom:'Tarification Oyvia', lettre:'O', externe:false,
+    accroche:"Le moteur intégré : vos règles, vos garde-fous, aucun outil supplémentaire à payer.",
+    desc:"Cinq leviers que vous réglez vous-même — occupation, saison, jour de la semaine, durée du séjour, délai de réservation." },
+  { id:'pricelabs',  nom:'PriceLabs',  lettre:'P', externe:true,
+    accroche:"La référence du marché, avec les données de comparables de votre quartier.",
+    desc:"Vos règles restent configurées dans PriceLabs. Oyvia lui transmet vos réservations, applique vos garde-fous et pousse les prix vers vos canaux." },
+  { id:'beyond',     nom:'Beyond',     lettre:'B', externe:true,
+    accroche:"Tarification pilotée par la demande, orientée gestionnaires multi-biens.",
+    desc:"Vos règles restent configurées dans Beyond. Oyvia applique vos garde-fous et pousse les prix vers vos canaux." },
+  { id:'wheelhouse', nom:'Wheelhouse', lettre:'W', externe:true,
+    accroche:"Stratégies personnalisables, du plus prudent au plus agressif.",
+    desc:"Vos règles restent configurées dans Wheelhouse. Oyvia applique vos garde-fous et pousse les prix vers vos canaux." },
+];
+function getMoteurTarification(id) { return MOTEURS_TARIFICATION.find(m => m.id === id) || null; }
+
 const TARIF_DYNAMIQUE = {
   id: 'TD',
+  // null = aucun choix fait, l'écran de sélection s'affiche.
+  moteur: null,
   syncAuto: true,
   heureSync: '06:00',
   derniereSync: '2026-07-23 06:12',
   horizonJours: 365,          // profondeur de calendrier poussée aux canaux
   arrondi: 1,                 // arrondi du prix final, en euros
 
+  /* 1. TAUX D'OCCUPATION — le levier principal.
+     Part de VOS logements déjà vendus pour cette nuit-là :
+     logements réservés / logements du parc. Plus le parc se remplit,
+     plus les nuits restantes peuvent se vendre cher.
+
+     `horizonUtile` est le garde-fou de cette règle : au-delà, elle ne
+     s'applique plus. Un parc vide à six mois n'est PAS un signal de
+     faible demande, c'est l'état normal d'un calendrier à six mois.
+     Sans cette borne, la règle lirait ce vide comme une alerte et
+     collerait toutes les dates lointaines au plancher.
+     Le palier retenu est le premier dont `jusqua` couvre la valeur. */
+  occupation: { actif: true, horizonUtile: 120, paliers: [
+    { jusqua: 30,  pct: -15 },
+    { jusqua: 50,  pct: -8  },
+    { jusqua: 70,  pct: 0   },
+    { jusqua: 85,  pct: 12  },
+    { jusqua: 100, pct: 25  },
+  ]},
+
+  // 2. SAISON — modulation mois par mois (index 0 = janvier).
   saison:  { actif: true, mois: [-20, -15, -10, 0, 5, 12, 25, 30, 10, 0, -15, -5] },
-  // index = getDay() : 0 = dimanche … 6 = samedi
+
+  // 3. JOUR DE LA SEMAINE — index = getDay() : 0 = dimanche … 6 = samedi.
   jours:   { actif: true, pct: [-8, -10, -10, -8, -3, 12, 15] },
 
-  // Décote à l'approche de l'arrivée : une nuit invendue ne se rattrape pas.
-  // Le premier palier dont `jours` couvre l'échéance l'emporte.
-  derniereMinute: { actif: true, paliers: [
-    { jours: 1,  pct: -22 },
-    { jours: 3,  pct: -15 },
-    { jours: 7,  pct: -8  },
-    { jours: 14, pct: -3  },
+  /* 4. DURÉE DU SÉJOUR — s'applique au devis, pas à la nuit.
+     En calculant le prix d'un mardi, on ignore si le voyageur prendra
+     2 nuits ou 3 semaines : cette règle ne peut donc pas entrer dans le
+     prix affiché au calendrier. Elle module le TOTAL une fois la durée
+     connue (cf. prixSejour), comme le fait une grille LOS. Bornes en
+     nuits, inclusives des deux côtés ; `max: null` = pas de limite. */
+  duree: { actif: true, paliers: [
+    { min: 2,  max: 3,    pct: 0   },
+    { min: 4,  max: 6,    pct: -5  },
+    { min: 7,  max: 13,   pct: -12 },
+    { min: 14, max: 29,   pct: -20 },
+    { min: 30, max: null, pct: -30 },
   ]},
 
-  // Nuits coincées entre deux séjours, dans un trou plus court que le
-  // minimum de nuits du logement : invendables au prix normal.
-  orphelines: { actif: true, pct: -25 },
-
-  /* Tension sur la période, mesurée sur votre propre calendrier.
-     `fenetre` = nombre de jours de part et d'autre de la date.
-
-     `horizonUtile` est le garde-fou essentiel de cette règle : au-delà,
-     elle ne s'applique plus du tout. Un calendrier vide à quatre mois
-     n'est PAS un signal de faible demande — c'est l'état normal d'un
-     calendrier à quatre mois, personne n'a encore réservé. Sans cette
-     borne, la règle lisait ce vide comme une alerte et décotait toutes
-     les dates lointaines, ce qui collait les prix au plancher sur la
-     moitié de l'horizon. Les paliers sont calés sur l'échelle réelle
-     d'un calendrier privé, pas sur une courbe de marché. */
-  tension: { actif: true, fenetre: 10, horizonUtile: 60, paliers: [
-    { seuil: 0,  pct: -8 },
-    { seuil: 20, pct: 0  },
-    { seuil: 45, pct: 10 },
-    { seuil: 70, pct: 18 },
+  /* 5. DÉLAI DE RÉSERVATION — nombre de jours entre aujourd'hui et la nuit.
+     Une nuit invendue ne se rattrape jamais : on décote à l'approche, et
+     on peut au contraire majorer les réservations très anticipées, qui
+     sécurisent le calendrier. Bornes en jours, inclusives. */
+  delai: { actif: true, paliers: [
+    { min: 0,  max: 3,    label: 'Dernière minute', pct: -20 },
+    { min: 4,  max: 7,    label: 'Rush',            pct: -10 },
+    { min: 8,  max: 30,   label: 'Normal',          pct: 0   },
+    { min: 31, max: 60,   label: 'Early bird',      pct: 5   },
+    { min: 61, max: null, label: 'Super early',     pct: 8   },
   ]},
 
-  // Minimum de nuits piloté : on assouplit là où l'on veut remplir.
-  minNuits: { actif: true, orphelin: true, derniereMinuteJours: 3, derniereMinuteMin: 1 },
 };
+
+/* Copie des réglages d'usine, prise avant toute restauration : _migrerTarification()
+   s'en sert pour reconstruire une règle absente d'un ancien instantané. */
+const _TD_DEFAUTS = JSON.parse(JSON.stringify({
+  occupation: TARIF_DYNAMIQUE.occupation,
+  duree: TARIF_DYNAMIQUE.duree,
+  delai: TARIF_DYNAMIQUE.delai,
+}));
 
 /* Prix fixés à la main pour une nuit précise. Ils court-circuitent tout le
    moteur — y compris le plancher et le plafond : si l'hôte inscrit un prix,
@@ -2833,17 +3043,43 @@ const TD_JOURNAL = [
 
 const TD_STATUT_JOURNAL = { ok:'Réussie', attention:'Avertissement', erreur:'Échec' };
 
-// La section n'a de sens que si le compte PriceLabs est relié.
+/* Moteur retenu par l'hôte. Tant qu'aucun choix n'est fait, la section
+   affiche l'écran de sélection et rien d'autre : montrer un calendrier de
+   recommandations laisserait croire que des prix partent déjà. */
+function tdMoteur() { return getMoteurTarification(TARIF_DYNAMIQUE.moteur); }
+function tdMoteurChoisi() { return !!tdMoteur(); }
+// Les règles ne sont modifiables ici que si c'est Oyvia qui calcule : avec
+// une plateforme externe, elles vivent chez elle, et les éditer ici
+// laisserait croire qu'on agit sur des prix qu'on ne fait que recevoir.
+function tdMoteurInterne() { const m = tdMoteur(); return !!m && !m.externe; }
+
+function tdChoisirMoteur(id) {
+  const m = getMoteurTarification(id);
+  if (!m) return false;
+  TARIF_DYNAMIQUE.moteur = id;
+  // Une plateforme externe se reflète dans la liste des intégrations :
+  // les deux écrans doivent raconter la même chose.
+  PLATEFORMES.forEach(p => { if (MOTEURS_TARIFICATION.some(x => x.externe && x.id === p.id)) p.connecte = (p.id === id); });
+  return true;
+}
+function tdDeconnecterMoteur() {
+  const ancien = TARIF_DYNAMIQUE.moteur;
+  TARIF_DYNAMIQUE.moteur = null;
+  PLATEFORMES.forEach(p => { if (p.id === ancien) p.connecte = false; });
+}
+
+// Conservé : d'autres écrans (Paramètres > Plateformes) parlent encore de
+// PriceLabs en tant qu'intégration, indépendamment du moteur retenu.
 function pricelabsConnecte() {
   const p = PLATEFORMES.find(x => x.id === 'pricelabs');
   return !!(p && p.connecte);
 }
 
-// Un logement est piloté s'il est activé ET si la passerelle est branchée :
-// afficher « PriceLabs » sur une fiche alors que le compte est déconnecté
-// laisserait croire que des prix partent, alors que rien ne part.
+// Un logement est piloté s'il est activé ET si un moteur est choisi :
+// afficher « tarification dynamique » sur une fiche alors qu'aucun moteur
+// ne tourne laisserait croire que des prix partent, alors que rien ne part.
 function tdPilote(l) {
-  return pricelabsConnecte() && !!(l && l.tarifs && l.tarifs.dynamique && l.tarifs.dynamique.actif);
+  return tdMoteurChoisi() && !!(l && l.tarifs && l.tarifs.dynamique && l.tarifs.dynamique.actif);
 }
 function tdLogementsPilotes() { return LOGEMENTS.filter(tdPilote); }
 
@@ -2879,40 +3115,27 @@ function tdRetirerOverride(logementId, date) {
   return o ? supprimerEntite('TD_OVERRIDES', o.id) : false;
 }
 
-/* Nuit orpheline : une nuit libre dans un trou fermé des DEUX côtés par un
-   séjour, et plus court que le minimum de nuits du logement. Personne ne
-   peut réserver ce trou sans enfreindre la règle de séjour minimum — d'où
-   la décote, qui va de pair avec l'assouplissement du minimum de nuits.
-   Au-delà de LIMITE jours de liberté d'un côté, ce n'est plus un trou :
-   c'est une période ouverte, qui n'a rien d'orphelin. */
-function tdTrouOrphelin(logementId, date) {
-  const occ = nuitsOccupees(logementId);
-  if (occ.has(date)) return null;
-  const LIMITE = 12;
-  let avant = 0, apres = 0;
-  while (avant < LIMITE && !occ.has(addDays(date, -(avant + 1)))) avant++;
-  if (avant >= LIMITE) return null;
-  while (apres < LIMITE && !occ.has(addDays(date, apres + 1))) apres++;
-  if (apres >= LIMITE) return null;
-  const taille = avant + 1 + apres;
-  const l = getLogement(logementId);
-  const seuil = (l && l.sejour && l.sejour.nuitsMin) || 1;
-  return taille < seuil ? { taille, seuil } : null;
+/* Taux d'occupation du parc pour une nuit : logements réservés / logements
+   du parc. Un seul passage sur les réservations, sans reconstruire un
+   calendrier par logement — la fonction est appelée pour chaque cellule du
+   calendrier, la différence se voit. */
+function tdOccupationParc(date) {
+  const total = LOGEMENTS.length;
+  if (!total) return 0;
+  const pris = new Set();
+  RESERVATIONS.forEach(r => {
+    if (r.statut === 'annule') return;
+    if (date >= r.arrivee && date < r.depart) pris.add(r.logementId);
+  });
+  return Math.round((pris.size / total) * 100);
 }
-
-// Part des nuits déjà vendues autour de la date, sur ce logement.
-function tdTension(logementId, date, fenetre) {
-  const occ = nuitsOccupees(logementId);
-  const f = fenetre || TARIF_DYNAMIQUE.tension.fenetre;
-  let prises = 0, total = 0;
-  for (let i = -f; i <= f; i++) { if (occ.has(addDays(date, i))) prises++; total++; }
-  return Math.round((prises / total) * 100);
+// Premier palier dont le plafond couvre la valeur (paliers « jusqua »).
+function tdPalierJusqua(paliers, valeur) {
+  return paliers.find(p => valeur <= p.jusqua) || paliers[paliers.length - 1];
 }
-function tdPalierTension(pct) {
-  const paliers = TARIF_DYNAMIQUE.tension.paliers;
-  let choisi = paliers[0];
-  paliers.forEach(p => { if (pct >= p.seuil) choisi = p; });
-  return choisi;
+// Palier d'un intervalle [min, max] inclusif ; max null = pas de limite.
+function tdPalierIntervalle(paliers, valeur) {
+  return paliers.find(p => valeur >= p.min && (p.max == null || valeur <= p.max)) || null;
 }
 
 /* Cœur du moteur. Renvoie le prix poussé pour une nuit, ET le détail des
@@ -2930,7 +3153,7 @@ function prixRecommande(logementId, date) {
     logementId, date, base, min, max,
     reservation, passe: jAvant < 0,
     facteurs: [], override: null, brut: base, prix: base,
-    borne: null, minNuits: (l.sejour && l.sejour.nuitsMin) || 1, orphelin: null,
+    borne: null, minNuits: (l.sejour && l.sejour.nuitsMin) || 1,
   };
 
   const ov = tdOverride(logementId, date);
@@ -2955,21 +3178,16 @@ function prixRecommande(logementId, date) {
   // Recalculer une décote « dernière minute » sur une nuit déjà réservée
   // n'aurait aucun sens : le prix est encaissé, il ne bouge plus.
   if (!reservation && !res.passe) {
-    if (T.derniereMinute.actif) {
-      const p = T.derniereMinute.paliers.slice().sort((a, b) => a.jours - b.jours).find(x => jAvant <= x.jours);
-      if (p) ajouter('derniere_minute', `Arrivée dans ${jAvant} j`, p.pct, 'Dernière minute');
+    if (T.delai.actif) {
+      const p = tdPalierIntervalle(T.delai.paliers, jAvant);
+      if (p) ajouter('delai', `${p.label} · ${jAvant} j avant`, p.pct, 'Délai de réservation');
     }
-    const orph = T.orphelines.actif ? tdTrouOrphelin(logementId, date) : null;
-    if (orph) {
-      res.orphelin = orph;
-      ajouter('orpheline', `Trou de ${orph.taille} nuit${orph.taille > 1 ? 's' : ''}`, T.orphelines.pct, `Minimum ${orph.seuil} nuits`);
-    }
-    // Hors de l'horizon utile, le remplissage n'est pas encore un signal.
-    if (T.tension.actif && jAvant <= (T.tension.horizonUtile || Infinity)) {
-      const t = tdTension(logementId, date);
-      const p = tdPalierTension(t);
-      res.tensionPct = t;
-      ajouter('tension', `Calendrier rempli à ${t} %`, p.pct, 'Tension sur la période');
+    // Hors de l'horizon utile, un parc vide n'est pas encore un signal.
+    if (T.occupation.actif && jAvant <= (T.occupation.horizonUtile || Infinity)) {
+      const t = tdOccupationParc(date);
+      const p = tdPalierJusqua(T.occupation.paliers, t);
+      res.occupationPct = t;
+      ajouter('occupation', `Parc occupé à ${t} %`, p.pct, "Taux d'occupation");
     }
   }
 
@@ -2980,13 +3198,6 @@ function prixRecommande(logementId, date) {
   else if (prix > max) { prix = max; res.borne = 'max'; }
   res.prix = prix;
 
-  // Minimum de nuits piloté, dans la même logique que le prix.
-  if (T.minNuits.actif) {
-    if (res.orphelin && T.minNuits.orphelin) res.minNuits = res.orphelin.taille;
-    else if (!reservation && !res.passe && jAvant <= T.minNuits.derniereMinuteJours) {
-      res.minNuits = Math.min(res.minNuits, T.minNuits.derniereMinuteMin);
-    }
-  }
   return res;
 }
 
@@ -2994,12 +3205,55 @@ function prixRecommande(logementId, date) {
    On ne mesure QUE les nuits encore à vendre : inclure les nuits déjà
    réservées ferait passer pour une recommandation un prix qui a été
    décidé il y a des mois. */
+/* Prix d'un SÉJOUR complet — c'est ici, et seulement ici, que la règle de
+   durée entre en jeu.
+
+   On somme les prix nuit par nuit (chacun portant déjà l'occupation, la
+   saison, le jour et le délai), puis on applique le palier de durée au
+   total. Impossible de faire autrement : au moment où l'on calcule le prix
+   d'un mardi, on ignore si le voyageur prendra 2 nuits ou 3 semaines.
+
+   Le plancher est revérifié sur la moyenne par nuit : une remise longue
+   durée de 30 % ne doit pas passer sous le prix que l'hôte a fixé comme
+   acceptable, sinon le garde-fou ne serait plus un garde-fou. */
+function prixSejour(logementId, arrivee, nuits) {
+  const l = getLogement(logementId);
+  if (!l || !nuits || nuits < 1) return null;
+  const T = TARIF_DYNAMIQUE;
+  const { min } = tdBornes(l);
+
+  const lignes = [];
+  let sousTotal = 0;
+  for (let i = 0; i < nuits; i++) {
+    const date = addDays(arrivee, i);
+    const r = prixRecommande(logementId, date);
+    const p = r ? r.prix : 0;
+    lignes.push({ date, prix: p });
+    sousTotal += p;
+  }
+
+  const palier = T.duree.actif ? tdPalierIntervalle(T.duree.paliers, nuits) : null;
+  const pctDuree = palier ? palier.pct : 0;
+  let total = Math.round(sousTotal * (1 + pctDuree / 100));
+
+  // Garde-fou : la remise de durée ne peut pas faire descendre la nuit
+  // moyenne sous le plancher du logement.
+  let plancherApplique = false;
+  if (total < min * nuits) { total = min * nuits; plancherApplique = true; }
+
+  return {
+    logementId, arrivee, nuits, lignes,
+    sousTotal, pctDuree, palierDuree: palier,
+    total, parNuit: Math.round(total / nuits), plancherApplique,
+  };
+}
+
 function tdSynthese(logementIds, jours = 30, depuis = AUJOURDHUI) {
   const ids = logementIds && logementIds.length
     ? logementIds
     : tdLogementsPilotes().map(l => l.id);
   let nuits = 0, sommePrix = 0, sommeBase = 0;
-  let orphelines = 0, plancher = 0, plafond = 0, fixes = 0;
+  let plancher = 0, plafond = 0, fixes = 0;
   ids.forEach(id => {
     for (let i = 0; i < jours; i++) {
       const date = addDays(depuis, i);
@@ -3009,7 +3263,6 @@ function tdSynthese(logementIds, jours = 30, depuis = AUJOURDHUI) {
       sommePrix += r.prix;
       sommeBase += r.base;
       if (r.override) fixes++;
-      if (r.orphelin) orphelines++;
       if (r.borne === 'min') plancher++;
       if (r.borne === 'max') plafond++;
     }
@@ -3021,7 +3274,7 @@ function tdSynthese(logementIds, jours = 30, depuis = AUJOURDHUI) {
     prixMoyen: Math.round(moyen),
     baseMoyenne: Math.round(moyenBase),
     ecartPct: moyenBase ? Math.round(((moyen - moyenBase) / moyenBase) * 100) : 0,
-    orphelines, plancher, plafond, fixes,
+    plancher, plafond, fixes,
   };
 }
 
@@ -3464,7 +3717,7 @@ const VIVI_CATEGORIES_TACHE = [
   {
     id:'panne', label:'Panne ou dégât', type:'maintenance', urgence:'haute',
     desc:"Fuite, chauffe-eau, serrure, électroménager, climatisation, Wi-Fi.",
-    heureDefaut:'16:00', montant:0,
+    heureDefaut:'16:00',
     confirmations:{
       fr:"Bonjour {prenom}, c'est confirmé : notre intervenant passera {quand} pour régler le problème. Merci de votre patience !",
       en:"Hello {prenom}, it's confirmed: our technician will come {quand} to fix the issue. Thank you for your patience!",
@@ -3482,7 +3735,7 @@ const VIVI_CATEGORIES_TACHE = [
   {
     id:'proprete', label:'Problème de propreté', type:'menage', urgence:'haute',
     desc:"Logement sale à l'arrivée, poubelles pleines, draps ou serviettes tachés.",
-    heureDefaut:'14:00', montant:0,
+    heureDefaut:'14:00',
     confirmations:{
       fr:"Bonjour {prenom}, c'est confirmé : une équipe de ménage passera {quand}. Encore désolés pour ce désagrément, et merci de nous l'avoir signalé.",
       en:"Hello {prenom}, it's confirmed: a cleaning team will come {quand}. Again, sorry for the inconvenience, and thank you for letting us know.",
@@ -3499,7 +3752,7 @@ const VIVI_CATEGORIES_TACHE = [
   {
     id:'consommables', label:'Linge et consommables', type:'linge', urgence:'normale',
     desc:"Serviettes, draps, papier toilette, capsules, produits d'entretien.",
-    heureDefaut:'09:00', montant:15,
+    heureDefaut:'09:00',
     confirmations:{
       fr:"Bonjour {prenom}, c'est noté : le réapprovisionnement vous sera livré {quand}. Bonne journée !",
       en:"Hello {prenom}, all set: your restock will be delivered {quand}. Have a great day!",
@@ -3515,7 +3768,7 @@ const VIVI_CATEGORIES_TACHE = [
   {
     id:'menage_sejour', label:'Ménage en cours de séjour', type:'menage', urgence:'normale',
     desc:"Séjour long : ménage intermédiaire demandé par le voyageur.",
-    heureDefaut:'11:00', montant:0,
+    heureDefaut:'11:00',
     confirmations:{
       fr:"Bonjour {prenom}, c'est confirmé : le ménage de mi-séjour est programmé {quand}. Merci de laisser l'accès possible à cette heure-là.",
       en:"Hello {prenom}, it's confirmed: your mid-stay cleaning is scheduled {quand}. Please make sure access is possible at that time.",
@@ -3622,19 +3875,9 @@ function prestataireHabituel(logementId, type) {
 }
 function getPrestataire(id) { return PRESTATAIRES.find(p => p.id === id) || null; }
 
-/* ---------- Montant proposé ----------
-   Le tarif d'un ménage dépend surtout du logement (un chalet de 5 pièces
-   n'est pas un studio) : on reprend donc le montant des ménages déjà
-   facturés sur ce bien, et on ne retombe sur le tarif générique du
-   prestataire que si le logement n'a pas d'historique. */
-function montantHabituel(logementId, type, prestataireId) {
-  const passees = TACHES.filter(t => t.logementId === logementId && t.type === type && t.montant > 0);
-  if (passees.length) return passees[passees.length - 1].montant;
-  // À défaut d'historique, on prend le forfait ménage du logement plutôt
-  // qu'un tarif attaché au prestataire : c'est le bien qui détermine le prix.
-  const l = getLogement(logementId);
-  return type === 'menage' && l ? (l.menageTarif || 0) : 0;
-}
+/* Une tâche ne porte plus de montant : la rémunération d'une intervention
+   dépend du bien et reste à définir. Rien n'est donc chiffré ici, ni proposé
+   à l'écran — plutôt qu'un prix arbitraire qui aurait l'air d'un engagement. */
 
 /* ---------- Date proposée ----------
    Urgent → aujourd'hui, sinon demain ; jamais avant l'arrivée du
@@ -3669,7 +3912,6 @@ function _viviProposition(c, msgIndex, detection) {
       date: _viviDateTache(cat, resa),
       heure: cat.heureDefaut,
       prestataireId,
-      montant: cat.montant || montantHabituel(resa.logementId, cat.type, prestataireId),
       note: `Signalé par ${resa.voyageur} — ${cat.label.toLowerCase()}`,
     },
   };
@@ -4292,6 +4534,51 @@ function supprimerTache(id) {
    Vider le cache HTTP n'y change rien — l'instantané est dans localStorage.
    On répare donc l'accès ici, après restauration, comme pour les autres
    migrations de ce fichier. */
+/* Les tâches ne portent plus de montant. Un instantané enregistré avant ce
+   changement en contient encore, et la restauration (Object.assign) le
+   réinjecterait à chaque chargement : le champ ressusciterait indéfiniment
+   dans l'état sauvegardé, alors que plus rien ne l'affiche ni ne le tient à
+   jour. On le retire donc explicitement. */
+function _migrerTachesSansMontant() {
+  TACHES.forEach(t => { if (t && 'montant' in t) delete t.montant; });
+  PRESTATAIRES.forEach(p => { if (p && 'tarifMenage' in p) delete p.tarifMenage; });
+}
+
+/* Réglages de tarification enregistrés avant l'arrivée du choix de moteur et
+   des cinq familles de règles. La restauration écrase TARIF_DYNAMIQUE avec
+   l'instantané : sans réparation, `occupation`, `duree` et `delai` seraient
+   absents et le moteur planterait au premier calcul de prix. */
+function _migrerTarification() {
+  const T = TARIF_DYNAMIQUE, D = _TD_DEFAUTS;
+  /* Attention au sens de la restauration : elle procède par Object.assign,
+     donc une clé ABSENTE de l'instantané laisse la valeur d'usine en place.
+     Après restauration, `occupation` existe donc toujours — tester son
+     absence ne détecterait jamais un ancien état. Ce sont les ANCIENNES clés
+     (`tension`, `derniereMinute`) qui signalent un instantané à migrer. */
+  if (!T.occupation) T.occupation = JSON.parse(JSON.stringify(D.occupation));
+  if (!T.delai)      T.delai      = JSON.parse(JSON.stringify(D.delai));
+  if (!T.duree)      T.duree      = JSON.parse(JSON.stringify(D.duree));
+
+  // L'ancienne règle « tension » mesurait la même idée — le remplissage —
+  // mais sur le calendrier d'un seul logement. On reprend ses pourcentages
+  // plutôt que d'imposer les valeurs d'usine : c'était un réglage de l'hôte.
+  if (T.tension && Array.isArray(T.tension.paliers)) {
+    T.occupation.actif = T.tension.actif !== false;
+    T.tension.paliers.forEach((p, i) => { if (T.occupation.paliers[i]) T.occupation.paliers[i].pct = p.pct; });
+    if (T.tension.horizonUtile) T.occupation.horizonUtile = T.tension.horizonUtile;
+  }
+  if (T.derniereMinute) T.delai.actif = T.derniereMinute.actif !== false;
+
+  // Un compte qui avait déjà branché une plateforme garde son moteur.
+  if (!T.moteur) {
+    const externe = MOTEURS_TARIFICATION.find(m => m.externe && (PLATEFORMES.find(p => p.id === m.id) || {}).connecte);
+    T.moteur = externe ? externe.id : null;
+  }
+
+  delete T.tension;
+  delete T.derniereMinute;
+}
+
 function _migrerAcces() {
   // Les modes retirés du référentiel se ramènent à celui qui leur ressemble.
   const REMPLACES = { digicode: 'boite_cles', accueil: 'personne', concierge: 'personne' };
@@ -4368,6 +4655,10 @@ _migrerFacturation();
 // personne). Voir la fonction pour le détail : c'est la restauration
 // elle-même qui abîme ces fiches, il faut donc les réparer juste après.
 _migrerAcces();
+// Tarification enregistrée avant le choix de moteur et les 5 familles de règles.
+_migrerTarification();
+// Tâches et prestataires enregistrés avant le retrait de la notion de prix.
+_migrerTachesSansMontant();
 // Déroulé complet sur les messages qui signalent un besoin d'intervention :
 // Vivi répond, puis prépare la tâche. Appelé APRÈS la restauration, pour que
 // les signalements déjà traités soient connus — un rechargement ne renvoie

@@ -50,7 +50,6 @@
 .pr-task__code { background: var(--bg-subtle); border: 1px solid var(--c-border); border-radius: var(--r-sm); padding: 5px var(--sp-2); font-size: var(--fs-xs); color: var(--c-text-soft); }
 .pr-task__code b { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text); }
 .pr-task__foot { display: flex; align-items: center; justify-content: space-between; margin-top: var(--sp-4); }
-.pr-task__pay { font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
 .pr-status { height: 38px; padding: 0 var(--sp-5); border-radius: var(--r-full); font-size: var(--fs-sm); font-weight: var(--fw-semibold); border: 1px solid transparent; cursor: pointer; transition: filter var(--t-fast); }
 .pr-status:hover { filter: brightness(0.97); }
 .pr-status--a_faire { background: var(--c-warning-soft); color: var(--c-warning-ink); }

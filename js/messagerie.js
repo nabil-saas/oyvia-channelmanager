@@ -288,7 +288,7 @@ Layout.init('messagerie');
       </div>
       <p class="msg-tache__cible">
         ${TACHE_LABEL[prop.tache.type] || prop.tache.type} · <b>${l.nom}</b> ·
-        ${formatDate(prop.tache.date)} à ${prop.tache.heure}${prest ? ` · ${prest.nom}` : ' · à assigner'}${prop.tache.montant ? ` · ${formatMontant(prop.tache.montant)}` : ''}
+        ${formatDate(prop.tache.date)} à ${prop.tache.heure}${prest ? ` · ${prest.nom}` : ' · à assigner'}
       </p>
       ${enEdition ? `
         <div class="msg-tache__grid">

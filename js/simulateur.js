@@ -1,10 +1,14 @@
 /* ============================================================
    OYVIA — Landing : offres tarifaires + simulateur
-   Modèle : 4 offres (cf. PLANS dans js/data.js).
-     · Découverte → essai de 15 jours, jusqu'à 5 logements
+   Modèle : 5 offres (cf. PLANS dans js/data.js).
+     · Gratuit    → création de compte, découverte de la plateforme
+     · Découverte → ~1 €/logement/mois, 2 logements, 6 mois
      · Smart      → grille dégressive par logement, sans IA voyageur
      · Business   → grille dégressive par logement, + Vivi IA Avancée
      · Entreprise → sur devis au-delà de 100 logements
+
+   Les cartes ne portent que le montant et l'action ; le détail des
+   fonctionnalités est rendu juste en dessous, offre par offre.
 
    Les cartes d'offres ET le simulateur sont générés depuis PLANS :
    la landing ne peut donc pas diverger du tarif appliqué dans l'app
@@ -28,46 +32,38 @@
   const PLAN_POPULAIRE = 'business';
 
   function planCardHTML(p, n) {
-    const gratuit = p.unite === 'essai';
+    const gratuit = p.unite === 'gratuit';
     const devis   = p.unite === 'devis';
 
-    // Au-delà du catalogue, il ne reste qu'Entreprise : Découverte, Smart
-    // et Business sont grisées ensemble. On les grise plutôt que de les
-    // retirer, pour que le visiteur voie ce qu'il quitte en basculant.
-    // Découverte est concernée elle aussi : un essai calibré pour
-    // 5 logements n'a rien à proposer à un parc de plus de 100.
-    const bloque = n > PARC_MAX_CATALOGUE && !devis;
+    /* Une offre payante qui ne couvre pas le parc saisi est grisée plutôt que
+       retirée : le visiteur doit voir ce qu'il quitte en changeant de taille.
+       On s'appuie sur planEligible, donc sur les bornes déclarées dans PLANS —
+       Découverte s'arrête à 2 logements, Smart et Business au catalogue. */
+    const bloque = !gratuit && !devis && !planEligible(p.id, n);
 
-    // Douze lignes d'affilée seraient illisibles : on les rend groupe par
-    // groupe, avec l'intitulé du groupe en intertitre.
-    const feats = planGroupes(p.id).map(g => `
-      ${g.titre ? `<li class="lp-plan__group">${g.titre}</li>` : ''}
-      ${g.items.map(f => `
-        <li class="lp-plan__feat ${g.herite ? 'lp-plan__feat--herite' : ''}">${CHECK}<span><b>${f.titre}</b>${f.desc ? `<em>${f.desc}</em>` : ''}</span></li>`).join('')}
-    `).join('');
+    // Dire POURQUOI c'est indisponible, et court : une phrase longue élargit
+    // sa colonne de grille et décale toute la rangée.
+    const limite = bloque
+      ? (p.maxLog < PARC_MAX_CATALOGUE
+          ? `Jusqu'à ${p.maxLog} logement${p.maxLog > 1 ? 's' : ''}`
+          : `Jusqu'à ${PARC_MAX_CATALOGUE} logements`)
+      : '';
 
-    // Le repère « populaire » est un choix commercial, pas une déduction —
-    // mais il n'a plus de sens sur une carte grisée.
     const populaire = p.id === PLAN_POPULAIRE && !bloque;
 
-    // Bloc prix. En annuel on montre le prix mensuel barré : la remise doit
-    // se voir sur le chiffre, pas seulement sur une pastille.
+    /* Bloc prix. La carte ne porte plus QUE le montant et l'action : le
+       détail des fonctionnalités est repris plus bas, offre par offre, où
+       il y a la place de le lire. */
     let bloc;
     if (bloque) {
-      bloc = `<div class="lp-plan__price"><b>—</b></div>
-              <p class="lp-plan__total">Jusqu'à ${PARC_MAX_CATALOGUE} logements</p>`;
+      bloc = `<div class="lp-plan__price"><b>—</b></div>`;
     } else if (gratuit) {
-      const couvre = essaiCouvreParc(n);
-      bloc = `<div class="lp-plan__price"><b>0</b><span>pendant ${p.essaiJours} jours</span></div>
-              <p class="lp-plan__total">${couvre
-                ? 'Aucune carte bancaire demandée'
-                : `L'essai couvre ${p.essaiLogements} de vos ${n} logements`}</p>`;
+      bloc = `<div class="lp-plan__price"><b>0</b><span>/ mois</span></div>`;
     } else if (devis) {
-      bloc = `<div class="lp-plan__price"><b>Sur devis</b></div>
-              <p class="lp-plan__total">Au-delà de ${PARC_MAX_CATALOGUE} logements</p>`;
+      bloc = `<div class="lp-plan__price"><b>Sur devis</b></div>`;
     } else {
-      // Tout vient de tarifAffiche : les montants à l'écran sont cohérents
-      // entre eux (prix unitaire × nombre de logements = total).
+      // Tout vient de tarifAffiche : les montants à l'écran restent
+      // cohérents entre eux (prix unitaire × logements facturés = total).
       const t = tarifAffiche(p.id, n, devise, periode);
       const f = v => formatDevise(v, devise, { deja: true });
       bloc = `
@@ -77,33 +73,83 @@
           : ''}
         <div class="lp-plan__price">
           <b>${f(t.total)}</b><span>/ mois</span>
-        </div>
-        <p class="lp-plan__total">
-          ${f(t.unite)} par logement · ${n} logement${n > 1 ? 's' : ''}
-          ${periode === 'annuel' ? `<br>Facturé ${f(t.annuel)} par an` : ''}
-        </p>`;
+        </div>`;
     }
 
     let cta;
-    if (bloque)       cta = `<span class="btn btn--secondary btn--block is-disabled" aria-disabled="true">Indisponible pour ${n} logements</span>`;
+    if (bloque)       cta = `<span class="btn btn--secondary btn--block is-disabled" aria-disabled="true">${limite}</span>`;
     else if (gratuit) cta = `<a class="btn btn--secondary btn--block" href="app/dashboard.html">Créer mon compte</a>`;
     else if (devis)   cta = `<a class="btn ${n > PARC_MAX_CATALOGUE ? 'btn--primary' : 'btn--secondary'} btn--block" href="mailto:contact@oyvia.com?subject=${encodeURIComponent('Demande de devis — ' + n + ' logements')}">Demander un devis</a>`;
     else              cta = `<a class="btn ${populaire ? 'btn--primary' : 'btn--secondary'} btn--block" href="app/dashboard.html">Choisir ${p.nom}</a>`;
 
     return `
-      <article class="lp-plan ${populaire ? 'is-popular' : ''} ${gratuit ? 'lp-plan--free' : ''} ${bloque ? 'is-locked' : ''}">
+      <article class="lp-plan lp-plan--compact ${populaire ? 'is-popular' : ''} ${gratuit ? 'lp-plan--free' : ''} ${bloque ? 'is-locked' : ''}">
         ${populaire ? '<span class="lp-plan__flag">Le plus populaire</span>' : ''}
         <h3 class="lp-plan__name">${p.nom}</h3>
         <p class="lp-plan__resume">${p.accroche}</p>
         ${bloc}
-        <div class="lp-plan__foot lp-plan__foot--haut">${cta}</div>
-        <ul class="lp-plan__feats">${feats}</ul>
-        <p class="lp-plan__ideal"><b>Idéal pour :</b> ${p.idealPour}</p>
+        <div class="lp-plan__foot">${cta}</div>
       </article>`;
+  }
+
+  /* ---------- Tableau comparatif ----------
+     Une ligne par fonctionnalité, une colonne par offre. Les cartes ne
+     portant plus que le montant, c'est ici qu'on répond à « qu'est-ce que
+     je gagne en montant d'offre ? » — question qui se lit en balayant une
+     ligne, pas en comparant cinq listes côte à côte. */
+  const elDetails = document.getElementById('lp-details');
+
+  const CROIX = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+  function celluleMatrice(valeur) {
+    if (valeur === 'inclus') return `<td class="lp-tab__cell lp-tab__cell--oui"><span class="sr-only">Inclus</span>${CHECK}</td>`;
+    if (valeur === 'non')    return `<td class="lp-tab__cell lp-tab__cell--non"><span class="sr-only">Non inclus</span>${CROIX}</td>`;
+    if (valeur === 'option') return `<td class="lp-tab__cell lp-tab__cell--option"><span class="lp-tab__option">Option</span></td>`;
+    return `<td class="lp-tab__cell lp-tab__cell--texte">${valeur}</td>`;
+  }
+
+  function renderTableau() {
+    if (!elDetails) return;
+    const cols = MATRICE_COLONNES.map(id => getPlan(id)).filter(Boolean);
+
+    const entetes = cols.map(p => `
+      <th scope="col" class="${p.id === PLAN_POPULAIRE ? 'is-popular' : ''}">
+        <span class="lp-tab__offre">${p.nom}</span>
+      </th>`).join('');
+
+    const corps = MATRICE_OFFRES.map(g => `
+      <tr class="lp-tab__grouperow">
+        <th scope="rowgroup" colspan="${cols.length + 1}">${g.groupe}</th>
+      </tr>
+      ${g.lignes.map(l => `
+        <tr>
+          <th scope="row" class="lp-tab__feat">
+            <b>${l.nom}</b>${l.desc ? `<em>${l.desc}</em>` : ''}
+          </th>
+          ${l.v.map((val, i) => celluleMatrice(val).replace('lp-tab__cell',
+              'lp-tab__cell' + (cols[i] && cols[i].id === PLAN_POPULAIRE ? ' is-popular' : ''))).join('')}
+        </tr>`).join('')}
+    `).join('');
+
+    elDetails.innerHTML = `
+      <div class="lp-tab__scroll">
+        <table class="lp-tab">
+          <thead>
+            <tr><th scope="col" class="lp-tab__coin">Fonctionnalité</th>${entetes}</tr>
+          </thead>
+          <tbody>${corps}</tbody>
+        </table>
+      </div>
+      <p class="lp-tab__legende">
+        <span><i class="lp-tab__pastille lp-tab__pastille--oui"></i> Inclus</span>
+        <span><i class="lp-tab__pastille lp-tab__pastille--option"></i> Disponible en option</span>
+        <span><i class="lp-tab__pastille lp-tab__pastille--non"></i> Non disponible</span>
+      </p>`;
   }
 
   function renderPlans(n) {
     if (elPlans) elPlans.innerHTML = PLANS.map(p => planCardHTML(p, n)).join('');
+    // Le tableau ne dépend ni du parc ni de la devise : un seul rendu suffit.
   }
 
   /* ============================================================
@@ -156,6 +202,10 @@
     renderBarre();
     renderPlans(parc);
   }
+
+  // Le tableau comparatif est statique : rendu une fois, hors du cycle
+  // de recalcul déclenché par la devise ou la taille du parc.
+  renderTableau();
 
   function setParc(n) {
     // 1 minimum : proposer un tarif pour zéro logement n'aurait pas de sens.

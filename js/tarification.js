@@ -22,7 +22,22 @@ Layout.init('tarification');
   const elTabs    = document.getElementById('td-tabs');
 
   const JOURS_MINI = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-  const NB_JOURS = 21;              // colonnes affichées dans le calendrier
+  /* Nombre de colonnes du calendrier. Il ne peut pas être fixe : « 180 € »
+     tient dans une case étroite, « 208 696 F CFA » non — en dirhams et en
+     francs CFA les montants débordaient et se chevauchaient d'une case à
+     l'autre. On dimensionne donc sur le montant le plus long réellement
+     affiché, ce qui suit à la fois la devise et le niveau de prix du parc. */
+  function nbJours() {
+    const liste = logementsAffiches();
+    if (!liste.length) return 21;
+    const plusLong = liste.reduce((n, l) => {
+      const b = tdBornes(l);
+      return Math.max(n, formatMontantNu(b.max).length, formatMontantNu(b.base).length);
+    }, 0);
+    if (plusLong <= 4) return 21;   // « 180 »
+    if (plusLong <= 6) return 14;   // « 1 957 »
+    return 10;                      // « 208 696 »
+  }
   let debut = AUJOURDHUI;           // première colonne
   let filtreLogement = 'all';
   let nuitOuverte = null;           // { logementId, date }
@@ -39,7 +54,7 @@ Layout.init('tarification');
      En-tête : actions disponibles selon l'état de la connexion
      ============================================================ */
   function renderActions() {
-    if (!pricelabsConnecte()) { elActions.innerHTML = ''; return; }
+    if (!tdMoteurChoisi()) { elActions.innerHTML = ''; return; }
     elActions.innerHTML = `
       <select class="select app-logement-select" id="td-logement" aria-label="Filtrer par logement">
         <option value="all">Tous les logements</option>
@@ -49,7 +64,14 @@ Layout.init('tarification');
         ${ic('<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>')}
         Synchroniser maintenant
       </button>
-      <a class="btn btn--ghost" href="parametres.html">Gérer la connexion</a>`;
+      <span class="td-moteur-actif" title="Moteur de tarification en service">
+        <i class="td-moteur-actif__pastille"${tdMoteurInterne() ? '' : ' data-externe'}>${tdMoteur().lettre}</i>
+        <span><small>Moteur actif</small><b>${tdMoteur().nom}</b></span>
+      </span>
+      <button class="btn btn--danger" id="td-moteur-btn" title="Déconnecter ${tdMoteur().nom} et choisir un autre moteur">
+        ${ic('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>')}
+        Déconnecter
+      </button>`;
 
     document.getElementById('td-logement').addEventListener('change', e => {
       filtreLogement = e.target.value;
@@ -61,53 +83,109 @@ Layout.init('tarification');
       render();
       UI.toast(e.statut === 'ok' ? `${e.logements} logements synchronisés` : e.message, e.statut === 'ok');
     });
+    document.getElementById('td-moteur-btn').addEventListener('click', deconnecterMoteur);
+  }
+
+  /* Déconnecter le moteur en cours, à tout moment et quel qu'il soit — ce qui
+     ramène à l'écran de choix.
+     Ce qui est conservé diffère selon le cas, et il faut le dire : quitter
+     Oyvia laisse ses règles intactes (on les retrouve en revenant), quitter
+     une plateforme externe coupe une connexion qu'il faudra rétablir. Dans les
+     deux cas, garde-fous et prix fixés à la main ne bougent pas — ils
+     appartiennent au logement, pas au moteur. */
+  function deconnecterMoteur() {
+    const m = tdMoteur();
+    if (!m) return;
+    UI.confirm({
+      title: `Déconnecter ${m.nom} ?`,
+      message: m.externe
+        ? `${m.nom} cessera de pousser des prix vers vos canaux. Vos garde-fous (plancher, plafond) et vos prix fixés à la main sont conservés, ainsi que vos réglages de la tarification Oyvia.\n\nVous pourrez reconnecter cette plateforme ou en choisir une autre à tout moment.`
+        : `Plus aucun prix ne partira vers vos canaux tant qu'aucun moteur n'est choisi.\n\nVos cinq règles, vos garde-fous et vos prix fixés à la main sont conservés : vous les retrouverez intacts en réactivant la tarification Oyvia.`,
+      confirmText: 'Déconnecter',
+      cancelText: 'Annuler',
+      danger: true,
+      onConfirm: () => {
+        tdDeconnecterMoteur();
+        saveOyviaState();
+        render();
+        UI.toast(`${m.nom} déconnecté — choisissez votre moteur`);
+      },
+    });
   }
 
   /* ============================================================
      Écran d'accroche — passerelle non connectée
      ============================================================ */
   function renderGate() {
-    const pf = PLATEFORMES.find(p => p.id === 'pricelabs');
-    const exemple = LOGEMENTS[0];
-    const b = exemple ? tdBornes(exemple) : { base: 0, min: 0, max: 0 };
+    const b = LOGEMENTS[0] ? tdBornes(LOGEMENTS[0]) : { base: 0, min: 0, max: 0 };
+    const interne = MOTEURS_TARIFICATION.filter(m => !m.externe);
+    const externes = MOTEURS_TARIFICATION.filter(m => m.externe);
+
     elGate.innerHTML = `
-      <div class="card td-gate">
-        <div class="td-gate__main">
-          <span class="td-gate__logo">P</span>
-          <h2>Connectez PriceLabs pour activer la tarification dynamique</h2>
+      <div class="td-choix">
+        <div class="td-choix__intro">
+          <h2>Comment voulez-vous fixer vos prix ?</h2>
           <p class="text-soft">
-            PriceLabs recalcule le prix de chaque nuit à partir de votre prix de base,
-            de la saison, du jour de la semaine et du remplissage de votre calendrier,
-            puis pousse le résultat vers vos canaux. Oyvia lui fournit vos réservations
-            et applique vos garde-fous : jamais en dessous de votre plancher,
-            jamais au-dessus de votre plafond.
+            Oyvia sait calculer lui-même le prix de chaque nuit, ou se brancher sur la plateforme
+            de tarification que vous utilisez déjà. Dans les deux cas, vos garde-fous s'appliquent
+            en dernier — jamais sous votre plancher, jamais au-dessus de votre plafond — et un prix
+            que vous fixez à la main l'emporte sur tout.
           </p>
-          <div class="td-gate__actions">
-            <button class="btn btn--primary btn--lg" id="td-connect">Connecter mon compte PriceLabs</button>
-            <a class="btn btn--ghost" href="parametres.html">Voir toutes les plateformes</a>
-          </div>
-          <p class="text-xs text-muted mt-3">${pf ? pf.desc : ''}</p>
         </div>
-        <ul class="td-gate__points">
-          <li>${ic('<path d="M3 16.5 8 10l4 3.5L21 4"/><path d="M16 4h5v5"/>')}
-            <div><b>Un prix par nuit, pas un tarif figé</b>
-            <span>Exemple sur « ${exemple ? exemple.nom : '—'} » : base ${formatMontant(b.base)}, plancher ${formatMontant(b.min)}, plafond ${formatMontant(b.max)}.</span></div></li>
-          <li>${ic('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>')}
-            <div><b>Les nuits orphelines détectées</b>
-            <span>Un trou trop court pour votre minimum de séjour est décoté et son minimum assoupli, sinon il reste invendable.</span></div></li>
-          <li>${ic('<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>')}
-            <div><b>Vous gardez la main</b>
-            <span>Un prix fixé à la main sur une date précise l'emporte sur tout le moteur.</span></div></li>
-        </ul>
+
+        ${interne.map(m => `
+          <div class="td-moteur td-moteur--interne">
+            <div class="td-moteur__head">
+              <span class="td-moteur__logo">${m.lettre}</span>
+              <div class="grow">
+                <b>${m.nom}</b>
+                <small>${m.accroche}</small>
+              </div>
+              <span class="badge badge--accent">Inclus dans votre offre</span>
+            </div>
+            <p class="text-sm text-soft">${m.desc}</p>
+            <ul class="td-moteur__points">
+              <li>${ic('<path d="M3 16.5 8 10l4 3.5L21 4"/><path d="M16 4h5v5"/>')}
+                <div><b>Cinq règles que vous réglez</b>
+                <span>Occupation du parc, saison, jour de la semaine, durée du séjour, délai de réservation.</span></div></li>
+              <li>${ic('<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>')}
+                <div><b>Vos garde-fous d'abord</b>
+                <span>Exemple sur « ${LOGEMENTS[0] ? LOGEMENTS[0].nom : '—'} » : base ${formatMontant(b.base)}, plancher ${formatMontant(b.min)}, plafond ${formatMontant(b.max)}.</span></div></li>
+              <li>${ic('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>')}
+                <div><b>Calculé sur vos données</b>
+                <span>Vos réservations, votre parc. Aucune donnée de marché n'est inventée.</span></div></li>
+            </ul>
+            <button class="btn btn--primary btn--lg" data-moteur="${m.id}">Utiliser la tarification Oyvia</button>
+          </div>`).join('')}
+
+        <div class="td-choix__externes">
+          <p class="eyebrow mb-3">Ou connecter votre plateforme</p>
+          ${externes.map(m => `
+            <div class="td-moteur td-moteur--externe">
+              <span class="td-moteur__logo td-moteur__logo--sm">${m.lettre}</span>
+              <div class="grow">
+                <b>${m.nom}</b>
+                <small>${m.accroche}</small>
+              </div>
+              <button class="btn btn--secondary btn--sm" data-moteur="${m.id}">Connecter</button>
+            </div>`).join('')}
+          <p class="text-xs text-muted mt-3">
+            Avec une plateforme externe, vos règles restent configurées chez elle : Oyvia lui transmet
+            vos réservations, applique vos garde-fous et pousse les prix vers vos canaux.
+          </p>
+        </div>
       </div>`;
 
-    document.getElementById('td-connect').addEventListener('click', () => {
-      const p = PLATEFORMES.find(x => x.id === 'pricelabs');
-      if (p) p.connecte = true;
-      tdSynchroniser();
-      saveOyviaState();
-      render();
-      UI.toast('PriceLabs connecté — premiers prix calculés');
+    elGate.querySelectorAll('[data-moteur]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.moteur;
+        tdChoisirMoteur(id);
+        tdSynchroniser();
+        saveOyviaState();
+        render();
+        const m = getMoteurTarification(id);
+        UI.toast(m.externe ? `${m.nom} connecté — premiers prix reçus` : 'Tarification Oyvia activée — premiers prix calculés');
+      });
     });
   }
 
@@ -162,15 +240,15 @@ Layout.init('tarification');
       sup = `<span class="td-cell__tag">${r.reservation.canal === 'bloque' ? 'Bloqué' : 'Vendu'}</span>`;
     } else {
       if (r.override) { classes.push('td-cell--fixe'); sup = '<span class="td-cell__tag">Fixé</span>'; }
-      else if (r.orphelin) { classes.push('td-cell--orphelin'); sup = '<span class="td-cell__tag">Orphelin</span>'; }
       else if (r.borne === 'min') { classes.push('td-cell--plancher'); sup = '<span class="td-cell__tag">Plancher</span>'; }
       else if (r.borne === 'max') { classes.push('td-cell--plafond'); sup = '<span class="td-cell__tag">Plafond</span>'; }
       else if (r.prix > r.base) classes.push('td-cell--haut');
       else if (r.prix < r.base) classes.push('td-cell--bas');
     }
-    const montant = r.reservation && r.reservation.canal === 'bloque' ? '—' : formatMontant(r.prix);
+    // Sans symbole : il est rappelé une seule fois dans l'en-tête du tableau.
+    const montant = r.reservation && r.reservation.canal === 'bloque' ? '—' : formatMontantNu(r.prix);
     return `<button type="button" class="${classes.join(' ')}" data-nuit="${l.id}|${date}"
-      aria-label="${l.nom}, ${formatDate(date, { annee: true })}, ${montant}">
+      aria-label="${l.nom}, ${formatDate(date, { annee: true })}, ${r.reservation && r.reservation.canal === 'bloque' ? 'bloqué' : formatMontant(r.prix)}">
       <span class="td-cell__prix">${montant}</span>${sup}</button>`;
   }
 
@@ -187,7 +265,8 @@ Layout.init('tarification');
       return;
     }
 
-    const dates = Array.from({ length: NB_JOURS }, (_, i) => addDays(debut, i));
+    const cols = nbJours();
+    const dates = Array.from({ length: cols }, (_, i) => addDays(debut, i));
     const entetes = dates.map(d => {
       const dd = parseDate(d);
       const we = dd.getDay() === 0 || dd.getDay() === 6;
@@ -206,20 +285,20 @@ Layout.init('tarification');
             <b>${l.nom}</b>
             <span>${erreur
               ? `<span class="text-danger">${erreur}</span>`
-              : `Base ${formatMontant(b.base)} · ${formatMontant(b.min)}–${formatMontant(b.max)}`}</span>
+              : `Base ${formatMontantNu(b.base)} · ${formatMontantNu(b.min)}–${formatMontantNu(b.max)}`}</span>
           </div>
         </div>
         <div class="td-row__cells">${dates.map(d => celluleHTML(l, d)).join('')}</div>
       </div>`;
     }).join('');
 
-    const finDate = addDays(debut, NB_JOURS - 1);
+    const finDate = addDays(debut, cols - 1);
     pane.innerHTML = `
       <div class="card td-cal">
         <div class="card__head">
           <div>
             <div class="card__title">${formatPlage(debut, finDate)}</div>
-            <p class="text-sm text-soft">Le prix affiché est celui qui part vers vos canaux pour cette nuit-là.</p>
+            <p class="text-sm text-soft">Le prix affiché est celui qui part vers vos canaux pour cette nuit-là. Montants en <b>${getDevise(deviseAffichee()).label}</b>.</p>
           </div>
           <div class="row gap-2">
             <button class="icon-btn" id="td-prev" aria-label="Période précédente">${ic('<path d="m15 18-6-6 6-6"/>')}</button>
@@ -228,7 +307,7 @@ Layout.init('tarification');
           </div>
         </div>
         <div class="td-scroll">
-          <div class="td-grid" style="--td-cols:${NB_JOURS}">
+          <div class="td-grid" style="--td-cols:${cols}">
             <div class="td-row td-row--head">
               <div class="td-row__nom"></div>
               <div class="td-row__cells">${entetes}</div>
@@ -241,14 +320,13 @@ Layout.init('tarification');
           <span><i class="td-dot td-dot--bas"></i>En dessous</span>
           <span><i class="td-dot td-dot--plancher"></i>Bloqué au plancher</span>
           <span><i class="td-dot td-dot--plafond"></i>Bloqué au plafond</span>
-          <span><i class="td-dot td-dot--orphelin"></i>Nuit orpheline</span>
           <span><i class="td-dot td-dot--fixe"></i>Prix fixé à la main</span>
           <span><i class="td-dot td-dot--vendu"></i>Déjà vendu</span>
         </div>
       </div>`;
 
-    document.getElementById('td-prev').addEventListener('click', () => { debut = addDays(debut, -NB_JOURS); renderCalendrier(); });
-    document.getElementById('td-next').addEventListener('click', () => { debut = addDays(debut, NB_JOURS); renderCalendrier(); });
+    document.getElementById('td-prev').addEventListener('click', () => { debut = addDays(debut, -cols); renderCalendrier(); });
+    document.getElementById('td-next').addEventListener('click', () => { debut = addDays(debut, cols); renderCalendrier(); });
     document.getElementById('td-auj').addEventListener('click', () => { debut = AUJOURDHUI; renderCalendrier(); });
     pane.querySelectorAll('[data-nuit]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -306,16 +384,8 @@ Layout.init('tarification');
     corps += `<div class="td-meta">
       <div><span>Plancher</span><b>${formatMontant(r.min)}</b></div>
       <div><span>Plafond</span><b>${formatMontant(r.max)}</b></div>
-      <div><span>Minimum de nuits</span><b>${r.minNuits}</b></div>
-      ${r.tensionPct !== undefined ? `<div><span>Calendrier rempli</span><b>${r.tensionPct} %</b></div>` : ''}
+      ${r.occupationPct !== undefined ? `<div><span>Parc occupé</span><b>${r.occupationPct} %</b></div>` : ''}
     </div>`;
-
-    if (r.orphelin) {
-      corps += `<div class="td-note td-note--orphelin">
-        Trou de ${r.orphelin.taille} nuit${r.orphelin.taille > 1 ? 's' : ''} entre deux séjours, alors que ce logement
-        demande ${r.orphelin.seuil} nuits minimum. Sans décote ET sans assouplir le minimum, personne ne peut réserver
-        cette nuit : les deux vont ensemble.</div>`;
-    }
 
     corps += `<div class="field mt-5">
       <label class="field__label" for="td-fixe">Fixer le prix de cette nuit (${symboleDevise()})</label>
@@ -411,7 +481,7 @@ Layout.init('tarification');
       input.addEventListener('change', () => {
         const l = getLogement(input.dataset.pilote);
         l.tarifs.dynamique.actif = input.checked;
-        l.tarifs.dynamique.source = input.checked ? 'PriceLabs' : null;
+        l.tarifs.dynamique.source = input.checked ? (tdMoteur() || {}).id || null : null;
         if (input.checked && l.tarifs.min == null) {
           const b = tdBornes(l);
           l.tarifs.min = b.min; l.tarifs.max = b.max;
@@ -494,59 +564,91 @@ Layout.init('tarification');
   function inter(id, actif) {
     return `<label class="switch"><input type="checkbox" data-regle="${id}" ${actif ? 'checked' : ''} /><span class="switch__track"></span></label>`;
   }
-  function champPct(cle, index, valeur, label) {
-    return `<label class="td-pct">
-      <span>${label}</span>
-      <input class="input input--pct" type="number" step="1" data-pctcle="${cle}" data-pctidx="${index}" value="${valeur}" />
-    </label>`;
+
+  // Libellé d'un palier borné, du type « 7–13 nuits » ou « 30+ ».
+  function bornes(p, unite) {
+    return p.max == null ? `${p.min}+ ${unite}` : `${p.min}–${p.max} ${unite}`;
   }
 
   function renderRegles() {
     const T = TARIF_DYNAMIQUE;
-    const mois = T.saison.mois.map((v, i) => champPct('saison', i, v, MOIS_COURT[i])).join('');
-    const jours = T.jours.pct.map((v, i) => champPct('jours', i, v, JOURS_MINI[i])).join('');
-    const lm = T.derniereMinute.paliers.map((p, i) =>
-      champPct('derniereMinute', i, p.pct, `≤ ${p.jours} j`)).join('');
-    const tens = T.tension.paliers.map((p, i) =>
-      champPct('tension', i, p.pct, `≥ ${p.seuil} %`)).join('');
+    const m = tdMoteur();
+    const editable = tdMoteurInterne();
+
+    /* Avec une plateforme externe, les règles vivent chez elle. On les
+       montre pour que l'écran reste lisible, mais en lecture seule : les
+       rendre modifiables ici laisserait croire qu'on agit sur des prix
+       qu'Oyvia ne fait que recevoir. */
+    const bandeau = editable ? '' : `
+      <div class="card card--pad td-externe mb-4">
+        <div class="row gap-3">
+          <span class="td-moteur__logo td-moteur__logo--sm">${m.lettre}</span>
+          <div class="grow">
+            <b>Ces règles sont configurées dans ${m.nom}</b>
+            <p class="text-sm text-soft">Oyvia applique vos garde-fous et vos prix fixés à la main, puis pousse le résultat vers vos canaux. Pour modifier la stratégie elle-même, passez par ${m.nom}.</p>
+          </div>
+          <button class="btn btn--danger btn--sm" id="td-changer-moteur">Déconnecter</button>
+        </div>
+      </div>`;
+
+    const ro = editable ? '' : ' disabled';
+    const champ = (cle, i, v, label) => `<label class="td-pct">
+      <span>${label}</span>
+      <input class="input input--pct" type="number" step="1" data-pctcle="${cle}" data-pctidx="${i}" value="${v}"${ro} />
+    </label>`;
+
+    const occ    = T.occupation.paliers.map((p, i) => champ('occupation', i, p.pct,
+                     i === 0 ? `0–${p.jusqua} %` : `${T.occupation.paliers[i - 1].jusqua}–${p.jusqua} %`)).join('');
+    const mois   = T.saison.mois.map((v, i) => champ('saison', i, v, MOIS_COURT[i])).join('');
+    const jours  = T.jours.pct.map((v, i) => champ('jours', i, v, JOURS_MINI[i])).join('');
+    const duree  = T.duree.paliers.map((p, i) => champ('duree', i, p.pct, bornes(p, 'nuits'))).join('');
+    const delai  = T.delai.paliers.map((p, i) => champ('delai', i, p.pct, bornes(p, 'j'))).join('');
+
+    // Effet concret de la règle de durée sur un séjour réel : sans ça, la
+    // grille reste abstraite et on ne voit pas ce qu'elle change.
+    const ex = tdLogementsPilotes()[0];
+    const apercuDuree = ex ? T.duree.paliers.map(p => {
+      const n = p.min;
+      const d = prixSejour(ex.id, addDays(AUJOURDHUI, 30), n);
+      return `<li><span>${bornes(p, 'nuits')}</span><b>${formatMontant(d.parNuit)}</b><small>/ nuit</small></li>`;
+    }).join('') : '';
 
     document.getElementById('td-pane-regles').innerHTML = `
+      ${bandeau}
       <div class="td-regles">
-        ${bloc('Saisonnalité', 'Modulation mois par mois, en pourcentage du prix de base.',
+        ${bloc("1 · Taux d'occupation",
+          `Part de votre parc déjà vendue pour la nuit concernée : logements réservés / ${LOGEMENTS.length} logements. Plus le parc se remplit, plus les nuits restantes se vendent cher.`,
+          `<div class="td-pcts td-pcts--5">${occ}</div>
+           <p class="text-xs text-muted mt-3">Mesuré sur <b>vos</b> réservations, pas sur des données de marché — Oyvia n'en dispose pas. Au-delà de ${T.occupation.horizonUtile} jours la règle ne s'applique plus : un parc vide à six mois est normal, ce n'est pas un signal de faible demande.</p>`,
+          inter('occupation', T.occupation.actif))}
+
+        ${bloc('2 · Saison',
+          'Modulation mois par mois, en pourcentage du prix de base.',
           `<div class="td-pcts td-pcts--12">${mois}</div>`, inter('saison', T.saison.actif))}
 
-        ${bloc('Jour de la semaine', 'Un vendredi ne vaut pas un mardi. Les écarts se cumulent avec la saison.',
+        ${bloc('3 · Jour de la semaine',
+          'Un vendredi ne vaut pas un mardi. Les écarts se cumulent avec la saison.',
           `<div class="td-pcts td-pcts--7">${jours}</div>`, inter('jours', T.jours.actif))}
 
-        ${bloc('Dernière minute', "Décote à l'approche de l'arrivée. Une nuit invendue ne se rattrape jamais.",
-          `<div class="td-pcts td-pcts--4">${lm}</div>
-           <p class="text-xs text-muted mt-3">Le palier le plus proche l'emporte. Ces décotes ne touchent que les nuits encore libres.</p>`,
-          inter('derniereMinute', T.derniereMinute.actif))}
+        ${bloc('4 · Durée du séjour',
+          "S'applique au séjour entier, pas à la nuit : en calculant le prix d'un mardi, on ignore encore combien de nuits le voyageur prendra.",
+          `<div class="td-pcts td-pcts--5">${duree}</div>
+           ${apercuDuree ? `<p class="text-xs text-muted mt-4 mb-2">Effet sur « ${ex.nom} », arrivée dans 30 jours :</p>
+             <ul class="td-apercu">${apercuDuree}</ul>` : ''}
+           <p class="text-xs text-muted mt-3">La remise ne peut pas faire descendre la nuit moyenne sous votre plancher : le garde-fou passe en dernier.</p>`,
+          inter('duree', T.duree.actif))}
 
-        ${bloc('Nuits orphelines', "Un trou plus court que votre minimum de séjour, coincé entre deux réservations.",
-          `<div class="row gap-4">
-            ${champPct('orphelines', 0, T.orphelines.pct, 'Décote')}
-            <p class="text-xs text-muted grow">Le minimum de nuits est ramené à la taille du trou, sinon la décote ne servirait à rien : la réservation resterait interdite.</p>
-          </div>`, inter('orphelines', T.orphelines.actif))}
+        ${bloc('5 · Délai de réservation',
+          "Nombre de jours entre aujourd'hui et la nuit. Une nuit invendue ne se rattrape jamais ; à l'inverse, une réservation très anticipée sécurise le calendrier.",
+          `<div class="td-pcts td-pcts--5">${delai}</div>
+           <p class="text-xs text-muted mt-3">${T.delai.paliers.map(p => `<b>${bornes(p, 'j')}</b> ${p.label}`).join(' · ')}</p>
+           <p class="text-xs text-muted mt-2">Ces ajustements ne touchent que les nuits encore libres.</p>`,
+          inter('delai', T.delai.actif))}
 
-        ${bloc('Tension sur la période',
-          `Part de votre calendrier déjà vendue autour de la date, sur ± ${T.tension.fenetre} jours. Mesurée sur <b>vos</b> réservations, pas sur des données de marché — Oyvia n'en dispose pas.`,
-          `<div class="td-pcts td-pcts--4">${tens}</div>`, inter('tension', T.tension.actif))}
-
-        ${bloc('Minimum de nuits piloté', "Assouplir le minimum là où l'on cherche à remplir.",
-          `<ul class="td-liste">
-            <li>Nuit orpheline : minimum ramené à la taille du trou.</li>
-            <li>Arrivée dans ${T.minNuits.derniereMinuteJours} jours ou moins : minimum ramené à ${T.minNuits.derniereMinuteMin} nuit.</li>
-          </ul>`, inter('minNuits', T.minNuits.actif))}
-
-        ${bloc('Synchronisation', 'Fréquence à laquelle les prix repartent vers vos canaux.',
-          `<div class="app-grid app-grid--2">
-            <div class="field"><label class="field__label" for="td-heure">Heure d'envoi</label>
-              <input class="input" type="time" id="td-heure" value="${T.heureSync}" /></div>
-            <div class="field"><label class="field__label" for="td-horizon">Horizon (jours)</label>
-              <input class="input" type="number" min="30" max="730" id="td-horizon" value="${T.horizonJours}" /></div>
-          </div>`, inter('syncAuto', T.syncAuto))}
       </div>`;
+
+    const changer = document.getElementById('td-changer-moteur');
+    if (changer) changer.addEventListener('click', deconnecterMoteur);
 
     document.querySelectorAll('[data-regle]').forEach(input => {
       input.addEventListener('change', () => {
@@ -563,18 +665,13 @@ Layout.init('tarification');
         const v = Math.round(Number(input.value) || 0);
         if (cle === 'saison') T.saison.mois[i] = v;
         else if (cle === 'jours') T.jours.pct[i] = v;
-        else if (cle === 'derniereMinute') T.derniereMinute.paliers[i].pct = v;
-        else if (cle === 'tension') T.tension.paliers[i].pct = v;
-        else if (cle === 'orphelines') T.orphelines.pct = v;
+        else if (cle === 'occupation') T.occupation.paliers[i].pct = v;
+        else if (cle === 'duree') T.duree.paliers[i].pct = v;
+        else if (cle === 'delai') T.delai.paliers[i].pct = v;
         saveOyviaState(); renderKpis(); renderCalendrier();
+        // La grille de durée s'illustre par un aperçu chiffré : il doit suivre.
+        if (cle === 'duree') renderRegles();
       });
-    });
-    const heure = document.getElementById('td-heure');
-    if (heure) heure.addEventListener('change', () => { T.heureSync = heure.value; saveOyviaState(); });
-    const horizon = document.getElementById('td-horizon');
-    if (horizon) horizon.addEventListener('change', () => {
-      T.horizonJours = Math.max(30, Math.min(730, Math.round(Number(horizon.value) || 365)));
-      horizon.value = T.horizonJours; saveOyviaState();
     });
   }
 
@@ -598,11 +695,25 @@ Layout.init('tarification');
         ${canaux.length
           ? `<div class="row gap-2 wrap">${canaux.map(c => `<span class="chip-canal chip-canal--${c.id === 'booking' ? 'booking' : (c.id === 'airbnb' ? 'airbnb' : 'direct')}">${c.nom}</span>`).join('')}</div>`
           : `<p class="text-sm text-danger">Aucun canal connecté : les prix sont calculés mais ne partent nulle part.</p>`}
-        <p class="text-xs text-muted mt-3">
-          ${TARIF_DYNAMIQUE.syncAuto
-            ? `Envoi automatique chaque jour à ${TARIF_DYNAMIQUE.heureSync}, sur ${TARIF_DYNAMIQUE.horizonJours} jours d'horizon.`
-            : "Envoi automatique désactivé : les prix ne partent que si vous cliquez sur « Synchroniser maintenant »."}
-        </p>
+      </div>
+
+      <div class="card card--pad mb-4">
+        <div class="row-between mb-4">
+          <div>
+            <p class="eyebrow">Envoi automatique</p>
+            <p class="text-sm text-soft">${TARIF_DYNAMIQUE.syncAuto
+              ? 'Les prix repartent chaque jour, sans intervention.'
+              : 'Désactivé : les prix ne partent que si vous cliquez sur « Synchroniser maintenant ».'}</p>
+          </div>
+          <label class="switch"><input type="checkbox" id="td-sync-auto" ${TARIF_DYNAMIQUE.syncAuto ? 'checked' : ''} /><span class="switch__track"></span></label>
+        </div>
+        <div class="app-grid app-grid--2">
+          <div class="field"><label class="field__label" for="td-heure">Heure d'envoi</label>
+            <input class="input" type="time" id="td-heure" value="${TARIF_DYNAMIQUE.heureSync}" ${TARIF_DYNAMIQUE.syncAuto ? '' : 'disabled'} /></div>
+          <div class="field"><label class="field__label" for="td-horizon">Horizon (jours)</label>
+            <input class="input" type="number" min="30" max="730" id="td-horizon" value="${TARIF_DYNAMIQUE.horizonJours}" /></div>
+        </div>
+        <p class="text-xs text-muted mt-3">L'horizon est la profondeur de calendrier poussée aux canaux : au-delà, aucun prix n'est envoyé.</p>
       </div>
       <div class="table-wrap">
         <table class="table">
@@ -610,6 +721,22 @@ Layout.init('tarification');
           <tbody>${rows}</tbody>
         </table>
       </div>`;
+
+    const T = TARIF_DYNAMIQUE;
+    document.getElementById('td-sync-auto').addEventListener('change', e => {
+      T.syncAuto = e.target.checked;
+      saveOyviaState(); renderJournal();
+      UI.toast(T.syncAuto ? 'Envoi automatique activé' : 'Envoi automatique désactivé');
+    });
+    document.getElementById('td-heure').addEventListener('change', e => {
+      T.heureSync = e.target.value; saveOyviaState();
+    });
+    document.getElementById('td-horizon').addEventListener('change', e => {
+      // Bornes larges mais réelles : moins de 30 jours ne sert à rien, au-delà
+      // de deux ans aucun canal n'accepte le calendrier.
+      T.horizonJours = Math.max(30, Math.min(730, Math.round(Number(e.target.value) || 365)));
+      e.target.value = T.horizonJours; saveOyviaState();
+    });
   }
 
   /* ---------- Onglets ---------- */
@@ -623,14 +750,16 @@ Layout.init('tarification');
 
   /* ---------- Rendu global ---------- */
   function render() {
-    const connecte = pricelabsConnecte();
-    elGate.hidden = connecte;
-    elCorps.hidden = !connecte;
-    document.getElementById('td-sous-titre').textContent = connecte
-      ? 'Vos prix, recalculés chaque nuit et poussés vers vos canaux.'
-      : 'Disponible dès que votre compte PriceLabs est relié à Oyvia.';
+    const m = tdMoteur();
+    elGate.hidden = !!m;
+    elCorps.hidden = !m;
+    document.getElementById('td-sous-titre').textContent = m
+      ? (m.externe
+          ? `Prix reçus de ${m.nom}, garde-fous appliqués, puis poussés vers vos canaux.`
+          : 'Vos prix, recalculés chaque nuit par Oyvia et poussés vers vos canaux.')
+      : 'Choisissez qui calcule vos prix : Oyvia, ou la plateforme que vous utilisez déjà.';
     renderActions();
-    if (!connecte) { renderGate(); return; }
+    if (!m) { renderGate(); return; }
     if (filtreLogement !== 'all' && !tdLogementsPilotes().some(l => l.id === filtreLogement)) filtreLogement = 'all';
     renderKpis();
     renderCalendrier();
