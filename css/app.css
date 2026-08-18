@@ -35,10 +35,13 @@
 /* Le libellé doit pouvoir rétrécir : avec « min-width:auto » (défaut flex) un
    intitulé long comme « Historique des voyageurs » gardait sa largeur pleine
    et poussait l'épingle hors du menu. */
-.app-navitem > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.app-navitem > span:not(.app-navitem__badge) { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .app-navitem:hover { background: var(--c-nav-hover-bg); color: var(--c-text); }
 .app-navitem.is-active { background: var(--c-nav-active-bg); color: var(--c-nav-active); font-weight: var(--fw-semibold); }
-.app-navitem__badge { margin-left: auto; background: var(--c-accent); color: #fff; font-size: var(--fs-xs); font-weight: var(--fw-semibold); border-radius: var(--r-full); min-width: 20px; height: 20px; padding: 0 6px; display: grid; place-items: center; }
+.app-navitem__badge { margin-left: auto; background: var(--c-accent); color: #fff; font-size: var(--fs-xs); font-weight: var(--fw-semibold); border-radius: var(--r-full); min-width: 20px; height: 20px; padding: 0 6px; display: grid; place-items: center;
+  /* Ni élastique ni compressible : une pastille de compteur se dimensionne
+     sur son chiffre, pas sur la place restante dans la ligne. */
+  flex: 0 0 auto; width: fit-content; }
 /* Épingle des raccourcis : discrète au repos, elle n'apparaît qu'au survol
    de l'entrée — sinon vingt épingles grises parasiteraient la lecture du
    menu. Une entrée déjà épinglée garde la sienne visible, sans quoi on ne
@@ -51,8 +54,8 @@
   display: grid; place-items: center; width: 24px; height: 24px;
   border-radius: var(--r-sm); color: var(--c-text-muted); opacity: 0; flex-shrink: 0;
   transition: opacity var(--t-fast), color var(--t-fast), background var(--t-fast); }
-.app-navitem:hover > span,
-.app-navitem:has(.app-navpin.is-on) > span { padding-right: 26px; }
+.app-navitem:hover > span:not(.app-navitem__badge),
+.app-navitem:has(.app-navpin.is-on) > span:not(.app-navitem__badge) { padding-right: 26px; }
 .app-navpin svg { width: 15px; height: 15px; }
 .app-navitem:hover .app-navpin { opacity: .75; }
 .app-navpin:hover { opacity: 1 !important; background: var(--c-nav-hover-bg); color: var(--c-text); }
@@ -60,11 +63,20 @@
 .app-navpin.is-on svg { fill: currentColor; }
 /* Un compteur et une épingle peuvent coexister : on décale l'épingle pour
    qu'elle ne recouvre pas le badge. */
-.app-navitem:has(.app-navitem__badge):hover > span,
-.app-navitem:has(.app-navitem__badge):has(.app-navpin.is-on) > span { padding-right: 0; }
+.app-navitem:has(.app-navitem__badge):hover > span:not(.app-navitem__badge),
+.app-navitem:has(.app-navitem__badge):has(.app-navpin.is-on) > span:not(.app-navitem__badge) { padding-right: 0; }
 .app-navitem:has(.app-navitem__badge) .app-navpin { position: static; transform: none; margin-left: var(--sp-2); }
 /* Menu réduit : plus de place pour l'épingle, et plus de libellé à épingler. */
 .app-sidebar.is-mini .app-navpin { display: none; }
+
+/* Tactile et tiroir mobile : il n'y a pas de survol, donc pas de moment où
+   l'épingle apparaîtrait. Elle est affichée en permanence, et le libellé
+   réserve sa place pour que rien ne se recouvre. */
+@media (hover: none), (max-width: 900px) {
+  .app-navpin { opacity: .7; }
+  .app-navitem > span:not(.app-navitem__badge) { padding-right: 26px; }
+  .app-navitem:has(.app-navitem__badge) > span:not(.app-navitem__badge) { padding-right: 0; }
+}
 
 .app-sidebar__foot { border-top: 1px solid var(--c-border); padding: var(--sp-3); }
 .app-userchip { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2); border-radius: var(--r-md); transition: background var(--t-fast); cursor: pointer; }
