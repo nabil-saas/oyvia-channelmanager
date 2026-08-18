@@ -47,7 +47,7 @@ const Layout = (function () {
     { id:'reservations', label:'Réservations',    title:'Réservations',      href:'reservations.html' },
     { id:'voyageurs',    label:'Historique des voyageurs', title:'Historique des voyageurs', href:'voyageurs.html' },
     { id:'avis',         label:'Avis',            title:'Avis',              href:'avis.html', badge:'avis' },
-    { id:'police',       label:'Fiches de police', title:'Fiches de police', href:'police.html' },
+    { id:'police',       label:'Fiches de police', title:'Fiches de police', href:'police.html', badge:'police' },
     { id:'site',         label:'Site web',        title:'Site web & réservations directes', href:'site.html' },
     { id:'services',     label:'Services additionnels', title:'Services additionnels', href:'services.html' },
     { id:'messagerie',   label:'Messagerie',      title:'Messagerie',        href:'messagerie.html', badge:'unread' },
@@ -128,6 +128,15 @@ const Layout = (function () {
     unread: unreadCount,
     avis: () => avisEnAttente().filter(avisRepondable).length
               + sejoursAEvaluer().filter(s => s.statut === 'a_faire').length,
+    /* Fiches encore à obtenir. On ne compte QUE les séjours non terminés :
+       une fiche manquante sur un séjour clos reste un manquement, mais ce
+       n'est plus une action à mener aujourd'hui — la compter ici ferait
+       gonfler un badge que rien ne pourrait plus faire redescendre. */
+    police: () => FICHES_POLICE.filter(f => {
+      if (f.statut === 'complete' || f.statut === 'transmise') return false;
+      const r = getReservation(f.reservationId);
+      return r && r.depart >= AUJOURDHUI;
+    }).length,
   };
   function badgeCount(id) {
     const f = BADGES[id];

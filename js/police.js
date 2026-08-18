@@ -179,6 +179,8 @@ Layout.init('police');
     const finalisee = f.statut === 'complete';
     return `
       <button class="btn btn--secondary" onclick="UI.closeAll()">Fermer</button>
+      <button class="btn btn--ghost" id="fp-pdf">
+        ${ic('<path d="M12 3v12"/><path d="m7 12 5 5 5-5"/><path d="M5 21h14"/>')} Exporter en PDF</button>
       ${f.statut === 'transmise'
         ? '<span class="badge badge--accent">Transmise aux autorités</span>'
         : `<button class="btn btn--ghost" id="fp-relancer">Relancer le voyageur</button>
@@ -288,6 +290,8 @@ Layout.init('police');
       saveOyviaState(); UI.closeAll(); render();
       UI.toast('Fiche transmise — conservation six mois');
     });
+    const pdf = F('fp-pdf');
+    if (pdf) pdf.addEventListener('click', () => exporterPdf(getFichePolice(editId)));
     F('fp-corps').addEventListener('click', e => {
       const v = e.target.closest('[data-voir]');
       // Aucun stockage de fichier dans cette maquette : on le dit plutôt que
@@ -358,6 +362,94 @@ Layout.init('police');
       const manque = fichePoliceManquants(f);
       UI.toast(manque.length ? `Enregistré — il manque : ${manque.join(', ')}` : 'Fiche complète, prête à être transmise');
     });
+  }
+
+  /* ---------- Export PDF ----------
+     Pas de bibliothèque embarquée : on compose un document A4 propre dans la
+     page, et on laisse le navigateur produire le PDF via sa boîte
+     d'impression (« Enregistrer au format PDF »). C'est ce que réclame une
+     fiche de police — un document officiel mis en page, pas une capture —
+     et ça reste fidèle quelle que soit la longueur des champs.
+
+     Le contenu est reconstruit à chaque export : une fiche corrigée entre
+     deux impressions doit sortir à jour. */
+  function exporterPdf(f) {
+    const r = getReservation(f.reservationId);
+    const l = r ? getLogement(r.logementId) : null;
+    const doc = POLICE_DOCUMENTS.find(d => d.id === f.document);
+    const val = v => v || '—';
+    const ligne = (k, v) => `<tr><th>${k}</th><td>${val(v)}</td></tr>`;
+
+    let zone = document.getElementById('fp-print');
+    if (!zone) {
+      zone = document.createElement('div');
+      zone.id = 'fp-print';
+      document.body.appendChild(zone);
+    }
+    zone.innerHTML = `
+      <article class="fp-print__page">
+        <header class="fp-print__head">
+          <div>
+            <h1>Fiche individuelle de police</h1>
+            <p>Déclaration des voyageurs étrangers — article R. 611-42 du CESEDA</p>
+          </div>
+          <div class="fp-print__hote">
+            <b>${COMPTE.societe}</b>
+            ${CONFORMITE.carteG ? `<span>Carte professionnelle ${CONFORMITE.carteG}</span>` : ''}
+          </div>
+        </header>
+
+        <h2>Établissement d'hébergement</h2>
+        <table class="fp-print__tbl">
+          ${ligne('Logement', l ? l.nom : '')}
+          ${ligne('Adresse', l ? l.adresse : '')}
+          ${ligne('Séjour', r ? `du ${formatDate(r.arrivee, { annee: true })} au ${formatDate(r.depart, { annee: true })}` : '')}
+        </table>
+
+        <h2>Voyageur</h2>
+        <table class="fp-print__tbl">
+          ${ligne('Nom', f.nom)}
+          ${ligne('Prénom(s)', f.prenom)}
+          ${ligne('Date de naissance', f.naissanceDate ? formatDate(f.naissanceDate, { annee: true }) : '')}
+          ${ligne('Lieu de naissance', f.naissanceLieu)}
+          ${ligne('Nationalité', f.nationalite)}
+          ${ligne('Domicile habituel', f.domicile)}
+          ${ligne('Personnes accompagnantes', f.accompagnants)}
+        </table>
+
+        <h2>Document d'identité</h2>
+        <table class="fp-print__tbl">
+          ${ligne('Nature du document', doc ? doc.label : '')}
+          ${ligne('Numéro', f.documentNumero)}
+          ${ligne('Pièce jointe', f.pieces.length ? f.pieces.map(p => p.nom).join(', ') : 'Aucune')}
+        </table>
+
+        <div class="fp-print__sign">
+          <div><span>Date d'arrivée</span><i>${r ? formatDate(r.arrivee, { annee: true }) : ''}</i></div>
+          <div><span>Signature du voyageur</span><i></i></div>
+        </div>
+
+        <footer class="fp-print__foot">
+          Document à conserver six mois et à tenir à disposition des services de police et de gendarmerie.
+          ${f.transmiseLe ? `Transmis le ${formatDate(f.transmiseLe, { annee: true })}.` : ''}
+          Édité le ${formatDate(AUJOURDHUI, { annee: true })}.
+        </footer>
+      </article>`;
+
+    document.body.classList.add('is-printing');
+    // Le nom du fichier proposé par le navigateur vient du titre du document.
+    const titre = document.title;
+    document.title = `Fiche de police — ${f.prenom} ${f.nom}`;
+    const nettoyer = () => {
+      document.body.classList.remove('is-printing');
+      document.title = titre;
+      window.removeEventListener('afterprint', nettoyer);
+    };
+    window.addEventListener('afterprint', nettoyer);
+    window.print();
+    // Filet : certains navigateurs n'émettent pas afterprint si l'impression
+    // est annulée. Sans ce délai, la page resterait bloquée en mode impression.
+    setTimeout(nettoyer, 1500);
   }
 
   /* ---------- Filtre et ouverture ---------- */

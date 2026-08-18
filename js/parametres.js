@@ -495,9 +495,72 @@ Layout.init('parametres');
     UI.toast(p.connecte ? `${p.nom} connecté` : `${p.nom} déconnecté`, p.connecte);
   });
 
+  /* ---------- Conformité ----------
+     La carte professionnelle « G » et rien d'autre : c'est elle qui autorise
+     l'activité de gestion, et son numéro doit figurer sur les documents
+     édités — mandats, factures, fiches de police. */
+  function renderConformite() {
+    const c = CONFORMITE;
+
+    // Une carte expirée n'est pas « bientôt à renouveler » : l'activité de
+    // gestion est en infraction tant qu'elle n'est pas à jour.
+    const expiree = c.carteGExpire && c.carteGExpire < AUJOURDHUI;
+    const bientot = c.carteGExpire && !expiree && nuitsEntre(AUJOURDHUI, c.carteGExpire) <= 90;
+    const alerte = (classe, icone, titre, texte) => `
+      <div class="pf-conformite__alerte ${classe}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${icone}</svg>
+        <div><b>${titre}</b><p>${texte}</p></div>
+      </div>`;
+    const ICO_ALERTE = '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>';
+    const ICO_HORLOGE = '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>';
+
+    document.getElementById('pf-pane-conformite').innerHTML = `
+      ${!c.carteG
+        ? alerte('', ICO_ALERTE, 'Carte professionnelle non renseignée',
+            "La carte « G » est obligatoire dès lors que vous gérez le bien d'autrui contre rémunération.")
+        : expiree
+          ? alerte('', ICO_ALERTE, 'Carte professionnelle expirée',
+              `Validité dépassée depuis le ${formatDate(c.carteGExpire, { annee: true })}. Le renouvellement se demande auprès de votre CCI.`)
+          : bientot
+            ? alerte('pf-conformite__alerte--douce', ICO_HORLOGE, 'Carte à renouveler',
+                `Elle expire le ${formatDate(c.carteGExpire, { annee: true })}. Comptez deux à trois mois d'instruction.`)
+            : ''}
+
+      <div class="card card--pad" style="max-width:560px">
+        <p class="eyebrow mb-2">Carte professionnelle</p>
+        <p class="text-sm text-soft mb-4">Délivrée par la CCI, mention « Gestion immobilière ». Son numéro apparaît sur vos mandats, vos factures et les fiches de police que vous éditez.</p>
+
+        <div class="field mb-4">
+          <label class="field__label" for="cf-carteg">Numéro de carte G</label>
+          <input class="input" id="cf-carteg" value="${c.carteG}" placeholder="CPI 0000 0000 000 000 000" />
+          <p class="field__hint">Format : CPI 6901 2024 000 012 345</p>
+        </div>
+        <div class="field mb-4">
+          <label class="field__label" for="cf-carteg-cci">CCI émettrice</label>
+          <input class="input" id="cf-carteg-cci" value="${c.carteGCci}" placeholder="CCI Lyon Métropole" />
+        </div>
+        <div class="field mb-4">
+          <label class="field__label" for="cf-carteg-expire">Valable jusqu'au</label>
+          <input class="input" type="date" id="cf-carteg-expire" value="${c.carteGExpire}" />
+        </div>
+
+        <button type="button" class="btn btn--primary" id="cf-save">Enregistrer</button>
+      </div>`;
+
+    document.getElementById('cf-save').addEventListener('click', () => {
+      const v = id => document.getElementById(id).value.trim();
+      Object.assign(CONFORMITE, {
+        carteG: v('cf-carteg'), carteGCci: v('cf-carteg-cci'), carteGExpire: v('cf-carteg-expire'),
+      });
+      saveOyviaState(); renderConformite();
+      UI.toast('Carte professionnelle enregistrée');
+    });
+  }
+
   renderProfil();
   renderLocalisation();
   renderSejour();
+  renderConformite();
   renderRoles();
   renderPlateformes();
 })();

@@ -4451,6 +4451,21 @@ const VIVI_FAQ = [
    PARAMÈTRES GÉNÉRAUX — localisation & séjour
    (page Paramètres > Général)
    ============================================================ */
+/* ============================================================
+   CONFORMITÉ DE L'EXPLOITANT
+
+   La carte professionnelle « G » (Gestion immobilière), délivrée par
+   la CCI. Elle est obligatoire dès qu'on gère le bien d'autrui contre
+   rémunération : sans elle, l'activité de conciergerie est en
+   infraction. Son numéro doit figurer sur les mandats, les factures
+   et les fiches de police éditées.
+   ============================================================ */
+const CONFORMITE = {
+  carteG: '',        // numéro de carte professionnelle G
+  carteGCci: '',     // CCI émettrice
+  carteGExpire: '',  // date de fin de validité
+};
+
 const PARAMETRES_GENERAUX = {
   // Les données de démonstration sont des biens français tarifés en euros :
   // c'est aussi DEVISE_REF, donc l'app s'ouvre sans conversion.
@@ -4809,7 +4824,7 @@ const OYVIA_STATE_KEY = 'oyvia_state_v2';
 const _OYVIA_ENTITIES = {
   LOGEMENTS, RESERVATIONS, VOYAGEURS, CONVERSATIONS, TACHES,
   PRESTATAIRES, AUTOMATISATIONS, RECURRENTES, PLATEFORMES,
-  COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, TACHE_LABEL,
+  COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, CONFORMITE, TACHE_LABEL,
   PROPRIETAIRES, DEPENSES, FACTURES,
   ROLES, UTILISATEURS, ROLES_PRESTATAIRE,
   ALERTES, FICHES_POLICE, SERVICES,
@@ -4905,6 +4920,13 @@ function _migrerTarification() {
   delete T.derniereMinute;
 }
 
+/* La conformité s'est réduite à la seule carte professionnelle. Les clés des
+   autres mentions survivraient dans l'instantané sans que rien ne les lise. */
+function _migrerConformite() {
+  ['garantieFinanciere', 'garantieMontant', 'rcPro', 'rcProNumero', 'siret', 'tvaIntra', 'mediateur']
+    .forEach(k => { delete CONFORMITE[k]; });
+}
+
 function _migrerAcces() {
   // Les modes retirés du référentiel se ramènent à celui qui leur ressemble.
   const REMPLACES = { digicode: 'boite_cles', accueil: 'personne', concierge: 'personne' };
@@ -4985,6 +5007,8 @@ _migrerAcces();
 _migrerTarification();
 // Tâches et prestataires enregistrés avant le retrait de la notion de prix.
 _migrerTachesSansMontant();
+// Conformité enregistrée avant sa réduction à la carte professionnelle.
+_migrerConformite();
 // Déroulé complet sur les messages qui signalent un besoin d'intervention :
 // Vivi répond, puis prépare la tâche. Appelé APRÈS la restauration, pour que
 // les signalements déjà traités soient connus — un rechargement ne renvoie
