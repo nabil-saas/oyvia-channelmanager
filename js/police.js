@@ -15,9 +15,10 @@
       en édition pour les corrections ponctuelles.
 
    2. Le statut ne se choisit pas, il se DÉDUIT de ce qui est
-      renseigné. Une fiche à qui il manque le numéro de document ne
-      peut pas être marquée « complète » par un clic optimiste. Seule
-      la transmission aux autorités reste une action explicite.
+      renseigné : « En attente » tant qu'il manque une mention
+      obligatoire, « Complète » quand tout y est. Aucun bouton ne
+      permet de le forcer — une fiche incomplète déclarée complète
+      ne se découvrirait qu'au contrôle.
 
    3. La photo du document prime sur la saisie. Recopier un numéro de
       passeport à la main, c'est une coquille sur deux documents, et
@@ -52,11 +53,11 @@ Layout.init('police');
       kpi('Échéance sous 24 h', urgentes.length,
         enRetard ? `dont ${enRetard} déjà arrivé${enRetard > 1 ? 's' : ''}` : 'à relancer avant l\'arrivée',
         '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', urgentes.length > 0),
-      kpi('En attente du voyageur', par('a_remplir') + par('en_attente'), 'Fiches non finalisées',
+      kpi('En attente', par('en_attente'), 'Il manque des mentions obligatoires',
         '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'),
-      kpi('Complètes', par('complete'), 'Prêtes à être transmises', '<path d="M20 6 9 17l-5-5"/>'),
-      kpi('Transmises', par('transmise'), 'Conservation en cours',
-        '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>'),
+      kpi('Complètes', par('complete'), 'À conserver six mois', '<path d="M20 6 9 17l-5-5"/>'),
+      kpi('Total', FICHES_POLICE.length, 'Sur la période couverte',
+        '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>'),
     ].join('');
   }
 
@@ -97,7 +98,7 @@ Layout.init('police');
       const l = r ? getLogement(r.logementId) : null;
       const st = POLICE_STATUTS[f.statut];
       const h = heuresAvantArrivee(f);
-      const nonFinalisee = f.statut !== 'complete' && f.statut !== 'transmise';
+      const nonFinalisee = f.statut !== 'complete';
       const echeance = nonFinalisee && h !== null && h <= SEUIL_ALERTE
         ? `<br><small class="text-danger">${h < 0 ? 'Arrivée passée' : `Arrivée dans ${h} h`}</small>` : '';
       return `<tr class="is-clickable" data-fiche="${f.id}">
@@ -160,7 +161,6 @@ Layout.init('police');
           <p class="eyebrow mb-3 mt-4">Suivi</p>
           ${ligne('Lien envoyé le', f.envoyeeLe ? formatDate(f.envoyeeLe) : '')}
           ${ligne('Complétée le', f.completeeLe ? formatDate(f.completeeLe) : '')}
-          ${ligne('Transmise le', f.transmiseLe ? formatDate(f.transmiseLe) : '')}
         </div>
       </div>
 
@@ -176,16 +176,13 @@ Layout.init('police');
   }
 
   function piedLecture(f) {
-    const finalisee = f.statut === 'complete';
     return `
       <button class="btn btn--secondary" onclick="UI.closeAll()">Fermer</button>
-      <button class="btn btn--ghost" id="fp-pdf">
-        ${ic('<path d="M12 3v12"/><path d="m7 12 5 5 5-5"/><path d="M5 21h14"/>')} Exporter en PDF</button>
-      ${f.statut === 'transmise'
-        ? '<span class="badge badge--accent">Transmise aux autorités</span>'
-        : `<button class="btn btn--ghost" id="fp-relancer">Relancer le voyageur</button>
-           <button class="btn btn--primary" id="fp-transmettre" ${finalisee ? '' : 'disabled'}
-             title="${finalisee ? '' : 'La fiche doit être complète avant transmission'}">Marquer transmise</button>`}`;
+      ${f.statut === 'complete'
+        ? ''
+        : '<button class="btn btn--ghost" id="fp-relancer">Relancer le voyageur</button>'}
+      <button class="btn btn--primary" id="fp-pdf">
+        ${ic('<path d="M12 3v12"/><path d="m7 12 5 5 5-5"/><path d="M5 21h14"/>')} Exporter en PDF</button>`;
   }
 
   /* ============================================================
@@ -279,16 +276,8 @@ Layout.init('police');
     if (relancer) relancer.addEventListener('click', () => {
       const f = getFichePolice(editId);
       f.envoyeeLe = AUJOURDHUI;
-      if (f.statut === 'a_remplir') f.statut = 'en_attente';
       saveOyviaState(); UI.closeAll(); render();
       UI.toast('Lien de saisie renvoyé au voyageur');
-    });
-    const transmettre = F('fp-transmettre');
-    if (transmettre) transmettre.addEventListener('click', () => {
-      const f = getFichePolice(editId);
-      f.statut = 'transmise'; f.transmiseLe = AUJOURDHUI;
-      saveOyviaState(); UI.closeAll(); render();
-      UI.toast('Fiche transmise — conservation six mois');
     });
     const pdf = F('fp-pdf');
     if (pdf) pdf.addEventListener('click', () => exporterPdf(getFichePolice(editId)));
@@ -345,22 +334,18 @@ Layout.init('police');
         pieces: piecesEnCours,
       });
 
-      // Le statut se déduit : une fiche transmise le reste, une fiche
-      // incomplète ne peut pas être déclarée complète.
-      if (f.statut !== 'transmise') {
-        const manque = fichePoliceManquants(f);
-        if (!manque.length) {
-          if (f.statut !== 'complete') f.completeeLe = AUJOURDHUI;
-          f.statut = 'complete';
-        } else {
-          f.statut = f.envoyeeLe ? 'en_attente' : 'a_remplir';
-        }
-      }
+      // Le statut se déduit du contenu, dans les deux sens : compléter la
+      // dernière mention fait passer en « Complète », en retirer une fait
+      // repasser en « En attente ».
+      const complete = !fichePoliceManquants(f).length;
+      if (complete && f.statut !== 'complete') f.completeeLe = AUJOURDHUI;
+      if (!complete) f.completeeLe = null;
+      f.statut = complete ? 'complete' : 'en_attente';
 
       saveOyviaState();
       enEdition = false; rendreModale(); render();
       const manque = fichePoliceManquants(f);
-      UI.toast(manque.length ? `Enregistré — il manque : ${manque.join(', ')}` : 'Fiche complète, prête à être transmise');
+      UI.toast(manque.length ? `Enregistré — il manque : ${manque.join(', ')}` : 'Fiche complète');
     });
   }
 
@@ -431,7 +416,6 @@ Layout.init('police');
 
         <footer class="fp-print__foot">
           Document à conserver six mois et à tenir à disposition des services de police et de gendarmerie.
-          ${f.transmiseLe ? `Transmis le ${formatDate(f.transmiseLe, { annee: true })}.` : ''}
           Édité le ${formatDate(AUJOURDHUI, { annee: true })}.
         </footer>
       </article>`;

@@ -133,7 +133,7 @@ const Layout = (function () {
        n'est plus une action à mener aujourd'hui — la compter ici ferait
        gonfler un badge que rien ne pourrait plus faire redescendre. */
     police: () => FICHES_POLICE.filter(f => {
-      if (f.statut === 'complete' || f.statut === 'transmise') return false;
+      if (f.statut === 'complete') return false;
       const r = getReservation(f.reservationId);
       return r && r.depart >= AUJOURDHUI;
     }).length,

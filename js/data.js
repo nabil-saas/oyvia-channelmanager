@@ -1966,21 +1966,22 @@ function libelleAlerte(a) {
    fiche individuelle de police à chaque voyageur étranger, la
    conserver six mois et la tenir à disposition des autorités.
 
-   Le statut suit le cycle réel du document, pas un état interne :
-     a_remplir  → le voyageur n'a rien saisi
-     en_attente → le lien lui a été envoyé, il n'a pas terminé
-     complete   → toutes les mentions obligatoires sont renseignées
-     transmise  → remise aux autorités, la conservation court
+   Deux statuts, et ils se DÉDUISENT du contenu :
+     en_attente → il manque au moins une mention obligatoire
+     complete   → tout est renseigné
+
+   Pas d'état intermédiaire déclaratif : « envoyée », « transmise » ou
+   « à remplir » décrivent des actions, pas l'état du document. Les
+   confondre avec un statut laisse croire qu'une fiche vide mais
+   envoyée serait plus avancée qu'une fiche vide — elle ne l'est pas.
 
    `pieces` porte les justificatifs. Le voyageur peut photographier sa
    pièce d'identité depuis son téléphone : c'est infiniment plus fiable
    qu'une saisie manuelle du numéro, où une coquille passe inaperçue.
    ============================================================ */
 const POLICE_STATUTS = {
-  a_remplir:  { label:'À remplir',  badge:'badge--neutral' },
   en_attente: { label:'En attente', badge:'badge--warning' },
   complete:   { label:'Complète',   badge:'badge--positive' },
-  transmise:  { label:'Transmise',  badge:'badge--accent' },
 };
 const POLICE_DOCUMENTS = [
   { id:'passeport',   label:'Passeport' },
@@ -1992,37 +1993,37 @@ const POLICE_DOCUMENTS = [
 const POLICE_OBLIGATOIRE_HORS = 'France';
 
 const FICHES_POLICE = [
-  { id:'FP1', reservationId:'R02', statut:'transmise', nom:'Rossi', prenom:'Marco',
+  { id:'FP1', reservationId:'R02', statut:'complete', nom:'Rossi', prenom:'Marco',
     naissanceDate:'1988-04-12', naissanceLieu:'Milan, Italie', nationalite:'Italie',
     domicile:'Via Torino 14, Milan', document:'passeport', documentNumero:'YA4471820',
-    accompagnants:2, envoyeeLe:'2026-07-10', completeeLe:'2026-07-11', transmiseLe:'2026-07-12',
+    accompagnants:2, envoyeeLe:'2026-07-10', completeeLe:'2026-07-11',
     pieces:[{ nom:'passeport-rossi.jpg', type:'photo', ajouteLe:'2026-07-11' }] },
   { id:'FP2', reservationId:'R06', statut:'complete', nom:'Wei', prenom:'Chen',
     naissanceDate:'1991-11-03', naissanceLieu:'Shanghai, Chine', nationalite:'Chine',
     domicile:'Nanjing Road 288, Shanghai', document:'passeport', documentNumero:'EG9902144',
-    accompagnants:1, envoyeeLe:'2026-07-18', completeeLe:'2026-07-19', transmiseLe:null,
+    accompagnants:1, envoyeeLe:'2026-07-18', completeeLe:'2026-07-19',
     pieces:[{ nom:'passeport-wei.jpg', type:'photo', ajouteLe:'2026-07-19' }] },
   { id:'FP3', reservationId:'R09', statut:'en_attente', nom:'Schmidt', prenom:'Anna',
     naissanceDate:'', naissanceLieu:'', nationalite:'Allemagne',
     domicile:'', document:'', documentNumero:'',
-    accompagnants:3, envoyeeLe:'2026-07-20', completeeLe:null, transmiseLe:null, pieces:[] },
-  { id:'FP4', reservationId:'R15', statut:'a_remplir', nom:'Popova', prenom:'Elena',
+    accompagnants:3, envoyeeLe:'2026-07-20', completeeLe:null, pieces:[] },
+  { id:'FP4', reservationId:'R15', statut:'en_attente', nom:'Popova', prenom:'Elena',
     naissanceDate:'', naissanceLieu:'', nationalite:'Bulgarie',
     domicile:'', document:'', documentNumero:'',
-    accompagnants:5, envoyeeLe:null, completeeLe:null, transmiseLe:null, pieces:[] },
+    accompagnants:5, envoyeeLe:null, completeeLe:null, pieces:[] },
   // Arrivée demain : c'est cette fiche que l'alerte des 24 h fait remonter.
   { id:'FP6', reservationId:'R03', statut:'en_attente', nom:'Meyer', prenom:'Sophie',
     naissanceDate:'1990-09-08', naissanceLieu:'Genève, Suisse', nationalite:'Suisse',
     domicile:'', document:'', documentNumero:'',
-    accompagnants:1, envoyeeLe:'2026-07-21', completeeLe:null, transmiseLe:null, pieces:[] },
-  { id:'FP7', reservationId:'R14', statut:'a_remplir', nom:'Weber', prenom:'Lukas',
+    accompagnants:1, envoyeeLe:'2026-07-21', completeeLe:null, pieces:[] },
+  { id:'FP7', reservationId:'R14', statut:'en_attente', nom:'Weber', prenom:'Lukas',
     naissanceDate:'', naissanceLieu:'', nationalite:'Allemagne',
     domicile:'', document:'', documentNumero:'',
-    accompagnants:4, envoyeeLe:null, completeeLe:null, transmiseLe:null, pieces:[] },
-  { id:'FP5', reservationId:'R05', statut:'transmise', nom:"O'Connor", prenom:'Liam',
+    accompagnants:4, envoyeeLe:null, completeeLe:null, pieces:[] },
+  { id:'FP5', reservationId:'R05', statut:'complete', nom:"O'Connor", prenom:'Liam',
     naissanceDate:'1985-06-27', naissanceLieu:'Cork, Irlande', nationalite:'Irlande',
     domicile:'12 Patrick Street, Cork', document:'cni', documentNumero:'IE7781093',
-    accompagnants:1, envoyeeLe:'2026-07-02', completeeLe:'2026-07-04', transmiseLe:'2026-07-06',
+    accompagnants:1, envoyeeLe:'2026-07-02', completeeLe:'2026-07-04',
     pieces:[{ nom:'cni-oconnor-recto.jpg', type:'photo', ajouteLe:'2026-07-04' }] },
 ];
 function getFichePolice(id) { return FICHES_POLICE.find(f => f.id === id) || null; }
@@ -2053,7 +2054,7 @@ function heuresAvantArrivee(fiche, maintenant = AUJOURDHUI) {
    rattrapable. */
 function fichesPoliceUrgentes(heures = 24, maintenant = AUJOURDHUI) {
   return FICHES_POLICE.filter(f => {
-    if (f.statut === 'complete' || f.statut === 'transmise') return false;
+    if (f.statut === 'complete') return false;
     const r = getReservation(f.reservationId);
     if (!r || r.depart < maintenant) return false;
     const h = heuresAvantArrivee(f, maintenant);
@@ -4922,6 +4923,19 @@ function _migrerTarification() {
 
 /* La conformité s'est réduite à la seule carte professionnelle. Les clés des
    autres mentions survivraient dans l'instantané sans que rien ne les lise. */
+/* Les fiches de police n'ont plus que deux statuts. Un instantané enregistré
+   avant garde « a_remplir » ou « transmise », que plus aucun libellé ne sait
+   afficher — la colonne Statut serait vide. On les ramène sur les deux
+   statuts subsistants, et on retire la date de transmission devenue sans objet. */
+function _migrerFichesPolice() {
+  const REMPLACES = { a_remplir: 'en_attente', transmise: 'complete' };
+  FICHES_POLICE.forEach(f => {
+    if (REMPLACES[f.statut]) f.statut = REMPLACES[f.statut];
+    if (!POLICE_STATUTS[f.statut]) f.statut = 'en_attente';
+    delete f.transmiseLe;
+  });
+}
+
 function _migrerConformite() {
   ['garantieFinanciere', 'garantieMontant', 'rcPro', 'rcProNumero', 'siret', 'tvaIntra', 'mediateur']
     .forEach(k => { delete CONFORMITE[k]; });
@@ -5009,6 +5023,8 @@ _migrerTarification();
 _migrerTachesSansMontant();
 // Conformité enregistrée avant sa réduction à la carte professionnelle.
 _migrerConformite();
+// Fiches de police enregistrées avec les quatre anciens statuts.
+_migrerFichesPolice();
 // Déroulé complet sur les messages qui signalent un besoin d'intervention :
 // Vivi répond, puis prépare la tâche. Appelé APRÈS la restauration, pour que
 // les signalements déjà traités soient connus — un rechargement ne renvoie
