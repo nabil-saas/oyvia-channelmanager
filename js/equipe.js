@@ -5,7 +5,9 @@
 Layout.init('equipe');
 
 (function () {
-  const ROLES = ['Ménage', 'Polyvalent', 'Maintenance'];
+  // Les métiers viennent de ROLES_PRESTATAIRE (data.js) : la liste est
+  // ouverte, un gestionnaire peut créer « Jardinage » ou « Piscine ».
+  const noms = () => ROLES_PRESTATAIRE.map(r => r.nom);
   const ICO_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
   const ICO_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>';
   let editId = null;
@@ -16,7 +18,7 @@ Layout.init('equipe');
       return `<div class="mn-teamrow is-editing" data-id="${p.id}">
         <div class="mn-teamedit">
           <input class="input" data-f="nom" value="${p.nom}" placeholder="Nom" />
-          <select class="select" data-f="role">${ROLES.map(r => `<option ${r === p.role ? 'selected' : ''}>${r}</option>`).join('')}</select>
+          <select class="select" data-f="role">${noms().map(r => `<option ${r === p.role ? 'selected' : ''}>${r}</option>`).join('')}</select>
           <input class="input" data-f="zone" value="${p.zone}" placeholder="Zone" />
         </div>
         <div class="mn-teamedit__actions">
@@ -43,7 +45,25 @@ Layout.init('equipe');
     document.getElementById('eq-team-list').innerHTML = PRESTATAIRES.map(teamRow).join('');
   }
 
-  function renderAll() { renderTeamList(); }
+  /* ---------- Les métiers ----------
+     Un rôle encore exercé ne se supprime pas : les fiches des prestataires
+     concernés pointeraient vers un métier inexistant, et leur select
+     retomberait silencieusement sur la première valeur de la liste. */
+  function renderRoles() {
+    const zone = document.getElementById('eq-roles');
+    if (!zone) return;
+    zone.innerHTML = ROLES_PRESTATAIRE.map(r => {
+      const n = effectifRole(r.nom);
+      return `<div class="eq-role">
+        <div class="grow"><b>${r.nom}</b><small>${n ? `${n} prestataire${n > 1 ? 's' : ''}` : 'Personne pour l\'instant'}</small></div>
+        ${r.systeme
+          ? '<span class="text-xs text-muted" title="Utilisé par l\'affectation automatique des tâches">Rôle système</span>'
+          : `<button class="icon-btn icon-btn--danger" data-role-del="${r.nom}" aria-label="Supprimer le rôle">${ICO_DEL}</button>`}
+      </div>`;
+    }).join('');
+  }
+
+  function renderAll() { renderTeamList(); renderRoles(); }
 
   document.getElementById('eq-team-list').addEventListener('click', e => {
     const ed = e.target.closest('[data-edit]');
@@ -74,7 +94,38 @@ Layout.init('equipe');
     }
   });
 
-  document.getElementById('eq-add-btn').addEventListener('click', () => { UI.openPanel('eq-add-modal'); });
+  /* Création d'un métier. Le nom sert de clé (les prestataires stockent le
+     libellé), donc les doublons sont refusés — deux « Ménage » rendraient
+     l'affectation ambiguë. */
+  document.getElementById('eq-role-add').addEventListener('click', () => {
+    const champ = document.getElementById('eq-role-nom');
+    const nom = champ.value.trim();
+    if (!nom) { UI.toast('Indiquez le nom du rôle', false); return; }
+    if (getRolePrestataire(nom)) { UI.toast('Ce rôle existe déjà', false); return; }
+    ROLES_PRESTATAIRE.push({ id: nom.toLowerCase().replace(/[^a-z0-9]+/g, '_'), nom, systeme: false });
+    champ.value = '';
+    saveOyviaState(); renderAll();
+    UI.toast(`Rôle « ${nom} » créé`);
+  });
+
+  document.getElementById('eq-roles').addEventListener('click', e => {
+    const b = e.target.closest('[data-role-del]');
+    if (!b) return;
+    const nom = b.dataset.roleDel;
+    if (effectifRole(nom)) {
+      UI.toast(`${effectifRole(nom)} prestataire(s) occupent ce rôle — réaffectez-les d'abord`, false);
+      return;
+    }
+    const i = ROLES_PRESTATAIRE.findIndex(r => r.nom === nom);
+    if (i > -1) ROLES_PRESTATAIRE.splice(i, 1);
+    saveOyviaState(); renderAll();
+    UI.toast(`Rôle « ${nom} » supprimé`);
+  });
+
+  document.getElementById('eq-add-btn').addEventListener('click', () => {
+    document.getElementById('eq-t-role').innerHTML = noms().map(r => `<option>${r}</option>`).join('');
+    UI.openPanel('eq-add-modal');
+  });
   document.getElementById('eq-add-confirm').addEventListener('click', () => {
     const nom = document.getElementById('eq-t-nom').value.trim();
     if (!nom) { UI.toast('Renseignez le nom', false); return; }

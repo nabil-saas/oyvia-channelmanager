@@ -39,10 +39,23 @@
           </div>
         </div>
 
-        <!-- Liste des prestataires : édition en place, suppression -->
-        <div class="card card--pad">
-          <p class="eyebrow mb-4">Tous les prestataires</p>
-          <div id="eq-team-list"><!-- injecté --></div>
+        <div class="app-grid app-grid--2-1">
+          <!-- Liste des prestataires : édition en place, suppression -->
+          <div class="card card--pad">
+            <p class="eyebrow mb-4">Tous les prestataires</p>
+            <div id="eq-team-list"><!-- injecté --></div>
+          </div>
+
+          <!-- Les métiers, librement extensibles -->
+          <div class="card card--pad">
+            <p class="eyebrow mb-2">Rôles</p>
+            <p class="text-sm text-soft mb-4">Le métier d'un intervenant sur le terrain. Créez ceux qui vous manquent.</p>
+            <div id="eq-roles" class="mb-4"><!-- injecté --></div>
+            <div class="eq-roleadd">
+              <input class="input" id="eq-role-nom" placeholder="Ex. Jardinage, Piscine, Blanchisserie" />
+              <button class="btn btn--secondary" id="eq-role-add">Ajouter</button>
+            </div>
+          </div>
         </div>
 
       </main>
@@ -58,7 +71,7 @@
     <div class="modal__body">
       <div class="app-grid app-grid--2">
         <div class="field"><label class="field__label" for="eq-t-nom">Nom</label><input class="input" id="eq-t-nom" placeholder="Prénom Nom" /></div>
-        <div class="field"><label class="field__label" for="eq-t-role">Rôle</label><select class="select" id="eq-t-role"><option>Ménage</option><option>Polyvalent</option><option>Maintenance</option></select></div>
+        <div class="field"><label class="field__label" for="eq-t-role">Rôle</label><select class="select" id="eq-t-role"><!-- rempli depuis ROLES_PRESTATAIRE --></select></div>
       </div>
       <div class="field" style="margin-top:var(--sp-4)">
         <label class="field__label" for="eq-t-zone">Zone</label><input class="input" id="eq-t-zone" placeholder="Lyon" />

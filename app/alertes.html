@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Alertes</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Alertes</h1>
+            <p>Définissez des règles : Oyvia surveille vos logements et vous alerte dès qu'un seuil est franchi.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <button class="btn btn--primary" id="al-add">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Nouvelle règle
+            </button>
+          </div>
+        </div>
+
+        <!-- Raccourcis : les quatre situations que tout hôte veut voir venir -->
+        <div class="card card--pad mb-4">
+          <p class="eyebrow mb-2">Ajouter rapidement</p>
+          <p class="text-sm text-soft mb-4">Des règles déjà calibrées, modifiables ensuite comme les autres.</p>
+          <div class="al-rapides" id="al-rapides"><!-- injecté --></div>
+        </div>
+
+        <div class="card card--pad">
+          <p class="eyebrow mb-4">Vos règles</p>
+          <div id="al-liste"><!-- injecté --></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : créer ou modifier une règle -->
+  <div class="modal" id="al-modal" role="dialog" aria-modal="true" aria-labelledby="al-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="al-modal-title">Nouvelle règle personnalisée</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="field"><label class="field__label" for="al-f-nom">Nom</label>
+        <input class="input" id="al-f-nom" placeholder="Ex : Occupation faible" /></div>
+
+      <div class="field mt-4"><label class="field__label" for="al-f-condition">Condition</label>
+        <select class="select" id="al-f-condition"></select>
+        <p class="field__hint" id="al-f-aide"></p></div>
+
+      <div class="app-grid app-grid--2 mt-4">
+        <div class="field"><label class="field__label" for="al-f-seuil">Seuil <span id="al-f-unite" class="text-muted"></span></label>
+          <input class="input" type="number" min="0" step="1" id="al-f-seuil" /></div>
+        <div class="field"><label class="field__label" for="al-f-logement">Portée</label>
+          <select class="select" id="al-f-logement"></select></div>
+      </div>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <p class="eyebrow mb-2">Comment vous prévenir</p>
+      <label class="al-canal"><input type="checkbox" id="al-f-cloche" checked />
+        <span><b>Notification dans Oyvia</b><small>Cloche en haut de l'écran, avec le détail de la règle franchie.</small></span></label>
+      <label class="al-canal"><input type="checkbox" id="al-f-email" />
+        <span><b>E-mail</b><small>Envoyé à <span id="al-f-email-adresse"></span>.</small></span></label>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="al-save">Créer la règle</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/alertes.js"></script>
+  <script src="../js/vivi.js"></script>
+</body>
+</html>

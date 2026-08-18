@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Services additionnels</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Services additionnels</h1>
+            <p>Ce que vous vendez en plus de la nuitée : aucune commission d'OTA, et le voyageur est déjà acquis.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <button class="btn btn--primary" id="sv-add">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Nouveau service
+            </button>
+          </div>
+        </div>
+
+        <div class="app-grid app-grid--kpi mb-4" id="sv-kpis"><!-- injecté --></div>
+
+        <div id="sv-liste"><!-- injecté --></div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : paramétrer un service -->
+  <div class="modal modal--lg" id="sv-modal" role="dialog" aria-modal="true" aria-labelledby="sv-modal-title">
+    <div class="modal__head">
+      <h3 class="modal__title" id="sv-modal-title">Nouveau service</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="sv-f-nom">Nom du service</label>
+          <input class="input" id="sv-f-nom" placeholder="Ex. Transfert aéroport" /></div>
+        <div class="field"><label class="field__label" for="sv-f-cat">Catégorie</label>
+          <select class="select" id="sv-f-cat"></select></div>
+      </div>
+
+      <div class="field mt-4"><label class="field__label" for="sv-f-desc">Description affichée au voyageur</label>
+        <textarea class="textarea" id="sv-f-desc" rows="2" placeholder="Ce que comprend la prestation, en une phrase."></textarea></div>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <p class="eyebrow mb-2">Facturation</p>
+      <div class="app-grid app-grid--3">
+        <div class="field"><label class="field__label" for="sv-f-prix">Prix (<span data-devise></span>)</label>
+          <input class="input" type="number" min="0" step="1" id="sv-f-prix" /></div>
+        <div class="field"><label class="field__label" for="sv-f-unite">Unité de facturation</label>
+          <select class="select" id="sv-f-unite"></select></div>
+        <div class="field"><label class="field__label" for="sv-f-marge">Votre marge (%)</label>
+          <input class="input" type="number" min="0" max="100" step="1" id="sv-f-marge" /></div>
+      </div>
+      <p class="field__hint mt-2" id="sv-f-apercu"></p>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <p class="eyebrow mb-2">Conditions</p>
+      <div class="app-grid app-grid--2">
+        <div class="field"><label class="field__label" for="sv-f-delai">Délai de prévenance (heures)</label>
+          <input class="input" type="number" min="0" step="1" id="sv-f-delai" />
+          <p class="field__hint">Temps minimum entre la commande et la prestation.</p></div>
+        <div class="field"><label class="field__label" for="sv-f-prest">Prestataire</label>
+          <input class="input" id="sv-f-prest" placeholder="Laisser vide si vous assurez le service" /></div>
+      </div>
+
+      <hr class="divider" style="margin:var(--sp-5) 0" />
+      <p class="eyebrow mb-2">Logements concernés</p>
+      <label class="sv-portee"><input type="radio" name="sv-f-portee" value="tous" checked />
+        <span><b>Tous les logements</b><small>Le service est proposé sur l'ensemble de votre parc, présent et à venir.</small></span></label>
+      <label class="sv-portee"><input type="radio" name="sv-f-portee" value="selection" />
+        <span><b>Une sélection</b><small>Utile quand la prestation dépend du lieu : accès spa, parking, matériel.</small></span></label>
+      <div id="sv-f-logements" class="sv-logements hidden"><!-- injecté --></div>
+
+      <div class="row-between" style="margin-top:var(--sp-5)">
+        <div><p class="fw-semibold text-sm">Proposé aux voyageurs</p>
+          <p class="text-xs text-muted">Un service désactivé reste paramétré mais n'apparaît nulle part.</p></div>
+        <label class="switch"><input type="checkbox" id="sv-f-actif" checked /><span class="switch__track"></span></label>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="sv-save">Enregistrer</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/services.js"></script>
+  <script src="../js/vivi.js"></script>
+</body>
+</html>

@@ -1892,6 +1892,307 @@ function statsPrestataire(prestataireId) {
 }
 
 /* ============================================================
+   ALERTES — la surveillance que l'hôte paramètre lui-même
+
+   Le principe : plutôt que d'imposer des notifications décidées par
+   Oyvia, l'hôte déclare les seuils qui comptent POUR LUI. Un parc de
+   deux studios en ville et une conciergerie de quarante biens n'ont
+   pas les mêmes signaux d'alerte.
+
+   Chaque règle porte sa condition, son seuil et ses canaux de
+   notification. `derniereAlerte` évite de renotifier en boucle tant
+   que la situation n'a pas changé — une alerte qui se répète chaque
+   heure finit ignorée, ce qui est pire que pas d'alerte du tout.
+   ============================================================ */
+const ALERTES_CONDITIONS = [
+  { id:'occupation_sous',  label:"Occupation sous un seuil",     unite:'%',      defaut:40,
+    aide:"Taux d'occupation du parc sur les 30 prochains jours", sens:'sous' },
+  { id:'note_sous',        label:'Note moyenne sous un seuil',   unite:'/ 5',    defaut:4,
+    aide:"Note moyenne des avis reçus, tous canaux confondus",   sens:'sous' },
+  { id:'sans_reservation', label:'Logement sans réservation',    unite:'jours',  defaut:14,
+    aide:"Aucune nouvelle réservation depuis X jours",           sens:'depuis' },
+  { id:'menage_non_pris',  label:'Ménage non pris',              unite:'heures', defaut:24,
+    aide:"Ménage non accepté à X h de l'échéance",               sens:'avant' },
+  { id:'message_sans_reponse', label:'Message sans réponse',     unite:'heures', defaut:4,
+    aide:"Un voyageur attend une réponse depuis X h",            sens:'depuis' },
+  { id:'police_incomplete', label:'Fiche de police non remplie',  unite:'heures', defaut:24,
+    aide:"Fiche non complétée à X h de l'arrivée du voyageur",     sens:'avant' },
+  { id:'plafond_nuitees',  label:'Plafond de nuitées approché',  unite:'nuits',  defaut:15,
+    aide:"Il reste moins de X nuits avant le plafond légal",     sens:'reste' },
+  { id:'batterie_serrure', label:'Batterie de serrure faible',   unite:'%',      defaut:20,
+    aide:"Batterie d'une serrure connectée sous X %",            sens:'sous' },
+  { id:'prix_au_plancher', label:'Prix bloqué au plancher',      unite:'nuits',  defaut:5,
+    aide:"X nuits ou plus collées au plancher tarifaire",        sens:'atteint' },
+];
+function getConditionAlerte(id) { return ALERTES_CONDITIONS.find(c => c.id === id) || null; }
+
+/* Les quatre raccourcis proposés en un clic : les situations que tout hôte
+   veut voir venir, avec des seuils déjà calibrés. Ils créent une règle
+   ordinaire, modifiable ensuite comme les autres. */
+const ALERTES_RAPIDES = [
+  { condition:'occupation_sous',  seuil:40, nom:'Occupation sous 40 %' },
+  { condition:'note_sous',        seuil:4,  nom:'Note moyenne sous 4 / 5' },
+  { condition:'sans_reservation', seuil:14, nom:'Sans réservation sur 14 j' },
+  { condition:'menage_non_pris',  seuil:24, nom:'Ménage non pris à 24 h' },
+  { condition:'police_incomplete', seuil:24, nom:'Fiche de police à 24 h' },
+];
+
+const ALERTES = [
+  { id:'AL1', nom:'Occupation sous 40 %',        condition:'occupation_sous',  seuil:40,
+    logementId:null, canaux:['cloche','email'], actif:true,  derniereAlerte:'2026-07-19 08:12' },
+  { id:'AL2', nom:'Ménage non pris à 24 h',      condition:'menage_non_pris',  seuil:24,
+    logementId:null, canaux:['cloche'],         actif:true,  derniereAlerte:'2026-07-22 17:40' },
+  { id:'AL3', nom:'Note moyenne sous 4 / 5',     condition:'note_sous',        seuil:4,
+    logementId:null, canaux:['cloche','email'], actif:true,  derniereAlerte:null },
+  { id:'AL4', nom:'Plafond de nuitées — Paris',  condition:'plafond_nuitees',  seuil:15,
+    logementId:'L002', canaux:['cloche','email'], actif:true, derniereAlerte:'2026-07-21 06:30' },
+  { id:'AL5', nom:'Message sans réponse 4 h',    condition:'message_sans_reponse', seuil:4,
+    logementId:null, canaux:['cloche'],         actif:false, derniereAlerte:null },
+  { id:'AL6', nom:'Fiche de police à 24 h',      condition:'police_incomplete', seuil:24,
+    logementId:null, canaux:['cloche','email'], actif:true,  derniereAlerte:'2026-07-22 09:05' },
+];
+
+// Libellé lisible d'une règle : « Occupation sous 40 % · tout le parc ».
+function libelleAlerte(a) {
+  const c = getConditionAlerte(a.condition);
+  const ou = a.logementId ? (getLogement(a.logementId) || {}).nom : 'Tout le parc';
+  return `${c ? c.label : a.condition} · ${a.seuil} ${c ? c.unite : ''} · ${ou}`;
+}
+
+/* ============================================================
+   FICHES DE POLICE
+
+   Obligation légale française : tout hébergeur doit faire remplir une
+   fiche individuelle de police à chaque voyageur étranger, la
+   conserver six mois et la tenir à disposition des autorités.
+
+   Le statut suit le cycle réel du document, pas un état interne :
+     a_remplir  → le voyageur n'a rien saisi
+     en_attente → le lien lui a été envoyé, il n'a pas terminé
+     complete   → toutes les mentions obligatoires sont renseignées
+     transmise  → remise aux autorités, la conservation court
+
+   `pieces` porte les justificatifs. Le voyageur peut photographier sa
+   pièce d'identité depuis son téléphone : c'est infiniment plus fiable
+   qu'une saisie manuelle du numéro, où une coquille passe inaperçue.
+   ============================================================ */
+const POLICE_STATUTS = {
+  a_remplir:  { label:'À remplir',  badge:'badge--neutral' },
+  en_attente: { label:'En attente', badge:'badge--warning' },
+  complete:   { label:'Complète',   badge:'badge--positive' },
+  transmise:  { label:'Transmise',  badge:'badge--accent' },
+};
+const POLICE_DOCUMENTS = [
+  { id:'passeport',   label:'Passeport' },
+  { id:'cni',         label:"Carte nationale d'identité" },
+  { id:'titre_sejour',label:'Titre de séjour' },
+];
+// Seuls les voyageurs étrangers sont concernés : imposer la fiche à un
+// résident français serait une collecte de données sans base légale.
+const POLICE_OBLIGATOIRE_HORS = 'France';
+
+const FICHES_POLICE = [
+  { id:'FP1', reservationId:'R02', statut:'transmise', nom:'Rossi', prenom:'Marco',
+    naissanceDate:'1988-04-12', naissanceLieu:'Milan, Italie', nationalite:'Italie',
+    domicile:'Via Torino 14, Milan', document:'passeport', documentNumero:'YA4471820',
+    accompagnants:2, envoyeeLe:'2026-07-10', completeeLe:'2026-07-11', transmiseLe:'2026-07-12',
+    pieces:[{ nom:'passeport-rossi.jpg', type:'photo', ajouteLe:'2026-07-11' }] },
+  { id:'FP2', reservationId:'R06', statut:'complete', nom:'Wei', prenom:'Chen',
+    naissanceDate:'1991-11-03', naissanceLieu:'Shanghai, Chine', nationalite:'Chine',
+    domicile:'Nanjing Road 288, Shanghai', document:'passeport', documentNumero:'EG9902144',
+    accompagnants:1, envoyeeLe:'2026-07-18', completeeLe:'2026-07-19', transmiseLe:null,
+    pieces:[{ nom:'passeport-wei.jpg', type:'photo', ajouteLe:'2026-07-19' }] },
+  { id:'FP3', reservationId:'R09', statut:'en_attente', nom:'Schmidt', prenom:'Anna',
+    naissanceDate:'', naissanceLieu:'', nationalite:'Allemagne',
+    domicile:'', document:'', documentNumero:'',
+    accompagnants:3, envoyeeLe:'2026-07-20', completeeLe:null, transmiseLe:null, pieces:[] },
+  { id:'FP4', reservationId:'R15', statut:'a_remplir', nom:'Popova', prenom:'Elena',
+    naissanceDate:'', naissanceLieu:'', nationalite:'Bulgarie',
+    domicile:'', document:'', documentNumero:'',
+    accompagnants:5, envoyeeLe:null, completeeLe:null, transmiseLe:null, pieces:[] },
+  // Arrivée demain : c'est cette fiche que l'alerte des 24 h fait remonter.
+  { id:'FP6', reservationId:'R03', statut:'en_attente', nom:'Meyer', prenom:'Sophie',
+    naissanceDate:'1990-09-08', naissanceLieu:'Genève, Suisse', nationalite:'Suisse',
+    domicile:'', document:'', documentNumero:'',
+    accompagnants:1, envoyeeLe:'2026-07-21', completeeLe:null, transmiseLe:null, pieces:[] },
+  { id:'FP7', reservationId:'R14', statut:'a_remplir', nom:'Weber', prenom:'Lukas',
+    naissanceDate:'', naissanceLieu:'', nationalite:'Allemagne',
+    domicile:'', document:'', documentNumero:'',
+    accompagnants:4, envoyeeLe:null, completeeLe:null, transmiseLe:null, pieces:[] },
+  { id:'FP5', reservationId:'R05', statut:'transmise', nom:"O'Connor", prenom:'Liam',
+    naissanceDate:'1985-06-27', naissanceLieu:'Cork, Irlande', nationalite:'Irlande',
+    domicile:'12 Patrick Street, Cork', document:'cni', documentNumero:'IE7781093',
+    accompagnants:1, envoyeeLe:'2026-07-02', completeeLe:'2026-07-04', transmiseLe:'2026-07-06',
+    pieces:[{ nom:'cni-oconnor-recto.jpg', type:'photo', ajouteLe:'2026-07-04' }] },
+];
+function getFichePolice(id) { return FICHES_POLICE.find(f => f.id === id) || null; }
+
+/* Heures restantes avant l'arrivée du voyageur. Négatif = l'arrivée est
+   passée, et la fiche aurait dû être remplie — c'est le cas le plus grave,
+   pas simplement « en retard ». L'heure d'arrivée du logement sert de
+   référence : une fiche due « à 24 h » se compte depuis l'entrée réelle. */
+function heuresAvantArrivee(fiche, maintenant = AUJOURDHUI) {
+  const r = getReservation(fiche.reservationId);
+  if (!r) return null;
+  const l = getLogement(r.logementId);
+  const heure = (l && l.sejour && l.sejour.arrivee) || '15:00';
+  /* Le « maintenant » de la démo est une DATE, sans heure. La prendre à
+     minuit ferait qu'une arrivée du lendemain à 15 h compte 39 h, et le
+     seuil des 24 h ne se déclencherait jamais qu'au jour même. On se cale
+     donc sur la même heure d'arrivée des deux côtés : une arrivée demain
+     tombe alors exactement à 24 h, ce qui est le sens de la règle. */
+  const arrivee = new Date(`${r.arrivee}T${heure}:00`);
+  const ref = new Date(`${maintenant}T${heure}:00`);
+  return Math.round((arrivee - ref) / 36e5);
+}
+/* Fiches non finalisées dont l'arrivée tombe dans la fenêtre surveillée.
+
+   Les séjours déjà terminés sont exclus : une fiche manquante sur un séjour
+   clos reste un manquement, mais ce n'est plus une relance à faire avant
+   l'arrivée — la mélanger aux échéances du jour noierait ce qui est encore
+   rattrapable. */
+function fichesPoliceUrgentes(heures = 24, maintenant = AUJOURDHUI) {
+  return FICHES_POLICE.filter(f => {
+    if (f.statut === 'complete' || f.statut === 'transmise') return false;
+    const r = getReservation(f.reservationId);
+    if (!r || r.depart < maintenant) return false;
+    const h = heuresAvantArrivee(f, maintenant);
+    return h !== null && h <= heures;
+  });
+}
+function fichePoliceParReservation(id) { return FICHES_POLICE.find(f => f.reservationId === id) || null; }
+// Une fiche est complète quand toutes les mentions obligatoires sont là.
+// La liste vient du formulaire réglementaire, pas d'un choix produit.
+function fichePoliceManquants(f) {
+  const requis = [['nom','Nom'], ['prenom','Prénom'], ['naissanceDate','Date de naissance'],
+                  ['naissanceLieu','Lieu de naissance'], ['nationalite','Nationalité'],
+                  ['domicile','Domicile'], ['document', "Type de document"], ['documentNumero','Numéro du document']];
+  return requis.filter(([cle]) => !f[cle]).map(([, label]) => label);
+}
+
+/* ============================================================
+   SERVICES ADDITIONNELS (Vente directe)
+
+   Ce que l'hôte vend EN PLUS de la nuitée. C'est la marge la plus
+   rentable du métier : aucune commission d'OTA, et le voyageur est
+   déjà acquis.
+
+   `unite` détermine la façon de facturer, et ce n'est pas cosmétique :
+   un transfert se paie par trajet, un petit-déjeuner par personne et
+   par jour, un lit d'appoint par séjour. Se tromper d'unité, c'est
+   facturer dix fois trop cher ou dix fois trop peu.
+
+   `delaiPrevenance` est le délai minimum entre la commande et la
+   prestation : réserver un chef à domicile deux heures avant n'a pas
+   de sens, et accepter la commande serait promettre l'impossible.
+
+   `logements` vaut 'tous' ou la LISTE des biens concernés. Tout n'est
+   pas proposable partout : un accès spa partenaire n'a de sens qu'à
+   proximité du spa, un parking privé que là où il existe. Proposer un
+   service qu'on ne peut pas rendre est pire que ne rien proposer.
+   ============================================================ */
+const SERVICES_UNITES = {
+  sejour:        'par séjour',
+  personne:      'par personne',
+  personne_jour: 'par personne et par jour',
+  nuit:          'par nuit',
+  trajet:        'par trajet',
+  unite:         "à l'unité",
+  heure:         "par heure",
+};
+const SERVICES_CATEGORIES = {
+  arrivee:   'Arrivée & départ',
+  confort:   'Confort sur place',
+  restauration: 'Restauration',
+  mobilite:  'Mobilité',
+  experience:'Expériences',
+  menage:    'Ménage & linge',
+};
+
+const SERVICES = [
+  { id:'SV01', nom:'Transfert aéroport', categorie:'mobilite', unite:'trajet', prix:65,
+    desc:"Prise en charge à l'aéroport ou à la gare, avec panneau au nom du voyageur.",
+    actif:true, delaiPrevenance:24, logements:'tous', prestataire:'Partenaire VTC', marge:30 },
+  { id:'SV02', nom:'Location de voiture', categorie:'mobilite', unite:'nuit', prix:45,
+    desc:'Véhicule livré sur place, assurance comprise.',
+    actif:false, delaiPrevenance:48, logements:'tous', prestataire:'Loueur partenaire', marge:15 },
+  { id:'SV03', nom:'Arrivée anticipée', categorie:'arrivee', unite:'sejour', prix:30,
+    desc:"Accès au logement dès 11 h au lieu de 15 h, sous réserve de disponibilité.",
+    actif:true, delaiPrevenance:24, logements:'tous', prestataire:null, marge:100 },
+  { id:'SV04', nom:'Départ tardif', categorie:'arrivee', unite:'sejour', prix:30,
+    desc:"Libération du logement à 15 h au lieu de 11 h, sous réserve de disponibilité.",
+    actif:true, delaiPrevenance:24, logements:'tous', prestataire:null, marge:100 },
+  { id:'SV05', nom:'Panier d\'accueil', categorie:'restauration', unite:'sejour', prix:35,
+    desc:'Produits locaux, bouteille de vin et douceurs à l\'arrivée.',
+    actif:true, delaiPrevenance:48, logements:'tous', prestataire:'Épicerie fine', marge:40 },
+  { id:'SV06', nom:'Petit-déjeuner livré', categorie:'restauration', unite:'personne_jour', prix:12,
+    desc:'Viennoiseries, jus frais et boissons chaudes déposés chaque matin.',
+    actif:false, delaiPrevenance:24, logements:'tous', prestataire:'Boulangerie du quartier', marge:35 },
+  { id:'SV07', nom:'Chef à domicile', categorie:'restauration', unite:'personne', prix:75,
+    desc:'Dîner préparé sur place, menu convenu à l\'avance.',
+    actif:false, delaiPrevenance:72, logements:'tous', prestataire:'Chef partenaire', marge:20 },
+  { id:'SV08', nom:'Réservation restaurant', categorie:'restauration', unite:'unite', prix:0,
+    desc:'Table réservée dans nos adresses partenaires. Service offert.',
+    actif:true, delaiPrevenance:24, logements:'tous', prestataire:null, marge:0 },
+  { id:'SV09', nom:'Lit d\'appoint', categorie:'confort', unite:'sejour', prix:25,
+    desc:'Lit simple installé avant l\'arrivée, linge fourni.',
+    actif:true, delaiPrevenance:24, logements:'tous', prestataire:null, marge:100 },
+  { id:'SV10', nom:'Lit bébé et chaise haute', categorie:'confort', unite:'sejour', prix:15,
+    desc:'Lit parapluie et chaise haute, installés et désinfectés.',
+    actif:true, delaiPrevenance:24, logements:'tous', prestataire:null, marge:100 },
+  { id:'SV11', nom:'Ménage en cours de séjour', categorie:'menage', unite:'unite', prix:45,
+    desc:'Passage complet en milieu de séjour, changement du linge inclus.',
+    actif:true, delaiPrevenance:48, logements:'tous', prestataire:'Équipe ménage', marge:35 },
+  { id:'SV12', nom:'Blanchisserie', categorie:'menage', unite:'unite', prix:20,
+    desc:'Collecte et retour sous 24 h.',
+    actif:false, delaiPrevenance:24, logements:'tous', prestataire:'Pressing partenaire', marge:30 },
+  { id:'SV13', nom:'Massage à domicile', categorie:'experience', unite:'personne', prix:80,
+    desc:'Praticien diplômé, matériel apporté sur place.',
+    actif:false, delaiPrevenance:48, logements:'tous', prestataire:'Spa partenaire', marge:25 },
+  { id:'SV14', nom:'Accès spa et piscine', categorie:'experience', unite:'personne_jour', prix:25,
+    desc:'Entrée à l\'espace bien-être partenaire, à deux pas du logement.',
+    actif:false, delaiPrevenance:24, logements:['L005','L004'], prestataire:'Spa partenaire', marge:20 },
+  { id:'SV15', nom:'Excursions et activités', categorie:'experience', unite:'personne', prix:55,
+    desc:'Visites guidées, dégustations, activités nautiques selon la saison.',
+    actif:true, delaiPrevenance:72, logements:'tous', prestataire:'Agence locale', marge:20 },
+  { id:'SV16', nom:'Location de matériel', categorie:'experience', unite:'nuit', prix:18,
+    desc:'Vélos, skis ou planches livrés au logement.',
+    actif:false, delaiPrevenance:48, logements:['L004'], prestataire:'Loueur local', marge:25 },
+  { id:'SV17', nom:'Parking privé', categorie:'mobilite', unite:'nuit', prix:15,
+    desc:'Place réservée à proximité immédiate.',
+    actif:true, delaiPrevenance:24, logements:['L003','L004','L005','L008'], prestataire:null, marge:100 },
+  { id:'SV18', nom:'Garde d\'animaux', categorie:'confort', unite:'nuit', prix:25,
+    desc:'Promenade et garde pendant vos sorties.',
+    actif:false, delaiPrevenance:72, logements:'tous', prestataire:'Pet-sitter', marge:25 },
+];
+function getService(id) { return SERVICES.find(s => s.id === id) || null; }
+
+/* Portée d'un service. Les identifiants pointant vers un logement supprimé
+   sont écartés : sans ce filtre, un service afficherait « 3 logements » en
+   n'en couvrant réellement que deux. */
+function porteeService(s) {
+  if (!s || s.logements === 'tous') return { tous: true, ids: LOGEMENTS.map(l => l.id), label: 'Tous les logements' };
+  const ids = (Array.isArray(s.logements) ? s.logements : []).filter(id => getLogement(id));
+  const label = ids.length === 0 ? 'Aucun logement'
+              : ids.length === 1 ? getLogement(ids[0]).nom
+              : `${ids.length} logements`;
+  return { tous: false, ids, label };
+}
+function serviceCouvreLogement(s, logementId) {
+  return porteeService(s).ids.includes(logementId);
+}
+// Services réellement proposables sur un bien donné : actifs ET dans la portée.
+function servicesPourLogement(logementId) {
+  return SERVICES.filter(s => s.actif && serviceCouvreLogement(s, logementId));
+}
+function servicesActifs() { return SERVICES.filter(s => s.actif); }
+function servicesParCategorie() {
+  return Object.keys(SERVICES_CATEGORIES)
+    .map(c => ({ cat:c, label:SERVICES_CATEGORIES[c], items:SERVICES.filter(s => s.categorie === c) }))
+    .filter(g => g.items.length);
+}
+
+/* ============================================================
    SITE WEB — la vitrine qui alimente les réservations directes
 
    Raison d'être : chaque réservation passée par une OTA coûte 15 à 18 %
@@ -2176,6 +2477,30 @@ function refuserDemande(id, motif) {
 /* ============================================================
    PRESTATAIRES (5) — équipe ménage / maintenance
    ============================================================ */
+/* ============================================================
+   RÔLES DES PRESTATAIRES
+
+   À ne pas confondre avec ROLES (plus bas), qui régit les COMPTES
+   utilisateurs et leurs permissions. Ici il s'agit du métier d'un
+   intervenant terrain : ce qu'il vient faire, pas ce qu'il a le droit
+   de voir dans l'application.
+
+   La liste est ouverte : un gestionnaire peut créer « Jardinage » ou
+   « Piscine » sans que le code ait à connaître ces métiers. Les rôles
+   d'origine sont marqués `systeme` — non pas pour les protéger d'un
+   caprice, mais parce que l'affectation automatique des tâches par
+   Vivi s'appuie dessus (cf. _viviPrestatairePour).
+   ============================================================ */
+const ROLES_PRESTATAIRE = [
+  { id:'menage',      nom:'Ménage',      systeme:true },
+  { id:'polyvalent',  nom:'Polyvalent',  systeme:true },
+  { id:'maintenance', nom:'Maintenance', systeme:true },
+];
+function getRolePrestataire(nom) { return ROLES_PRESTATAIRE.find(r => r.nom === nom) || null; }
+// Combien de prestataires occupent ce rôle : on ne supprime pas un métier
+// encore exercé, sinon leurs fiches pointeraient vers un rôle inexistant.
+function effectifRole(nom) { return PRESTATAIRES.filter(p => p.role === nom).length; }
+
 const PRESTATAIRES = [
   // Aucun tarif, ni ici ni sur les tâches : la rémunération d'une intervention
   // dépend du bien (un chalet de 5 pièces n'est pas un studio), pas de la
@@ -4486,7 +4811,8 @@ const _OYVIA_ENTITIES = {
   PRESTATAIRES, AUTOMATISATIONS, RECURRENTES, PLATEFORMES,
   COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, TACHE_LABEL,
   PROPRIETAIRES, DEPENSES, FACTURES,
-  ROLES, UTILISATEURS,
+  ROLES, UTILISATEURS, ROLES_PRESTATAIRE,
+  ALERTES, FICHES_POLICE, SERVICES,
   VIVI_CONFIG, VIVI_REPONSES, VIVI_SIGNALEMENTS, PAGE_SEJOUR, SITE_WEB,
   TARIF_DYNAMIQUE, TD_OVERRIDES, TD_JOURNAL,
   AVIS, EVALUATIONS,

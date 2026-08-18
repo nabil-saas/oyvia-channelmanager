@@ -32,9 +32,40 @@
   transition: background var(--t-fast), color var(--t-fast); white-space: nowrap; position: relative;
 }
 .app-navitem svg { width: 20px; height: 20px; flex-shrink: 0; }
+/* Le libellé doit pouvoir rétrécir : avec « min-width:auto » (défaut flex) un
+   intitulé long comme « Historique des voyageurs » gardait sa largeur pleine
+   et poussait l'épingle hors du menu. */
+.app-navitem > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .app-navitem:hover { background: var(--c-nav-hover-bg); color: var(--c-text); }
 .app-navitem.is-active { background: var(--c-nav-active-bg); color: var(--c-nav-active); font-weight: var(--fw-semibold); }
 .app-navitem__badge { margin-left: auto; background: var(--c-accent); color: #fff; font-size: var(--fs-xs); font-weight: var(--fw-semibold); border-radius: var(--r-full); min-width: 20px; height: 20px; padding: 0 6px; display: grid; place-items: center; }
+/* Épingle des raccourcis : discrète au repos, elle n'apparaît qu'au survol
+   de l'entrée — sinon vingt épingles grises parasiteraient la lecture du
+   menu. Une entrée déjà épinglée garde la sienne visible, sans quoi on ne
+   saurait pas d'où vient le raccourci. */
+/* Positionnée par-dessus, pas dans le flux : réservée en permanence, elle
+   amputait « Historique des voyageurs » de trois caractères alors même
+   qu'elle était invisible. Le libellé récupère sa place au repos et ne se
+   raccourcit que le temps du survol, quand l'épingle apparaît vraiment. */
+.app-navpin { position: absolute; right: var(--sp-2); top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 24px; height: 24px;
+  border-radius: var(--r-sm); color: var(--c-text-muted); opacity: 0; flex-shrink: 0;
+  transition: opacity var(--t-fast), color var(--t-fast), background var(--t-fast); }
+.app-navitem:hover > span,
+.app-navitem:has(.app-navpin.is-on) > span { padding-right: 26px; }
+.app-navpin svg { width: 15px; height: 15px; }
+.app-navitem:hover .app-navpin { opacity: .75; }
+.app-navpin:hover { opacity: 1 !important; background: var(--c-nav-hover-bg); color: var(--c-text); }
+.app-navpin.is-on { opacity: 1; color: var(--c-accent); }
+.app-navpin.is-on svg { fill: currentColor; }
+/* Un compteur et une épingle peuvent coexister : on décale l'épingle pour
+   qu'elle ne recouvre pas le badge. */
+.app-navitem:has(.app-navitem__badge):hover > span,
+.app-navitem:has(.app-navitem__badge):has(.app-navpin.is-on) > span { padding-right: 0; }
+.app-navitem:has(.app-navitem__badge) .app-navpin { position: static; transform: none; margin-left: var(--sp-2); }
+/* Menu réduit : plus de place pour l'épingle, et plus de libellé à épingler. */
+.app-sidebar.is-mini .app-navpin { display: none; }
+
 .app-sidebar__foot { border-top: 1px solid var(--c-border); padding: var(--sp-3); }
 .app-userchip { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2); border-radius: var(--r-md); transition: background var(--t-fast); cursor: pointer; }
 .app-userchip:hover { background: var(--c-nav-hover-bg); }
@@ -1466,3 +1497,106 @@
   color: var(--c-warning-ink); background: var(--c-warning-soft);
   border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); }
 .cp-ownercard__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+
+/* ============================================================
+   ALERTES  (.al-)
+   ============================================================ */
+.al-rapides { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-3); }
+.al-rapide { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); text-align: left;
+  background: var(--c-surface); border: 1px dashed var(--c-border-strong); border-radius: var(--r-lg);
+  font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text); cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast); }
+.al-rapide:hover { border-style: solid; border-color: var(--c-accent); background: var(--blue-50); }
+.al-rapide svg { width: 17px; height: 17px; color: var(--c-accent); flex-shrink: 0; }
+/* Règle déjà posée : on la montre couverte plutôt que de la faire disparaître */
+.al-rapide.is-off { border-style: solid; background: var(--bg-subtle); color: var(--c-text-muted); cursor: default; }
+.al-rapide.is-off svg { color: var(--green-600); }
+.al-rapide em { margin-left: auto; font-style: normal; font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+.al-regle { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4) 0; border-bottom: 1px solid var(--c-border); }
+.al-regle:last-child { border-bottom: 0; }
+.al-regle.is-off { opacity: 0.55; }
+.al-regle__meta b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.al-regle__meta small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 1px; }
+.al-regle__tags { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.al-canaltag { font-size: 11px; font-weight: var(--fw-semibold); padding: 2px var(--sp-2); border-radius: var(--r-full);
+  background: var(--c-accent-soft); color: var(--blue-700); }
+.al-canaltag--muted { background: var(--bg-subtle); color: var(--c-text-muted); font-weight: var(--fw-regular); }
+.al-canal { display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-3); margin-bottom: var(--sp-2);
+  border: 1px solid var(--c-border); border-radius: var(--r-md); cursor: pointer; }
+.al-canal:has(input:checked) { border-color: var(--blue-600); background: var(--blue-50); }
+.al-canal input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--blue-600); flex-shrink: 0; }
+.al-canal b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.al-canal small { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+/* ============================================================
+   FICHES DE POLICE  (.fp-)
+   ============================================================ */
+.fp-piecetag { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
+  padding: 2px var(--sp-2); border-radius: var(--r-full); background: var(--c-accent-soft); color: var(--blue-700); }
+.fp-piecetag svg { width: 12px; height: 12px; }
+.fp-pieces { padding: var(--sp-4); background: var(--bg-subtle); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
+.fp-piece { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3);
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-md); margin-bottom: var(--sp-2); }
+.fp-piece svg { width: 18px; height: 18px; color: var(--c-text-soft); flex-shrink: 0; }
+.fp-piece b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.fp-piece small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+/* ============================================================
+   SERVICES ADDITIONNELS  (.sv-)
+   ============================================================ */
+.sv-item { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4) 0; border-bottom: 1px solid var(--c-border); }
+.sv-item:last-child { border-bottom: 0; }
+.sv-item.is-off { opacity: 0.55; }
+.sv-item__meta { min-width: 0; }
+.sv-item__meta b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.sv-item__meta small { display: block; font-size: var(--fs-xs); color: var(--c-text-soft); margin-top: 1px; }
+.sv-item__tags { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.sv-tag { font-size: 11px; font-weight: var(--fw-semibold); padding: 2px var(--sp-2); border-radius: var(--r-full);
+  background: var(--c-accent-soft); color: var(--blue-700); }
+.sv-tag--muted { background: var(--bg-subtle); color: var(--c-text-muted); font-weight: var(--fw-regular); }
+
+/* ============================================================
+   RÔLES DES PRESTATAIRES (page Équipe)
+   ============================================================ */
+.eq-role { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) 0; border-bottom: 1px solid var(--c-border); }
+.eq-role:last-child { border-bottom: 0; }
+.eq-role b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.eq-role small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.eq-roleadd { display: flex; gap: var(--sp-2); }
+.eq-roleadd .input { flex: 1; min-width: 0; }
+
+/* Échéance réglementaire des fiches de police : ce qui doit partir aujourd'hui */
+.fp-urgence { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-4); background: var(--c-warning-soft); border: 1px solid var(--c-warning);
+  border-radius: var(--r-lg); color: var(--c-warning-ink); }
+.fp-urgence svg { width: 20px; height: 20px; flex-shrink: 0; }
+.fp-urgence b { display: block; font-size: var(--fs-sm); }
+.fp-urgence p { font-size: var(--fs-xs); margin-top: 2px; }
+/* Mentions obligatoires encore absentes, dans la fiche ouverte */
+.fp-manque { display: flex; gap: var(--sp-3); padding: var(--sp-4); margin-bottom: var(--sp-5);
+  background: var(--bg-subtle); border-left: 3px solid var(--c-warning); border-radius: var(--r-md); }
+.fp-manque svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--c-warning-ink); margin-top: 1px; }
+.fp-manque b { font-size: var(--fs-sm); }
+.fp-manque p { font-size: var(--fs-xs); color: var(--c-text-soft); margin-top: 2px; }
+
+/* Portée d'un service : sur quels logements il est proposable */
+.sv-tag--portee { background: var(--green-100); color: var(--c-positive-ink); }
+.sv-tag--vide   { background: var(--c-danger-soft); color: var(--c-danger-ink); }
+.sv-portee { display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-3);
+  margin-bottom: var(--sp-2); border: 1px solid var(--c-border); border-radius: var(--r-md); cursor: pointer; }
+.sv-portee:has(input:checked) { border-color: var(--blue-600); background: var(--blue-50); }
+.sv-portee input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--blue-600); flex-shrink: 0; }
+.sv-portee b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.sv-portee small { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.sv-logements { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--sp-2);
+  margin-top: var(--sp-3); padding: var(--sp-4); background: var(--bg-subtle);
+  border: 1px solid var(--c-border); border-radius: var(--r-lg); }
+.sv-logement { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3);
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-md); cursor: pointer; }
+.sv-logement:has(input:checked) { border-color: var(--blue-600); background: var(--blue-50); }
+.sv-logement input { width: 15px; height: 15px; accent-color: var(--blue-600); flex-shrink: 0; }
+.sv-logement b { display: block; font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
+.sv-logement small { display: block; font-size: 11px; color: var(--c-text-muted); }
+/* Les deux boutons occupent toute la largeur de la grille, sous les cases */
+.sv-logements__actions { grid-column: 1 / -1; display: flex; gap: var(--sp-2); justify-content: flex-end; }

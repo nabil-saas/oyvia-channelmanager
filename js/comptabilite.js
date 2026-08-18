@@ -34,6 +34,13 @@ Layout.init('comptabilite');
   });
   // Permet d'arriver directement sur un onglet via l'URL (ex : comptabilite.html#facturation)
   if (location.hash) activateTab(location.hash.slice(1));
+  /* Le menu propose Facturation et Dépenses comme entrées à part entière.
+     Depuis cette page, elles ne changent que le fragment : sans écoute du
+     hashchange, l'URL bougerait et l'onglet resterait figé. */
+  window.addEventListener('hashchange', () => {
+    activateTab(location.hash.slice(1) || 'synthese');
+    if (typeof Layout !== 'undefined' && Layout.refreshNav) Layout.refreshNav();
+  });
 
   /* ============================================================
      SYNTHÈSE COMPTABLE

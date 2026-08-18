@@ -28,50 +28,87 @@ const Layout = (function () {
     search:    '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
     bell:      '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
     menu:      '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    alertes:   '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><circle cx="18" cy="6" r="3" fill="currentColor" stroke="none"/>',
+    police:    '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="12" cy="13" r="2"/><path d="M9 18c.5-1.5 1.6-2.4 3-2.4s2.5.9 3 2.4"/>',
+    services:  '<path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
+    epingle:   '<path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
+    facturation:'<path d="M4 2h13l3 3v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M17 2v4h4"/><path d="M9 13h6M9 17h4"/>',
+    depenses:  '<path d="M12 2v20"/><path d="M17 7H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"/>',
     chevrons:  '<path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/>',
   };
 
   const NAV = [
     { id:'dashboard',    label:'Tableau de bord', title:'Tableau de bord',   href:'dashboard.html' },
     { id:'calendrier',   label:'Calendrier',      title:'Calendrier unifié', href:'calendrier.html' },
+    { id:'alertes',      label:'Alertes',         title:'Alertes',           href:'alertes.html' },
     { id:'statistiques', label:'Statistiques',    title:'Statistiques',      href:'statistiques.html' },
     { id:'logements',    label:'Logements',       title:'Logements',         href:'logements.html' },
     { id:'proprietaires',label:'Propriétaires',   title:'Propriétaires',     href:'proprietaires.html' },
     { id:'reservations', label:'Réservations',    title:'Réservations',      href:'reservations.html' },
     { id:'voyageurs',    label:'Historique des voyageurs', title:'Historique des voyageurs', href:'voyageurs.html' },
     { id:'avis',         label:'Avis',            title:'Avis',              href:'avis.html', badge:'avis' },
+    { id:'police',       label:'Fiches de police', title:'Fiches de police', href:'police.html' },
     { id:'site',         label:'Site web',        title:'Site web & réservations directes', href:'site.html' },
+    { id:'services',     label:'Services additionnels', title:'Services additionnels', href:'services.html' },
     { id:'messagerie',   label:'Messagerie',      title:'Messagerie',        href:'messagerie.html', badge:'unread' },
     { id:'automatisations', label:'Automatisations', title:'Automatisations', href:'automatisations.html' },
     { id:'vivi',         label:'Assistant IA',    title:'Vivi — Assistant IA', href:'vivi.html' },
     { id:'menage',       label:'Gestion des tâches', title:'Gestion des tâches', href:'menage.html' },
     { id:'equipe',       label:'Équipe',          title:'Équipe',            href:'equipe.html' },
     { id:'tarification', label:'Tarification dynamique', title:'Tarification dynamique', href:'tarification.html' },
-    { id:'comptabilite', label:'Comptabilité',    title:'Comptabilité',      href:'comptabilite.html' },
+    { id:'comptabilite', label:'Synthèse',        title:'Comptabilité',      href:'comptabilite.html' },
+    { id:'facturation',  label:'Facturation',     title:'Comptabilité',      href:'comptabilite.html#facturation' },
+    { id:'depenses',     label:'Dépenses',        title:'Comptabilité',      href:'comptabilite.html#depenses' },
     { id:'abonnement',   label:'Abonnement',      title:'Abonnement & Facturation', href:'abonnement.html' },
     { id:'parametres',   label:'Paramètres',      title:'Paramètres',       href:'parametres.html' },
   ];
 
   // Regroupement du menu par catégories (l'ordre des groupes = l'ordre affiché).
   const NAV_GROUPS = [
-    { label:'Aperçu',        items:['dashboard', 'calendrier', 'statistiques'] },
-    { label:'Locations',     items:['logements', 'proprietaires', 'reservations', 'voyageurs', 'avis'] },
-    { label:'Vente directe', items:['site'] },
-    { label:'Communication', items:['messagerie', 'automatisations', 'vivi'] },
+    { label:'Principal',     items:['dashboard', 'calendrier', 'alertes', 'statistiques'] },
+    { label:'Locations',     items:['logements', 'proprietaires', 'reservations', 'voyageurs', 'police'] },
+    { label:'Communication', items:['messagerie', 'avis', 'automatisations'] },
+    { label:'Vente directe', items:['site', 'services'] },
     { label:'Équipe',        items:['menage', 'equipe'] },
-    // Accueille les outils tiers branchés sur Oyvia. Un seul aujourd'hui,
-    // mais le groupe existe pour que le suivant s'y range sans redécoupage.
-    { label:'Intégrations',  items:['tarification'] },
-    { label:'Comptabilité',  items:['comptabilite'] },
+    // Accueille les outils branchés sur Oyvia — tiers comme maison.
+    { label:'Intégrations',  items:['tarification', 'vivi'] },
+    { label:'Comptabilité',  items:['comptabilite', 'facturation', 'depenses'] },
     { label:'Compte',        items:['abonnement', 'parametres'] },
   ];
+
+  /* ---------- Raccourcis épinglés ----------
+     L'épingle apparaît au survol d'une entrée et bascule son appartenance
+     au groupe Raccourcis, en tête de menu. Le choix vit dans localStorage
+     et non dans l'état applicatif : c'est un confort de navigation propre
+     à la personne et à son poste, pas une donnée de l'entreprise.
+
+     Le groupe reste MASQUÉ tant que rien n'est épinglé — un intitulé sans
+     contenu ne ferait qu'ajouter du bruit en haut de la liste. */
+  const PIN_KEY = 'oyvia_nav_pins';
+  function lirePins() {
+    try { return JSON.parse(localStorage.getItem(PIN_KEY)) || []; }
+    catch { return []; }
+  }
+  function ecrirePins(ids) {
+    try { localStorage.setItem(PIN_KEY, JSON.stringify(ids)); } catch { /* navigation privée */ }
+  }
+  function basculerPin(id) {
+    const pins = lirePins();
+    const i = pins.indexOf(id);
+    if (i > -1) pins.splice(i, 1); else pins.push(id);
+    ecrirePins(pins);
+    return i === -1;
+  }
 
   // Position de défilement du menu, conservée d'une page à l'autre.
   // sessionStorage et non localStorage : cela n'a de sens que le temps
   // d'une session de navigation.
   const NAV_SCROLL_KEY = 'oyvia_nav_scroll';
 
-  function svg(paths, w) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`; }
+  // `paths` peut manquer si une entrée du menu n'a pas encore d'icône : sans
+  // ce garde-fou, le gabarit écrivait littéralement « undefined » à côté du
+  // libellé, ce qui se voit tout de suite et ne s'explique pas.
+  function svg(paths, w) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round">${paths || ''}</svg>`; }
 
   // Ne compte que les conversations réellement visibles dans la messagerie :
   // un canal dont la plateforme est déconnectée ne doit pas gonfler le badge.
@@ -99,19 +136,52 @@ const Layout = (function () {
   }
 
   function sidebarHTML(active) {
+    const pins = lirePins();
+
+    // Une entrée se rend à l'identique où qu'elle apparaisse : dans son groupe
+    // d'origine comme dans les Raccourcis. Seul l'état de l'épingle change.
+    /* Plusieurs entrées visent le même fichier avec des fragments différents
+       (Comptabilité : Synthèse, Facturation, Dépenses). L'identifiant de page
+       ne peut donc plus désigner l'entrée active : les trois partagent la
+       même page et Layout.init() n'en déclare qu'un. On compare le LIEN —
+       fichier et fragment — ce qui départage sans ambiguïté.
+
+       L'identifiant reste le repli : sur une page ouverte par un chemin
+       inattendu, mieux vaut allumer l'entrée déclarée que rien du tout. */
+    const fichierCourant = location.pathname.split('/').pop() || 'dashboard.html';
+    const fragment = location.hash.slice(1);
+    const estActive = n => {
+      const [fichier, frag = ''] = n.href.split('#');
+      if (fichier === fichierCourant) return frag === fragment;
+      return n.id === active && !n.href.includes('#');
+    };
+
+    const itemHTML = (n, epingle) => {
+      const nb = n.badge ? badgeCount(n.badge) : 0;
+      const badge = nb > 0 ? `<span class="app-navitem__badge">${nb}</span>` : '';
+      return `<a class="app-navitem ${estActive(n) ? 'is-active' : ''}" href="${n.href}">
+        ${svg(I[n.id])}<span>${n.label}</span>${badge}
+        <button type="button" class="app-navpin ${epingle ? 'is-on' : ''}" data-pin="${n.id}"
+          aria-label="${epingle ? 'Retirer des raccourcis' : 'Épingler dans les raccourcis'}"
+          title="${epingle ? 'Retirer des raccourcis' : 'Épingler dans les raccourcis'}">${svg(I.epingle)}</button>
+      </a>`;
+    };
+
+    // Groupe Raccourcis : rendu en tête, et seulement s'il a du contenu.
+    const epingles = pins.map(id => NAV.find(n => n.id === id)).filter(Boolean);
+    const raccourcis = epingles.length
+      ? `<p class="app-navlabel">Raccourcis</p>${epingles.map(n => itemHTML(n, true)).join('')}`
+      : '';
+
     const groups = NAV_GROUPS.map(g => {
-      const items = g.items.map(id => NAV.find(n => n.id === id)).filter(Boolean).map(n => {
-        const nb = n.badge ? badgeCount(n.badge) : 0;
-        const badge = nb > 0 ? `<span class="app-navitem__badge">${nb}</span>` : '';
-        return `<a class="app-navitem ${n.id === active ? 'is-active' : ''}" href="${n.href}">
-          ${svg(I[n.id])}<span>${n.label}</span>${badge}</a>`;
-      }).join('');
+      const items = g.items.map(id => NAV.find(n => n.id === id)).filter(Boolean)
+        .map(n => itemHTML(n, pins.includes(n.id))).join('');
       return `<p class="app-navlabel">${g.label}</p>${items}`;
     }).join('');
     return `
       <div class="app-sidebar__brand"><img src="../assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></div>
       <nav class="app-sidebar__nav" aria-label="Navigation">
-        ${groups}
+        ${raccourcis}${groups}
       </nav>
       <div class="app-sidebar__foot">
         <button type="button" class="app-userchip" id="app-userchip-btn" aria-haspopup="true" aria-expanded="false">
@@ -173,7 +243,16 @@ const Layout = (function () {
     });
   }
 
+  // Redessine le menu sans recharger la page : utile quand seul le fragment
+  // change et que l'entrée active doit suivre.
+  let _pageActive = null;
+  function refreshNav() {
+    const sidebar = document.getElementById('app-sidebar');
+    if (sidebar && _pageActive) sidebar.innerHTML = sidebarHTML(_pageActive);
+  }
+
   function init(active) {
+    _pageActive = active;
     const nav = NAV.find(n => n.id === active) || NAV[0];
     document.title = `Oyvia — ${nav.title}`;
 
@@ -188,36 +267,53 @@ const Layout = (function () {
     if (sidebar) sidebar.innerHTML = sidebarHTML(active);
     if (topbar) topbar.innerHTML = topbarHTML(nav);
 
-    /* Le menu retrouve la position où il était au clic.
+    /* Mémorisation du défilement du menu, et épinglage.
 
-       Chaque page est un document complet : le menu est reconstruit et
-       son défilement repart de zéro. Sur un menu qui ne tient pas dans
-       la hauteur, cliquer « Comptabilité » en bas de liste faisait
-       remonter la barre en haut, et l'entrée active sortait de l'écran —
-       on perdait de vue l'endroit d'où l'on venait.
-
-       On restaure AVANT la première peinture (init() est appelé dans le
-       corps du document), sinon le saut serait visible. */
-    const zoneNav = sidebar && sidebar.querySelector('.app-sidebar__nav');
-    if (zoneNav) {
+       Ces écouteurs sont posés sur `sidebar`, qui SURVIT aux redessins, et
+       non sur `.app-sidebar__nav` qui est remplacé à chaque épinglage. Les
+       attacher à la zone de défilement fonctionnait une fois : le premier
+       clic reconstruisait le menu et emportait l'écouteur avec l'ancien
+       élément, le second clic ne déclenchait plus rien. */
+    function zoneNav() { return sidebar && sidebar.querySelector('.app-sidebar__nav'); }
+    function memoriser() {
+      const z = zoneNav();
+      try { if (z) sessionStorage.setItem(NAV_SCROLL_KEY, String(Math.round(z.scrollTop))); } catch {}
+    }
+    function restaurerDefilement() {
+      const z = zoneNav();
+      if (!z) return;
       try {
         const y = parseInt(sessionStorage.getItem(NAV_SCROLL_KEY) || '0', 10);
-        if (y > 0) zoneNav.scrollTop = y;
+        if (y > 0) z.scrollTop = y;
       } catch { /* navigation privée : on se passe de la mémoire */ }
+    }
+
+    if (sidebar) {
+      // Restauration AVANT la première peinture (init() est appelé dans le
+      // corps du document), sinon le saut de défilement serait visible.
+      restaurerDefilement();
 
       /* Écriture directe, sans requestAnimationFrame : rAF ne se déclenche
-         pas dans un document non peint (onglet en arrière-plan, aperçu
-         hors écran), et la position n'était alors jamais enregistrée. Le
-         navigateur limite déjà « scroll » à une émission par trame, et
-         écrire quelques octets y est négligeable. */
-      const memoriser = () => {
-        try { sessionStorage.setItem(NAV_SCROLL_KEY, String(Math.round(zoneNav.scrollTop))); } catch {}
-      };
-      zoneNav.addEventListener('scroll', memoriser, { passive: true });
-      // Filet : au clic sur une entrée, on fige la position exacte de ce
-      // moment-là, même si l'évènement de défilement a été manqué.
-      zoneNav.addEventListener('click', memoriser);
+         pas dans un document non peint (onglet en arrière-plan, aperçu hors
+         écran), et la position n'était alors jamais enregistrée. */
+      sidebar.addEventListener('scroll', memoriser, { passive: true, capture: true });
+      sidebar.addEventListener('click', memoriser);
       window.addEventListener('pagehide', memoriser);
+
+      /* Épinglage. L'épingle est DANS le lien : sans preventDefault, le clic
+         déclencherait la navigation avant d'avoir rien épinglé. */
+      sidebar.addEventListener('click', e => {
+        const pin = e.target.closest('[data-pin]');
+        if (!pin) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const id = pin.dataset.pin;
+        const ajoute = basculerPin(id);
+        const entree = NAV.find(n => n.id === id);
+        sidebar.innerHTML = sidebarHTML(active);
+        restaurerDefilement();
+        UI.toast(ajoute ? `${entree.label} épinglé dans les raccourcis` : `${entree.label} retiré des raccourcis`);
+      });
     }
 
     // Scrim mobile
@@ -268,7 +364,7 @@ const Layout = (function () {
     if (avatarBtn) avatarBtn.addEventListener('click', e => { e.stopPropagation(); UI.toggleAccountDropdown(avatarBtn, 'bottom'); });
   }
 
-  return { init, currentLogement: 'all', svg, NAV, unreadCount, refreshSidebarBadges };
+  return { init, refreshNav, currentLogement: 'all', svg, NAV, unreadCount, refreshSidebarBadges };
 })();
 
 /* --------- Boîte à outils UI partagée (toasts, panneau) --------- */
