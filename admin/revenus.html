@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia interne — Revenus &amp; facturation</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Intégration Odoo</h1>
+            <p>Cette fonctionnalité est en cours d’intégration avec Odoo.</p>
+          </div>
+        </div>
+
+        <div class="card card--pad">
+          <p class="eyebrow mb-4">Odoo</p>
+          <h2>Intégration Odoo en cours</h2>
+          <p class="text-muted">
+            La gestion des revenus et de la facturation sera prochainement connectée à Odoo.
+          </p>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/admin-data.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <!-- Sans cet appel, la page s'affiche sans menu ni barre du haut : le
+       shell n'est pas dans le HTML, il est injecté par AdminLayout.init.
+       La version complète de l'écran vit dans admin/revenus2.html. -->
+  <script>AdminLayout.init('revenus');</script>
+</body>
+</html>

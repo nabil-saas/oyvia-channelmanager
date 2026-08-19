@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia interne — Santé de la plateforme</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Santé de la plateforme</h1>
+            <p>Ces services sont les dépendances externes dont dépend l'application cliente : canaux de distribution, équipements, paiement, messagerie et IA. Une panne ici se répercute directement sur les opérations des clients.</p>
+          </div>
+          <div class="app-pagehead__actions" id="pl-actions">
+            <!-- Le bouton « Déclarer un incident » est injecté si peutAdmin('incidents') -->
+          </div>
+        </div>
+
+        <!-- Bandeau d'état global -->
+        <div id="pl-bandeau" class="mb-4"><!-- injecté --></div>
+
+        <!-- KPI -->
+        <div class="app-grid app-grid--kpi mb-4" id="pl-kpis"><!-- injecté --></div>
+
+        <!-- Bloc services groupés par catégorie -->
+        <div class="card card--pad mb-4" id="pl-services"><!-- injecté --></div>
+
+        <!-- Bloc incidents -->
+        <div class="card card--pad" id="pl-incidents-bloc">
+          <div class="adm-filtres" id="pl-filtres">
+            <b style="font-size:var(--fs-md);font-weight:var(--fw-semibold)">Incidents</b>
+            <select class="select" id="pl-f-statut" aria-label="Filtrer par statut">
+              <option value="ouverts">Ouverts</option>
+              <option value="resolus">Résolus</option>
+              <option value="tous">Tous</option>
+            </select>
+            <select class="select" id="pl-f-service" aria-label="Filtrer par service">
+              <option value="tous">Tous les services</option>
+            </select>
+            <span class="adm-compteur" id="pl-inc-compteur"></span>
+          </div>
+          <div id="pl-incidents"><!-- injecté --></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Panneau : détail d'un incident -->
+  <aside class="panel panel--lg" id="pl-panel" role="dialog" aria-modal="true" aria-labelledby="pl-panel-titre">
+    <div class="panel__head">
+      <div class="grow" id="pl-panel-tete">
+        <h3 class="modal__title" id="pl-panel-titre">Incident</h3>
+      </div>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="panel__body" id="pl-panel-corps"><!-- injecté --></div>
+    <div class="panel__foot" id="pl-panel-pied"><!-- injecté --></div>
+  </aside>
+
+  <!-- Modale : déclarer un incident -->
+  <div class="modal" id="pl-modal-inc" role="dialog" aria-modal="true" aria-labelledby="pl-modal-inc-titre">
+    <div class="modal__head">
+      <h3 class="modal__title" id="pl-modal-inc-titre">Déclarer un incident</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="field">
+        <label class="field__label" for="pl-f-service-inc">Service concerné</label>
+        <select class="select" id="pl-f-service-inc"></select>
+      </div>
+      <div class="field mt-4">
+        <label class="field__label" for="pl-f-titre-inc">Titre de l'incident</label>
+        <input class="input" id="pl-f-titre-inc" placeholder="Ex. Synchronisation Airbnb interrompue" />
+      </div>
+      <div class="field mt-4">
+        <label class="field__label" for="pl-f-gravite-inc">Gravité</label>
+        <select class="select" id="pl-f-gravite-inc">
+          <option value="mineur">Mineur — impact limité, service dégradé</option>
+          <option value="majeur">Majeur — fonctionnalité clé impactée</option>
+          <option value="critique">Critique — service totalement interrompu</option>
+        </select>
+      </div>
+      <div class="field mt-4">
+        <label class="field__label" for="pl-f-note-inc">Première note (observations, contexte)</label>
+        <textarea class="textarea" id="pl-f-note-inc" rows="3" placeholder="Ce qu'on observe, comment l'incident a été détecté…"></textarea>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="pl-save-inc">Déclarer l'incident</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/admin-data.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script src="../js/admin-plateforme.js"></script>
+</body>
+</html>

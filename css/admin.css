@@ -1,0 +1,193 @@
+/* ============================================================
+   OYVIA — Back-office interne
+
+   Le back-office réutilise entièrement le vocabulaire de l'app
+   (cards, tables, badges, modales). On ne redéfinit ici que ce qui
+   n'existe pas ailleurs, plus une signature visuelle : ces écrans
+   agissent sur les comptes de nos clients, il faut voir en un coup
+   d'œil qu'on n'est plus chez soi.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Signature « interne »
+   ------------------------------------------------------------ */
+.adm-brand { align-items: center; gap: var(--sp-2); }
+.adm-brand__tag {
+  font-size: 10px; font-weight: var(--fw-bold); text-transform: uppercase;
+  letter-spacing: var(--tracking-wider); color: var(--c-text-muted);
+  border: 1px solid var(--c-border-strong); border-radius: var(--r-full);
+  padding: 2px var(--sp-2); white-space: nowrap;
+}
+.app-sidebar.is-mini .adm-brand__tag { display: none; }
+
+/* Bandeau discret mais permanent : un liseré en haut de page suffit à
+   rappeler qu'on agit sur des données qui ne nous appartiennent pas. */
+body.is-admin .app-topbar { border-top: 3px solid var(--c-accent); }
+body.is-admin .app-topbar__title { margin-right: var(--sp-2); }
+
+.adm-env {
+  flex-shrink: 0; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
+  color: var(--c-accent-ink); background: var(--c-accent-soft);
+  border-radius: var(--r-full); padding: 3px var(--sp-3);
+}
+.adm-membre { width: auto; min-width: 210px; height: 36px; font-size: var(--fs-sm); }
+
+.adm-verrou { text-align: center; max-width: 520px; margin: var(--sp-10) auto; }
+.adm-verrou__ic {
+  width: 52px; height: 52px; margin: 0 auto var(--sp-4); border-radius: var(--r-lg);
+  background: var(--c-warning-soft); color: var(--c-warning-ink); display: grid; place-items: center;
+}
+.adm-verrou__ic svg { width: 24px; height: 24px; }
+.adm-verrou h2 { font-size: var(--fs-xl); margin-bottom: var(--sp-2); }
+.adm-verrou p { color: var(--c-text-soft); margin-bottom: var(--sp-5); }
+
+/* ------------------------------------------------------------
+   Nuances de KPI — le chiffre porte son propre jugement
+   ------------------------------------------------------------ */
+.kpi--positive .kpi__icon { background: var(--c-positive-soft); color: var(--c-positive-ink); }
+.kpi--warning  .kpi__icon { background: var(--c-warning-soft);  color: var(--c-warning-ink); }
+.kpi--danger   .kpi__icon { background: var(--c-danger-soft);   color: var(--c-danger-ink); }
+
+/* ------------------------------------------------------------
+   Histogramme du MRR
+
+   Barres en CSS plutôt qu'une bibliothèque de graphiques : douze
+   valeurs mensuelles ne justifient pas 200 ko de dépendance, et le
+   rendu reste lisible sans JavaScript de mise en page.
+   ------------------------------------------------------------ */
+.adm-chart { display: flex; align-items: flex-end; gap: var(--sp-2); height: 190px; padding-top: var(--sp-4); }
+.adm-chart__col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); height: 100%; justify-content: flex-end; }
+.adm-chart__bar {
+  width: 100%; max-width: 46px; border-radius: var(--r-sm) var(--r-sm) 0 0;
+  background: var(--c-accent-soft); position: relative;
+  transition: background var(--t-fast);
+}
+.adm-chart__col:hover .adm-chart__bar { background: var(--c-accent); }
+.adm-chart__col.is-courant .adm-chart__bar { background: var(--c-accent); }
+.adm-chart__val {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; font-weight: var(--fw-semibold); color: var(--c-text-soft); white-space: nowrap;
+  opacity: 0; transition: opacity var(--t-fast);
+}
+.adm-chart__col:hover .adm-chart__val, .adm-chart__col.is-courant .adm-chart__val { opacity: 1; }
+.adm-chart__mois { font-size: 10px; color: var(--c-text-muted); white-space: nowrap; }
+
+/* Répartition du MRR par offre : une barre empilée vaut mieux qu'un
+   camembert dès qu'il s'agit de comparer des parts entre elles. */
+.adm-mix { display: flex; height: 12px; border-radius: var(--r-full); overflow: hidden; background: var(--c-surface-alt); }
+.adm-mix__part { height: 100%; }
+.adm-mix__part:not(:last-child) { border-right: 2px solid var(--c-surface); }
+.adm-legende { display: flex; flex-wrap: wrap; gap: var(--sp-4); margin-top: var(--sp-4); }
+.adm-legende__item { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); }
+.adm-legende__pt { width: 10px; height: 10px; border-radius: var(--r-full); flex-shrink: 0; }
+.adm-legende__item b { font-variant-numeric: tabular-nums; }
+.adm-legende__item span { color: var(--c-text-muted); }
+
+/* Un montant coupé en deux lignes (« 2 898 » puis « € ») se lit comme deux
+   nombres. Les colonnes chiffrées du back-office ne cèdent donc jamais :
+   c'est aux colonnes de texte de rendre la place. */
+.table .money, .table .num { white-space: nowrap; }
+
+/* ------------------------------------------------------------
+   Listes et lignes cliquables
+   ------------------------------------------------------------ */
+.adm-ligne {
+  display: flex; align-items: center; gap: var(--sp-4);
+  padding: var(--sp-4) 0; border-bottom: 1px solid var(--c-border);
+}
+.adm-ligne:last-child { border-bottom: 0; }
+.adm-ligne__meta { min-width: 0; }
+.adm-ligne__meta b { display: block; font-weight: var(--fw-semibold); }
+.adm-ligne__meta small { display: block; color: var(--c-text-muted); font-size: var(--fs-xs); }
+.adm-ligne__val { font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); white-space: nowrap; }
+
+.adm-clic { cursor: pointer; }
+.adm-clic:hover { background: var(--c-surface-alt); }
+
+/* Pastille d'état d'un service */
+.adm-dot { width: 9px; height: 9px; border-radius: var(--r-full); flex-shrink: 0; display: inline-block; }
+.adm-dot.is-ok      { background: var(--c-positive); }
+.adm-dot.is-degrade { background: var(--amber-500, #f59e0b); }
+.adm-dot.is-panne   { background: var(--c-danger); }
+
+/* ------------------------------------------------------------
+   Fil chronologique (incidents, journal d'audit, échanges)
+   ------------------------------------------------------------ */
+.adm-fil { position: relative; padding-left: var(--sp-6); }
+.adm-fil::before {
+  content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px;
+  width: 2px; background: var(--c-border);
+}
+.adm-fil__pt { position: relative; padding-bottom: var(--sp-4); }
+.adm-fil__pt:last-child { padding-bottom: 0; }
+.adm-fil__pt::before {
+  content: ''; position: absolute; left: calc(-1 * var(--sp-6) + 1px); top: 5px;
+  width: 10px; height: 10px; border-radius: var(--r-full);
+  background: var(--c-surface); border: 2px solid var(--c-border-strong);
+}
+.adm-fil__pt.is-fort::before { background: var(--c-accent); border-color: var(--c-accent); }
+.adm-fil__date { font-size: var(--fs-xs); color: var(--c-text-muted); }
+.adm-fil__txt { font-size: var(--fs-sm); }
+
+/* ------------------------------------------------------------
+   Fiche compte (panneau latéral)
+   ------------------------------------------------------------ */
+/* Le panneau client porte plus qu'un aperçu : identité, abonnement,
+   dernières factures et demandes ouvertes. 420 px n'y suffisent pas. */
+.panel--lg { width: min(560px, 100vw); }
+
+.adm-fiche__head { display: flex; align-items: flex-start; gap: var(--sp-4); }
+.adm-fiche__logo {
+  width: 44px; height: 44px; border-radius: var(--r-lg); flex-shrink: 0;
+  background: var(--c-accent-soft); color: var(--c-accent-ink);
+  display: grid; place-items: center; font-weight: var(--fw-bold);
+}
+.adm-defs { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--sp-2) var(--sp-5); font-size: var(--fs-sm); }
+.adm-defs dt { color: var(--c-text-muted); }
+.adm-defs dd { font-weight: var(--fw-medium); overflow-wrap: anywhere; }
+
+.adm-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+/* ------------------------------------------------------------
+   Demandes clients
+   ------------------------------------------------------------ */
+.adm-dem { display: flex; gap: var(--sp-4); padding: var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); background: var(--c-surface); }
+.adm-dem + .adm-dem { margin-top: var(--sp-3); }
+.adm-dem.is-nouvelle { border-left: 3px solid var(--c-danger); }
+.adm-dem.is-en_cours { border-left: 3px solid var(--amber-500, #f59e0b); }
+.adm-dem.is-traitee  { border-left: 3px solid var(--c-positive); opacity: .72; }
+.adm-dem__corps { min-width: 0; flex: 1 1 auto; }
+.adm-dem__head { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-2); }
+.adm-dem__msg { font-size: var(--fs-sm); color: var(--c-text-soft); }
+.adm-dem__pied { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-3); flex-wrap: wrap; font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+.adm-echange { padding: var(--sp-3) var(--sp-4); background: var(--c-surface-alt); border-radius: var(--r-md); font-size: var(--fs-sm); }
+.adm-echange + .adm-echange { margin-top: var(--sp-2); }
+.adm-echange__de { font-weight: var(--fw-semibold); font-size: var(--fs-xs); color: var(--c-text-muted); margin-bottom: 2px; }
+
+/* ------------------------------------------------------------
+   Filtres de page
+   ------------------------------------------------------------ */
+.adm-filtres { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; margin-bottom: var(--sp-4); }
+.adm-filtres .input, .adm-filtres .select { height: 40px; width: auto; min-width: 170px; }
+.adm-filtres .input[type="search"] { min-width: 240px; }
+.adm-compteur { font-size: var(--fs-sm); color: var(--c-text-muted); margin-left: auto; }
+
+/* ------------------------------------------------------------
+   Matrice de permissions (Équipe Oyvia)
+   ------------------------------------------------------------ */
+.adm-perm { display: grid; grid-template-columns: minmax(0, 1fr) repeat(var(--roles, 4), 80px); gap: var(--sp-2) var(--sp-3); align-items: center; }
+.adm-perm__tete { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); text-align: center; }
+.adm-perm__lib b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.adm-perm__lib small { color: var(--c-text-muted); font-size: var(--fs-xs); }
+.adm-perm__case { display: grid; place-items: center; }
+.adm-perm__case svg { width: 17px; height: 17px; }
+.adm-perm__case.is-oui { color: var(--c-positive); }
+.adm-perm__case.is-non { color: var(--ink-300, #cbd5e1); }
+.adm-perm__groupe { grid-column: 1 / -1; font-size: var(--fs-xs); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); padding-top: var(--sp-3); border-top: 1px solid var(--c-border); }
+
+@media (max-width: 900px) {
+  .adm-membre { display: none; }
+  .adm-chart { height: 150px; }
+  .adm-perm { grid-template-columns: minmax(0, 1fr) repeat(var(--roles, 4), 58px); }
+}

@@ -2744,7 +2744,7 @@ const PLANS = [
     herite:null,
     groupes:[
       { titre:'Inclus', items:[
-        { titre:'Tout le socle Smart',        desc:"Calendrier unifié, messagerie, messages automatiques, ménage, serrures connectées, comptabilité." },
+        { titre:'Tout le socle Smart',        desc:"Calendrier unifié, messagerie, messages automatiques, ménage, comptabilité." },
         { titre:'Vos 2 premiers logements',   desc:"Au-delà de 2 logements, le passage à Smart est nécessaire." },
         { titre:'Pendant 6 mois',             desc:"À l'issue des 6 mois, l'offre bascule automatiquement sur Smart, au tarif du catalogue." },
         { titre:'Sans engagement',            desc:"Résiliable à tout moment pendant les 6 mois." },
@@ -2765,12 +2765,14 @@ const PLANS = [
         { titre:'Messages automatiques',             desc:"Confirmation, avant arrivée, check-out, demande d'avis — envoyés sur Airbnb, Booking, e-mail et WhatsApp" },
         { titre:'Réservations directes sans commission' },
         { titre:'Gestion du ménage et des équipes',  desc:"Tâches automatiques, assignation, check-list mobile" },
-        { titre:'Serrures connectées',               desc:"Nuki, TTLock, Yale et plus de 20 autres marques — codes d'accès créés et révoqués à distance" },
         { titre:'Tableau de bord & statistiques' },
         { titre:'Comptabilité' },
         { titre:'Intégration WhatsApp' },
         { titre:'Création de site web',              desc:"Pour vos réservations directes" },
         { titre:'Support standard' },
+      ] },
+      { titre:'En option', items:[
+        { titre:'Serrures connectées',               desc:"Nuki, TTLock, Yale et plus de 20 autres marques — codes d'accès créés et révoqués à distance" },
       ] },
     ],
     ia:null,
@@ -3024,7 +3026,7 @@ const MATRICE_OFFRES = [
     { nom: 'Tâches récurrentes',        v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
     { nom: 'Espace prestataire',        v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
     { nom: 'Serrures connectées',       desc: 'Nuki, TTLock, Yale et plus de 20 autres marques',
-      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+      v: ['non', 'option', 'option', 'option', 'option'] },
   ]},
 
   { groupe: 'Tarification', lignes: [
@@ -3040,6 +3042,15 @@ const MATRICE_OFFRES = [
     { nom: 'Exports CSV',               v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
   ]},
 
+  { groupe: 'Accompagnement', lignes: [
+    { nom: 'Support par e-mail',        v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Support prioritaire',       v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    { nom: 'Accompagnement à la mise en route', v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
+  ]},
+
+  // Vivi ferme la marche : c'est le seul bloc qui sépare vraiment Business
+  // de Smart, et une colonne de croix se lit mieux en fin de tableau qu'au
+  // milieu, où elle donne l'impression que l'offre s'arrête là.
   { groupe: 'Vivi — IA voyageur', lignes: [
     { nom: 'Réponses automatiques aux messages', desc: 'Dans toutes les langues, sur tous les canaux',
       v: ['non', 'non', 'non', 'inclus', 'inclus'] },
@@ -3050,12 +3061,6 @@ const MATRICE_OFFRES = [
     { nom: 'Garde-fous et escalade automatique', desc: 'Remboursements, réclamations, demandes sensibles',
       v: ['non', 'non', 'non', 'inclus', 'inclus'] },
     { nom: 'Seuil de confiance configurable', v: ['non', 'non', 'non', 'inclus', 'inclus'] },
-  ]},
-
-  { groupe: 'Accompagnement', lignes: [
-    { nom: 'Support par e-mail',        v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
-    { nom: 'Support prioritaire',       v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
-    { nom: 'Accompagnement à la mise en route', v: ['inclus', 'inclus', 'inclus', 'inclus', 'inclus'] },
   ]},
 ];
 
@@ -4960,23 +4965,23 @@ function _migrerAcces() {
   });
 }
 
-(function _oyviaRestoreState() {
-  let saved = null;
-  try { saved = JSON.parse(localStorage.getItem(OYVIA_STATE_KEY)); } catch { saved = null; }
+// Instantané lu une seule fois au chargement, puis conservé : les modules
+// chargés APRÈS ce fichier (le back-office, par exemple) déclarent leurs
+// entités trop tard pour la restauration ci-dessous et doivent pouvoir
+// rejouer la même fusion sur le même instantané.
+let _oyviaSnapshot = null;
+function _oyviaLireInstantane() {
+  try { return JSON.parse(localStorage.getItem(OYVIA_STATE_KEY)); } catch { return null; }
+}
+
+/* Fusion d'un instantané dans un jeu d'entités vivantes. Extraite de la
+   restauration pour être réutilisable telle quelle par les modules
+   optionnels — dupliquer cette logique, c'est se garantir deux
+   comportements divergents à la première correction. */
+function _oyviaFusionner(entites, saved) {
   if (!saved) return;
-
-  // Les suppressions s'appliquent AVANT la fusion : on retire des tableaux
-  // « frais » ce qui a été effacé, faute de quoi la fusion le réintroduirait.
-  Object.assign(OYVIA_SUPPRIMES, saved.__supprimes || {});
-  Object.keys(OYVIA_SUPPRIMES).forEach(nom => {
-    const ref = _OYVIA_ENTITIES[nom];
-    if (!Array.isArray(ref)) return;
-    const morts = new Set(OYVIA_SUPPRIMES[nom] || []);
-    for (let i = ref.length - 1; i >= 0; i--) if (ref[i] && morts.has(ref[i].id)) ref.splice(i, 1);
-  });
-
-  Object.keys(_OYVIA_ENTITIES).forEach(name => {
-    const ref = _OYVIA_ENTITIES[name];
+  Object.keys(entites).forEach(name => {
+    const ref = entites[name];
     const data = saved[name];
     if (data === undefined || data === null) return;
     if (Array.isArray(ref)) {
@@ -5001,6 +5006,42 @@ function _migrerAcces() {
       Object.assign(ref, data);
     }
   });
+}
+
+/* Déclaration tardive d'entités, pour les fichiers chargés après data.js
+   (js/admin-data.js). Le module fournit ses tableaux « frais » ; on leur
+   applique les suppressions puis l'instantané, exactement comme aux
+   entités du socle, et on les inscrit dans la carte de sauvegarde pour
+   que saveOyviaState() les emporte désormais. */
+function enregistrerEntitesOyvia(entites, migration) {
+  Object.keys(entites).forEach(nom => {
+    _OYVIA_ENTITIES[nom] = entites[nom];
+    const ref = entites[nom];
+    const morts = new Set(OYVIA_SUPPRIMES[nom] || []);
+    if (Array.isArray(ref) && morts.size) {
+      for (let i = ref.length - 1; i >= 0; i--) if (ref[i] && morts.has(ref[i].id)) ref.splice(i, 1);
+    }
+  });
+  _oyviaFusionner(entites, _oyviaSnapshot);
+  if (typeof migration === 'function') migration();
+}
+
+(function _oyviaRestoreState() {
+  _oyviaSnapshot = _oyviaLireInstantane();
+  const saved = _oyviaSnapshot;
+  if (!saved) return;
+
+  // Les suppressions s'appliquent AVANT la fusion : on retire des tableaux
+  // « frais » ce qui a été effacé, faute de quoi la fusion le réintroduirait.
+  Object.assign(OYVIA_SUPPRIMES, saved.__supprimes || {});
+  Object.keys(OYVIA_SUPPRIMES).forEach(nom => {
+    const ref = _OYVIA_ENTITIES[nom];
+    if (!Array.isArray(ref)) return;
+    const morts = new Set(OYVIA_SUPPRIMES[nom] || []);
+    for (let i = ref.length - 1; i >= 0; i--) if (ref[i] && morts.has(ref[i].id)) ref.splice(i, 1);
+  });
+
+  _oyviaFusionner(_OYVIA_ENTITIES, saved);
 })();
 
 // Après restauration : toute réservation sans jeton de séjour en reçoit un.

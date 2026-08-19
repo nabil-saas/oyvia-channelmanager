@@ -130,9 +130,23 @@ Layout.init('abonnement');
     UI.toast(`Demande envoyée au support — ${SUPPORT_OYVIA.delaiReponse.toLowerCase()}`);
     // Aucune écriture sur COMPTE : l'offre ne change qu'une fois traitée par
     // l'équipe. Le récapitulatif reste donc celui de l'offre en cours.
-    console.info('[abonnement] demande de changement d\'offre', {
-      de: COMPTE.plan, vers: offreId, parc, message: msg,
-    });
+
+    /* La demande atterrit dans le back-office (admin/demandes.html), où le
+       support la voit arriver en « Nouvelle ». C'est ce qui referme la
+       boucle : sans ça, l'écran client promettait une réponse à un
+       destinataire qui n'existait nulle part. La fonction n'est définie
+       que si js/admin-data.js est chargé — le formulaire continue donc de
+       fonctionner sur une page qui ne l'embarque pas. */
+    if (typeof creerDemandeClient === 'function') {
+      creerDemandeClient({
+        sujet: 'offre',
+        canal: 'formulaire',
+        priorite: cible ? 'normale' : 'basse',
+        message: cible
+          ? `Demande de passage de ${getPlan(COMPTE.plan).nom} à ${cible.nom} pour ${parc} logement${parc > 1 ? 's' : ''}.${msg ? ' ' + msg : ''}`
+          : `Demande d'accompagnement sur le choix d'offre (${parc} logement${parc > 1 ? 's' : ''}).${msg ? ' ' + msg : ''}`,
+      });
+    }
   });
 
   renderAll();
