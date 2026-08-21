@@ -147,28 +147,16 @@ Layout.init('automatisations');
           </div>
 
           <!-- Le panneau n'apparaît que si le message envoie effectivement la
-               page : il serait hors sujet sur un simple rappel de départ. -->
+               page : il serait hors sujet sur un simple rappel de départ.
+               Son contenu ne se règle plus ici : ces réglages ont leur propre
+               écran (Communication › Fiche séjour). Deux endroits pour modifier
+               la même chose, c'est un endroit de trop — celui qu'on oublie de
+               mettre à jour. -->
           <div class="card card--pad mt-4 ${a.modele.includes('{lien_sejour}') ? '' : 'hidden'}" id="auto-page-card">
-            <p class="eyebrow mb-2">Contenu de la page séjour</p>
-            <p class="field__hint mb-4">Ces réglages s'appliquent à la page elle-même, donc à toutes les automatisations qui l'envoient.</p>
-            <div class="auto-blocs">
-              ${BLOCS_PAGE_SEJOUR.map(b => `
-                <label class="auto-bloc ${blocPageSejourActif(b.id) ? 'is-on' : ''}">
-                  <input type="checkbox" data-bloc="${b.id}" ${blocPageSejourActif(b.id) ? 'checked' : ''} />
-                  <span><b>${b.label}</b><small>${b.desc}</small></span>
-                </label>`).join('')}
-            </div>
-
-            <div class="field mt-4"><label class="field__label" for="auto-accueil">Mot d'accueil</label>
-              <textarea class="textarea" id="auto-accueil" rows="3" ${blocPageSejourActif('accueil') ? '' : 'disabled'}>${PAGE_SEJOUR.messageAccueil}</textarea></div>
-
-            <div class="field mt-4"><label class="field__label" for="auto-jcode">Afficher le code d'accès et le Wi-Fi</label>
-              <select class="select" id="auto-jcode">
-                ${[0, 1, 2, 3, 7].map(n => `<option value="${n}" ${PAGE_SEJOUR.joursAvantCode === n ? 'selected' : ''}>${n === 0 ? 'Dès l\'ouverture de la page' : n === 1 ? "La veille de l'arrivée" : `${n} jours avant l'arrivée`}</option>`).join('')}
-              </select>
-              <span class="field__hint" id="auto-jcode-hint"></span></div>
-
-            <a class="btn btn--secondary btn--block mt-4" id="auto-preview-page" target="_blank" rel="noopener">Prévisualiser la page séjour ↗</a>
+            <p class="eyebrow mb-2">Page séjour</p>
+            <p class="field__hint mb-4">Ce message contient un lien vers la page séjour du voyageur. Son contenu — blocs affichés, mot d'accueil, délai avant l'affichage du code — se règle une fois pour toutes dans son écran dédié.</p>
+            <a class="btn btn--secondary btn--block" href="sejour.html">Personnaliser la fiche séjour</a>
+            <a class="btn btn--ghost btn--block mt-2" id="auto-preview-page" target="_blank" rel="noopener">Prévisualiser ↗</a>
           </div>
         </div>
       </div>`;
@@ -183,32 +171,6 @@ Layout.init('automatisations');
     };
     ta.addEventListener('input', refresh);
 
-    /* ---------- Contenu de la page séjour (config partagée) ---------- */
-    const majHintCode = () => {
-      const n = parseInt(editEl.querySelector('#auto-jcode').value, 10);
-      editEl.querySelector('#auto-jcode-hint').textContent = n === 0
-        ? "Le code sera lisible dès que le voyageur ouvrira le lien."
-        : `Avant cette date, la page affiche tout sauf le code et le Wi-Fi. Utile si vous envoyez le lien longtemps à l'avance.`;
-    };
-    editEl.querySelectorAll('[data-bloc]').forEach(cb => cb.addEventListener('change', () => {
-      const id = cb.dataset.bloc;
-      const i = PAGE_SEJOUR.blocs.indexOf(id);
-      if (cb.checked && i === -1) PAGE_SEJOUR.blocs.push(id);
-      if (!cb.checked && i > -1) PAGE_SEJOUR.blocs.splice(i, 1);
-      cb.closest('.auto-bloc').classList.toggle('is-on', cb.checked);
-      if (id === 'accueil') editEl.querySelector('#auto-accueil').disabled = !cb.checked;
-      if (typeof saveOyviaState === 'function') saveOyviaState();
-    }));
-    editEl.querySelector('#auto-accueil').addEventListener('input', e => {
-      PAGE_SEJOUR.messageAccueil = e.target.value;
-      if (typeof saveOyviaState === 'function') saveOyviaState();
-    });
-    editEl.querySelector('#auto-jcode').addEventListener('change', e => {
-      PAGE_SEJOUR.joursAvantCode = parseInt(e.target.value, 10);
-      majHintCode();
-      if (typeof saveOyviaState === 'function') saveOyviaState();
-    });
-    majHintCode();
     // La prévisualisation utilise une vraie réservation en cours, pour que la
     // fenêtre de validité du lien ne bloque pas l'aperçu.
     (() => {

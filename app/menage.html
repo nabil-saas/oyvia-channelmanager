@@ -64,32 +64,10 @@
     </div>
   </div>
 
-  <!-- Modale : ajouter une tâche -->
-  <div class="modal" id="mn-modal" role="dialog" aria-modal="true" aria-labelledby="mn-modal-title">
-    <div class="modal__head">
-      <h3 class="modal__title" id="mn-modal-title">Ajouter une tâche</h3>
-      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-    </div>
-    <div class="modal__body">
-      <div class="field"><label class="field__label" for="mn-f-logement">Logement</label><select class="select" id="mn-f-logement"></select></div>
-      <div class="mn-derived" id="mn-f-derived" style="margin-top:var(--sp-4)"></div>
-      <div class="field mt-4"><label class="field__label" for="mn-f-type">Catégorie de tâche</label><select class="select" id="mn-f-type"></select></div>
-      <div class="field mt-4 hidden" id="mn-f-newtype-wrap"><label class="field__label" for="mn-f-newtype">Nom de la nouvelle catégorie</label><input class="input" id="mn-f-newtype" placeholder="Ex. Jardinage, Piscine…" /></div>
-      <div class="app-grid app-grid--2" style="margin-top:var(--sp-4)">
-        <div class="field"><label class="field__label" for="mn-f-date">Date</label><input class="input" type="date" id="mn-f-date" /></div>
-        <div class="field"><label class="field__label" for="mn-f-heure">Heure</label><input class="input" type="time" id="mn-f-heure" value="11:00" /></div>
-      </div>
-      <div class="field mt-4"><label class="field__label" for="mn-f-prest">Prestataire assigné</label><select class="select" id="mn-f-prest"></select></div>
-    </div>
-    <div class="modal__foot">
-      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
-      <button class="btn btn--primary" id="mn-create">Créer la tâche</button>
-    </div>
-  </div>
-
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/datepicker.js"></script>
+  <script src="../js/tache-form.js"></script>
   <script src="../js/menage.js"></script>
   <script src="../js/vivi.js"></script>
 </body>

@@ -171,9 +171,23 @@
     { id: 'annuel',  label: 'Annuel'  },
   ];
 
+  /* Taille de parc affichée à l'ouverture de la page.
+
+     Choix commercial, pas technique : il décide de ce que le visiteur
+     voit avant d'avoir rien réglé. À 1 logement, ce sont les montants
+     les plus BAS de la grille qui s'affichent — l'entrée de gamme parle
+     d'elle-même, et celui qui gère davantage de biens monte le compteur
+     de lui-même. Contrepartie assumée : la dégressivité par logement,
+     elle, ne se découvre qu'une fois le chiffre augmenté.
+
+     Une seule ligne à changer : le champ de la page est rempli depuis
+     cette valeur (cf. setParc en fin de fichier), il n'y a rien à
+     modifier dans index.html. */
+  const PARC_DEFAUT = 1;
+
   let devise = 'MAD';
   let periode = 'mensuel';
-  let parc = 8;
+  let parc = PARC_DEFAUT;
 
   const surDevis = () => parc > PARC_MAX_CATALOGUE;
 

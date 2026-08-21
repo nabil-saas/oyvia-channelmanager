@@ -111,67 +111,11 @@ Layout.init('reservations');
       rows);
   });
 
-  /* ---------- Nouvelle réservation ---------- */
-  const RF = {
-    nom: document.getElementById('rf-nom'), log: document.getElementById('rf-log'),
-    canal: document.getElementById('rf-canal'), arrivee: document.getElementById('rf-arrivee'),
-    depart: document.getElementById('rf-depart'), pers: document.getElementById('rf-pers'),
-    montant: document.getElementById('rf-montant'), paiement: document.getElementById('rf-paiement'),
-  };
-  RF.log.innerHTML = LOGEMENTS.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
-  function suggestMontant() {
-    const l = getLogement(RF.log.value); if (!l) return;
-    const n = nuitsEntre(RF.arrivee.value, RF.depart.value);
-    // Suggestion calculée en euros, présentée dans la devise d'affichage.
-    if (n > 0) RF.montant.value = montantSaisie(l.tarifBase * n + l.menageTarif);
-  }
-  [RF.log, RF.arrivee, RF.depart].forEach(el => el.addEventListener('change', suggestMontant));
-
-  /* ---------- Dates réellement réservables ----------
-     Deux règles, et elles diffèrent entre l'arrivée et le départ :
-
-     · ARRIVÉE — toute nuit déjà vendue est impossible. Le jour de départ
-       d'un autre séjour reste libre : c'est la rotation du même jour.
-     · DÉPART  — il doit suivre l'arrivée, et surtout ne pas ENJAMBER la
-       réservation suivante. La borne haute est donc la première nuit
-       occupée après l'arrivée : on peut partir le jour où l'autre arrive,
-       pas après. Sans cette borne, on créerait un séjour à cheval sur un
-       autre sans qu'aucun jour cliqué ne paraisse fautif. */
-  DatePicker.range(RF.arrivee, RF.depart, () => ({
-    labels: { debut: "l'arrivée", fin: 'le départ' },
-    indispo: d => occupantNuit(RF.log.value, d),
-    note: d => occupationLogement(RF.log.value, d),
-    // La borne de fin ne peut être calculée qu'une fois l'arrivée posée :
-    // c'est la première nuit vendue après elle. On peut partir LE jour où
-    // le voyageur suivant arrive, pas au-delà.
-    maxFin: debut => prochaineNuitOccupee(RF.log.value, debut),
-    msgMax: 'Chevaucherait la réservation suivante',
-    legende: [{ classe: 'off', texte: 'Nuit déjà vendue' }, { classe: 'note', texte: 'Arrivée ou départ ce jour-là' }],
-  }));
-  // Changer de logement invalide des dates choisies pour l'ancien.
-  RF.log.addEventListener('change', () => {
-    if (RF.arrivee.value && occupantNuit(RF.log.value, RF.arrivee.value)) {
-      RF.arrivee.value = ''; RF.depart.value = '';
-      UI.toast('Dates réinitialisées : elles ne sont pas libres sur ce logement', false);
-    }
-  });
-
-  function openResaModal() { RF.nom.value = ''; suggestMontant(); UI.openPanel('resa-modal'); }
+  /* ---------- Nouvelle réservation ----------
+     Le formulaire vit dans js/resa-form.js : le calendrier l'ouvre aussi,
+     et deux copies auraient fini par appliquer deux jeux de règles. */
+  function openResaModal() { ResaForm.ouvrir(); }
   document.getElementById('resa-new').addEventListener('click', openResaModal);
-  document.getElementById('rf-create').addEventListener('click', () => {
-    const nom = RF.nom.value.trim();
-    if (!nom) { UI.toast('Renseignez le nom du voyageur', false); return; }
-    if (!RF.arrivee.value || !RF.depart.value || parseDate(RF.depart.value) <= parseDate(RF.arrivee.value)) { UI.toast('Dates invalides', false); return; }
-    const canal = RF.canal.value;
-    const prefix = { direct: 'CL-', airbnb: 'HM', booking: 'BK' }[canal];
-    RESERVATIONS.push({
-      id: 'R' + Date.now(), logementId: RF.log.value, voyageurId: null, voyageur: nom, canal,
-      arrivee: RF.arrivee.value, depart: RF.depart.value, pers: parseInt(RF.pers.value, 10) || 1,
-      montant: lireMontantSaisi(RF.montant.value, null) || 0, paiement: RF.paiement.value, statut: 'confirme',
-      ref: prefix + Math.floor(1000 + Math.random() * 9000), nuits: nuitsEntre(RF.arrivee.value, RF.depart.value),
-    });
-    UI.closeAll(); document.dispatchEvent(new Event('resaChanged')); UI.toast('Réservation créée');
-  });
 
   tbody.addEventListener('click', e => { const tr = e.target.closest('tr[data-res]'); if (tr) UI.openResa(tr.dataset.res); });
   // F.logement est exclu : layout.js émet déjà logementChange à sa place,

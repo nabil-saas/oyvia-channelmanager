@@ -60,6 +60,50 @@ Layout.init('calendrier');
     return `<div class="cal-bar cal-bar--${r.canal}${enAttente}" style="grid-column:${visStart + 1}/${visEnd + 1}" data-res="${r.id}" tabindex="0" role="button" aria-label="${labelTxt}, ${formatPlage(r.arrivee, r.depart)}${suffixe}">${labelTxt}${suffixe}</div>`;
   }
 
+  /* Prix affiché sous chaque nuit.
+
+     Trois cas, et un seul est une « recommandation » :
+
+     — nuit vendue : on montre ce qu'elle a RAPPORTÉ (montant du séjour
+       divisé par ses nuits), pas ce que le moteur proposerait
+       aujourd'hui. Le prix est encaissé, le recalculer donnerait un
+       chiffre qui n'a jamais existé ;
+     — nuit bloquée : rien à afficher, elle n'est pas à vendre ;
+     — nuit libre : le prix recommandé si la tarification dynamique
+       pilote ce logement, sinon le tarif de base — afficher un prix
+       calculé par un moteur débranché ferait croire à un pilotage qui
+       n'a pas lieu.
+
+     Le montant est rendu SANS symbole : sur 31 colonnes, « 113 € »
+     répété fait perdre les chiffres qu'on vient justement lire. La
+     devise se lit dans l'infobulle, et partout ailleurs dans l'app. */
+  function prixNuit(l, date, occ) {
+    const r = occ.get(date);
+    if (r && r.canal === 'bloque') return { texte: '—', titre: 'Nuit bloquée' };
+    if (r) {
+      const nuits = r.nuits || Math.max(1, nuitsEntre(r.arrivee, r.depart));
+      const parNuit = Math.round((r.montant || 0) / nuits);
+      return {
+        texte: parNuit ? formatMontantNu(parNuit) : '—',
+        titre: `Vendu ${formatMontant(parNuit)} la nuit — ${r.voyageur}`,
+      };
+    }
+    if (tdPilote(l)) {
+      // Exactement le chiffre de la grille Tarification dynamique : même
+      // fonction, mêmes règles. Deux calculs parallèles finiraient par
+      // afficher deux prix différents pour la même nuit.
+      const reco = prixRecommande(l.id, date);
+      const ecart = reco.prix - reco.base;
+      return {
+        texte: formatMontantNu(reco.prix),
+        titre: `Prix recommandé ${formatMontant(reco.prix)}`
+          + (ecart ? ` (${ecart > 0 ? '+' : ''}${Math.round((ecart / reco.base) * 100)} % vs base)` : ''),
+      };
+    }
+    const { base } = tdBornes(l);
+    return { texte: base ? formatMontantNu(base) : '—', titre: `Tarif de base ${formatMontant(base)}` };
+  }
+
   function render() {
     const days = getRange();
     const N = days.length;
@@ -92,17 +136,31 @@ Layout.init('calendrier');
             d = addDays(d, 1);
           }
         });
-        cells = days.map(d => {
+        cells = days.map((d, i) => {
           const chips = (tByDate[ymd(d)] || []).sort((a, b) => a.task.heure.localeCompare(b.task.heure)).map(({ task: t, isStart }) => {
             const p = getPrestataire(t.prestataireId);
             const nom = p ? p.nom : (TACHE_LABEL[t.type] || t.type);
             const head = isStart ? `<b>${t.heure}</b>` : '<b>↳</b>';
             return `<div class="cal-tchip cal-tchip--${t.type} ${isStart ? '' : 'cal-tchip--suite'}" data-task="${t.id}">${head} ${nom}</div>`;
           }).join('');
-          return `<div class="cal-daycell ${isToday(d) ? 'cal-daycell--today' : ''} ${isWE(d) ? 'cal-daycell--we' : ''}">${chips ? `<div class="cal-tchips">${chips}</div>` : ''}</div>`;
+          return `<div class="cal-daycell ${isToday(d) ? 'cal-daycell--today' : ''} ${isWE(d) ? 'cal-daycell--we' : ''}" style="grid-column:${i + 1}">${chips ? `<div class="cal-tchips">${chips}</div>` : ''}</div>`;
         }).join('');
       } else {
-        cells = days.map(d => `<div class="cal-daycell ${isToday(d) ? 'cal-daycell--today' : ''} ${isWE(d) ? 'cal-daycell--we' : ''}"></div>`).join('');
+        // Une seule construction de la carte des nuits occupées par
+        // logement : la refaire à chaque jour relirait tout le tableau
+        // des réservations 31 fois par ligne.
+        const occ = nuitsOccupees(l.id);
+        /* Colonne explicite sur chaque cellule : les barres occupent la
+           même rangée, et un placement automatique ferait « couler » les
+           cellules après elles au lieu de les laisser se superposer. Le
+           décalage se voyait immédiatement — le prix d'une nuit vendue
+           s'affichait trois colonnes plus loin. */
+        cells = days.map((d, i) => {
+          const p = prixNuit(l, ymd(d), occ);
+          return `<div class="cal-daycell ${isToday(d) ? 'cal-daycell--today' : ''} ${isWE(d) ? 'cal-daycell--we' : ''}" style="grid-column:${i + 1}">
+            <span class="cal-prix" title="${p.titre}">${p.texte}</span>
+          </div>`;
+        }).join('');
         extra = RESERVATIONS.filter(r => r.logementId === l.id && r.statut !== 'annule')
           .map(r => barFor(r, rangeStart, N)).join('');
       }
@@ -179,27 +237,69 @@ Layout.init('calendrier');
   const blkLog = document.getElementById('blk-log');
   const blkFrom = document.getElementById('blk-from');
   const blkTo = document.getElementById('blk-to');
+  /* Un blocage peut légitimement recouvrir un séjour : une chaudière qui
+     lâche ne consulte pas le planning. Les nuits occupées sont donc
+     BARRÉES mais sélectionnables — averties, pas interdites. La borne
+     `maxFin` disparaît pour la même raison : elle empêchait d'enjamber la
+     réservation suivante. Le formulaire de réservation, lui, garde le
+     refus ferme : deux voyageurs sur la même nuit n'existent pas. */
   DatePicker.range(blkFrom, blkTo, () => ({
     labels: { debut: 'la date de début', fin: 'la date de fin' },
-    indispo: d => occupantNuit(blkLog.value, d),
+    avertir: d => occupantNuit(blkLog.value, d),
     note: d => occupationLogement(blkLog.value, d),
-    maxFin: debut => prochaineNuitOccupee(blkLog.value, debut),
-    msgMax: 'Chevaucherait une réservation existante',
     uniteDuree: 'jours bloqués',
-    legende: [{ classe: 'off', texte: 'Nuit déjà occupée' }, { classe: 'note', texte: 'Arrivée ou départ' }],
+    legende: [
+      { classe: 'barre', texte: 'Nuit occupée — sélectionnable' },
+      { classe: 'note', texte: 'Arrivée ou départ' },
+    ],
   }));
-  blkLog.addEventListener('change', () => {
-    if (blkFrom.value && occupantNuit(blkLog.value, blkFrom.value)) {
-      blkFrom.value = ''; blkTo.value = '';
-      UI.toast('Dates réinitialisées : elles sont occupées sur ce logement', false);
-    }
+
+  /* Bloquer ou réserver : on demande avant d'ouvrir le bon formulaire.
+     Les deux produisent une barre dans la grille, mais un séjour porte un
+     voyageur, un canal et un montant — l'enregistrer comme « blocage »
+     ferait disparaître la recette de la comptabilité. */
+  document.getElementById('cal-block').addEventListener('click', () => UI.openPanel('cal-choix'));
+
+  /* Ajout d'une tâche depuis le calendrier : le logement filtré à l'écran
+     est repris, et la grille se redessine dès la création — sans quoi il
+     faudrait changer de mois pour voir apparaître ce qu'on vient de
+     planifier. */
+  document.getElementById('cal-tache').addEventListener('click', () => {
+    TacheForm.ouvrir({
+      logementId: logementFiltre !== 'all' ? logementFiltre : null,
+      onCree: () => render(),
+    });
   });
 
-  document.getElementById('cal-block').addEventListener('click', () => {
+  document.getElementById('cal-choix').addEventListener('click', e => {
+    const btn = e.target.closest('[data-choix]');
+    if (!btn) return;
+    UI.closeAll();
+    // Le logement filtré à l'écran est presque toujours celui qu'on vise.
+    const logementVise = logementFiltre !== 'all' ? logementFiltre : null;
+
+    if (btn.dataset.choix === 'reservation') {
+      ResaForm.ouvrir({ logementId: logementVise, onCree: () => render() });
+      return;
+    }
     document.getElementById('blk-motif').value = '';
+    document.getElementById('blk-from').value = '';
+    document.getElementById('blk-to').value = '';
+    if (logementVise) blkLog.value = logementVise;
     document.querySelectorAll('#blk-prest-list input:checked').forEach(c => { c.checked = false; });
     UI.openPanel('cal-modal');
   });
+  /* Séjours (hors blocages) qu'un blocage viendrait recouvrir. */
+  function sejoursRecouverts(logementId, du, au) {
+    return RESERVATIONS.filter(r => r.logementId === logementId
+      && r.canal !== 'bloque' && r.statut !== 'annule'
+      && r.arrivee < au && r.depart > du);
+  }
+
+  // Mémorise l'accord donné dans la boîte de confirmation, le temps du
+  // second passage dans ce même gestionnaire.
+  let confirmationFaite = false;
+
   document.getElementById('blk-confirm').addEventListener('click', () => {
     const logId = document.getElementById('blk-log').value;
     const from = document.getElementById('blk-from').value;
@@ -207,6 +307,24 @@ Layout.init('calendrier');
     const motif = document.getElementById('blk-motif').value.trim();
     if (!motif) { UI.toast('Le motif est obligatoire', false); return; }
     if (!from || !to || parseDate(to) <= parseDate(from)) { UI.toast('Dates invalides', false); return; }
+
+
+    /* Recouvrir un séjour reste possible, mais jamais par inadvertance :
+       on nomme les voyageurs concernés et on fait confirmer. Le
+       chevauchement se voit sinon uniquement dans la grille, une fois
+       enregistré. */
+    const genes = sejoursRecouverts(logId, from, to);
+    if (genes.length && !confirmationFaite) {
+      UI.confirm({
+        title: 'Ces dates sont déjà occupées',
+        message: `${genes.map(r => `${r.voyageur} (${formatPlage(r.arrivee, r.depart)})`).join(', ')} ${genes.length > 1 ? 'occupent' : 'occupe'} déjà ce logement sur la période. Le blocage se superposera au séjour : prévenez ${genes.length > 1 ? 'les voyageurs' : 'le voyageur'} ou déplacez les travaux.`,
+        confirmText: 'Bloquer quand même',
+        danger: true,
+        onConfirm: () => { confirmationFaite = true; document.getElementById('blk-confirm').click(); },
+      });
+      return;
+    }
+    confirmationFaite = false;
 
     const blockId = 'RB' + Date.now();
     RESERVATIONS.push({
@@ -265,6 +383,7 @@ Layout.init('calendrier');
     document.getElementById('cal-legend-resa').classList.toggle('hidden', mode !== 'reservations');
     document.getElementById('cal-legend-taches').classList.toggle('hidden', mode !== 'taches');
     document.getElementById('cal-block').style.display = mode === 'taches' ? 'none' : '';
+    document.getElementById('cal-tache').classList.toggle('hidden', mode !== 'taches');
     render();
   });
 

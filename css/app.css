@@ -249,9 +249,33 @@
 .cal-namecell__meta b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cal-namecell__meta small { font-size: var(--fs-xs); color: var(--c-text-muted); }
 
-.cal-track { display: grid; position: relative; flex: 1; }
+/* Une seule rangée, occupant toute la hauteur de la ligne.
+
+   Sans `grid-template-rows`, les barres (qui ne déclaraient pas de
+   `grid-row`) étaient placées automatiquement dans une DEUXIÈME rangée,
+   sous les cellules de jour — lesquelles se retrouvaient hautes de
+   quelques pixels. Invisible tant que les cellules étaient vides ; dès
+   qu'on y pose un prix, il se retrouvait au-dessus de la barre au lieu
+   d'être dessous. Cellules et barres partagent désormais la rangée 1 et
+   se superposent, ce qui est bien le comportement attendu. */
+.cal-track { display: grid; grid-template-rows: 100%; position: relative; flex: 1; }
 .cal-daycell { border-right: 1px solid var(--c-border); grid-row: 1; position: relative; }
 .cal-daycell--we { background: var(--bg-subtle); }
+
+/* Prix par nuit, centré dans la cellule. Une nuit réservée voit son prix
+   recouvert par la barre, et c'est voulu : ce qui compte alors est le
+   séjour, pas le tarif. Une seule couleur, neutre — un code couleur de
+   plus dans une grille qui en porte déjà quatre (les canaux) ferait
+   deux langages concurrents sur le même écran.
+   `pointer-events:none` : le prix n'intercepte ni le survol de la barre
+   ni le clic qui ouvre la réservation. */
+.cal-prix {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-size: 11px; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--c-text-soft);
+  pointer-events: none; user-select: none;
+}
 .cal-daycell--today::after { content: ""; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; background: var(--red-600); z-index: 5; }
 
 .cal-row--head { position: sticky; top: 0; z-index: 4; }
@@ -264,7 +288,7 @@
 .cal-dayhead--we { color: var(--ink-400); }
 
 .cal-row--body { height: 48px; }
-.cal-bar { align-self: center; height: 30px; margin: 0 3px; border-radius: var(--r-sm); display: flex; align-items: center; padding: 0 var(--sp-2); font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: #fff; white-space: nowrap; overflow: hidden; cursor: pointer; box-shadow: var(--shadow-xs); z-index: 1; transition: filter var(--t-fast), transform var(--t-fast); }
+.cal-bar { grid-row: 1; align-self: center; height: 30px; margin: 0 3px; border-radius: var(--r-sm); display: flex; align-items: center; padding: 0 var(--sp-2); font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: #fff; white-space: nowrap; overflow: hidden; cursor: pointer; box-shadow: var(--shadow-xs); z-index: 1; transition: filter var(--t-fast), transform var(--t-fast); }
 .cal-bar:hover { filter: brightness(1.07); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 .cal-bar--airbnb  { background: var(--ch-airbnb); }
 .cal-bar--booking { background: var(--ch-booking); }
@@ -859,6 +883,26 @@
 /* Jours suivants d'une tâche multi-jours : bordure pointillée + légèrement estompée */
 .cal-tchip--suite { border-left-style: dashed; opacity: 0.75; }
 .cal-grid--taches .cal-row--body { height: 60px; }
+
+/* Choix « blocage ou réservation », avant l'ouverture du formulaire.
+   Deux cibles larges plutôt que deux boutons de barre : le geste engage
+   une écriture différente dans les données, il mérite qu'on le lise. */
+.cal-choix {
+  display: flex; align-items: flex-start; gap: var(--sp-4); width: 100%; text-align: left;
+  padding: var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-lg);
+  background: var(--c-surface); transition: border-color var(--t-fast), background var(--t-fast);
+}
+.cal-choix + .cal-choix { margin-top: var(--sp-3); }
+.cal-choix:hover { border-color: var(--c-accent); background: var(--c-accent-soft); }
+.cal-choix__ic {
+  width: 38px; height: 38px; flex-shrink: 0; border-radius: var(--r-md);
+  display: grid; place-items: center; background: var(--c-surface-alt); color: var(--c-text-soft);
+}
+.cal-choix:hover .cal-choix__ic { background: var(--c-surface); color: var(--c-accent); }
+.cal-choix__ic svg { width: 19px; height: 19px; }
+.cal-choix__txt { min-width: 0; }
+.cal-choix__txt b { display: block; font-weight: var(--fw-semibold); }
+.cal-choix__txt small { display: block; color: var(--c-text-muted); font-size: var(--fs-xs); line-height: var(--lh-snug); margin-top: 2px; }
 
 /* Tooltip flottant du calendrier */
 .cal-tt { position: fixed; z-index: var(--z-toast); background: var(--bg-ink); color: #fff; border-radius: var(--r-md); padding: var(--sp-3); font-size: var(--fs-xs); line-height: var(--lh-snug); box-shadow: var(--shadow-lg); pointer-events: none; opacity: 0; transition: opacity var(--t-fast); max-width: 240px; }
@@ -1665,3 +1709,117 @@
 .fp-print__sign span { display: block; font-size: 8.5pt; }
 .fp-print__sign i { display: block; height: 42px; border-bottom: 1px solid #000; font-style: normal; padding-top: 4px; }
 .fp-print__foot { margin-top: 24px; padding-top: 8px; border-top: 1px solid #ccc; font-size: 8pt; }
+
+
+/* ============================================================
+   Fiche séjour — personnalisation
+
+   Réglages à gauche, page réelle à droite. L'aperçu est un vrai
+   navigateur miniature : il montre ce que le voyageur verra, pas une
+   reconstitution qui finirait par s'en écarter.
+   ============================================================ */
+.sj-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: var(--sp-5); align-items: start; }
+.sj-reglages { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+
+.sj-apercu { position: sticky; top: 76px; }
+.sj-apercu__tete { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+
+/* Cadre de téléphone : la page séjour se lit debout dans un couloir, pas
+   sur un écran de bureau. La montrer autrement laisserait passer des
+   choix qui ne tiennent qu'en grande largeur. */
+.sj-phone {
+  border: 10px solid var(--ink-800, #1e293b); border-radius: 34px;
+  overflow: hidden; background: var(--c-surface); box-shadow: var(--shadow-lg);
+  height: 700px; max-height: calc(100vh - 200px);
+}
+.sj-phone iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--bg-subtle); }
+
+/* Contenu de la page : une ligne par bloc.
+
+   La version précédente dépliait huit cartes à cocher, description
+   comprise : la colonne de réglages faisait deux écrans de haut avant
+   qu'on ait touché à quoi que ce soit. Ici, une ligne = un
+   interrupteur, un libellé cliquable et deux flèches d'ordre ; le reste
+   passe en modale. */
+.sj-blocs { display: flex; flex-direction: column; }
+.sj-bloc {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-1) 0; border-bottom: 1px solid var(--c-border);
+}
+.sj-bloc:last-child { border-bottom: 0; }
+.sj-bloc__sw { flex-shrink: 0; }
+.sj-bloc__nom {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-2);
+  text-align: left; padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-md); transition: background var(--t-fast);
+  font-size: var(--fs-sm); font-weight: var(--fw-medium);
+}
+.sj-bloc__nom:hover { background: var(--c-surface-alt); }
+/* Le titre seul : la description explique un bloc une fois, elle n'a pas
+   à occuper une ligne sur chacun des huit. Elle reste au survol et dans
+   la modale d'édition. */
+.sj-bloc__nom span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Point discret : ce bloc a un texte réécrit par l'hôte. */
+.sj-bloc__perso { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--c-accent); flex-shrink: 0; }
+/* Un bloc masqué reste lisible — on doit pouvoir le relire avant de
+   décider de le réafficher — mais nettement en retrait. */
+.sj-bloc:not(.is-on) .sj-bloc__nom { opacity: .5; }
+
+.sj-bloc__ordre { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
+.sj-bloc__ordre button {
+  width: 26px; height: 18px; display: grid; place-items: center;
+  border-radius: var(--r-sm); color: var(--c-text-muted);
+}
+.sj-bloc__ordre button:hover:not(:disabled) { background: var(--c-surface-alt); color: var(--c-text); }
+.sj-bloc__ordre button:disabled { opacity: .25; cursor: default; }
+.sj-bloc__ordre svg { width: 14px; height: 14px; }
+
+/* Éléments d'une section (étapes, tuiles) dans la fenêtre d'édition. */
+.sj-item { padding: var(--sp-3) 0; border-bottom: 1px solid var(--c-border); }
+.sj-item:last-of-type { border-bottom: 0; }
+.sj-item__tete { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.sj-item__num {
+  width: 24px; height: 24px; flex-shrink: 0; border-radius: var(--r-full);
+  background: var(--c-accent-soft); color: var(--c-accent-ink);
+  display: grid; place-items: center; font-size: var(--fs-xs); font-weight: var(--fw-bold);
+}
+.sj-item__icone { width: auto; min-width: 120px; height: 38px; flex-shrink: 0; font-size: var(--fs-sm); }
+.sj-item__titre { height: 38px; font-weight: var(--fw-medium); }
+.sj-item__texte { height: 36px; font-size: var(--fs-sm); }
+.sj-item__actions { display: flex; gap: 1px; flex-shrink: 0; }
+.sj-item__actions button {
+  width: 28px; height: 28px; display: grid; place-items: center;
+  border-radius: var(--r-sm); color: var(--c-text-muted);
+}
+.sj-item__actions button:hover:not(:disabled) { background: var(--c-surface-alt); color: var(--c-text); }
+.sj-item__actions button.is-danger:hover { background: var(--c-danger-soft); color: var(--c-danger-ink); }
+.sj-item__actions button:disabled { opacity: .25; cursor: default; }
+.sj-item__actions svg { width: 14px; height: 14px; }
+
+/* Variables insérables : cliquer vaut mieux que recopier à la main. */
+.sj-vars summary { font-size: var(--fs-xs); color: var(--c-text-muted); cursor: pointer; }
+.sj-vars > div { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.sj-var {
+  font-family: var(--font-mono); font-size: 11px; padding: 3px var(--sp-2);
+  border: 1px solid var(--c-border); border-radius: var(--r-sm);
+  color: var(--c-text-soft); background: var(--c-surface-alt);
+}
+.sj-var:hover { border-color: var(--c-accent); color: var(--c-accent-ink); }
+
+/* Palette */
+.sj-couleurs { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.sj-couleur {
+  width: 30px; height: 30px; border-radius: var(--r-full); background: var(--pastille);
+  border: 2px solid var(--c-surface); box-shadow: 0 0 0 1px var(--c-border);
+  transition: box-shadow var(--t-fast), transform var(--t-fast);
+}
+.sj-couleur:hover { transform: scale(1.08); }
+.sj-couleur.is-on { box-shadow: 0 0 0 2px var(--c-accent); }
+
+@media (max-width: 1100px) {
+  /* Sous cette largeur, la colonne d'aperçu étrangle les réglages :
+     elle passe dessous, et cesse de suivre le défilement. */
+  .sj-layout { grid-template-columns: minmax(0, 1fr); }
+  .sj-apercu { position: static; }
+  .sj-phone { max-width: 400px; margin-inline: auto; }
+}

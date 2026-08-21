@@ -626,7 +626,10 @@
           <span class="lp-bar__label">Nombre de logements</span>
           <div class="lp-nb">
             <button type="button" class="lp-nb__btn" id="lp-moins" aria-label="Un logement de moins">−</button>
-            <input type="text" id="lp-count" class="lp-nb__input" value="8" inputmode="numeric"
+            <!-- La valeur affichée vient de PARC_DEFAUT (js/simulateur.js) :
+                 la recopier ici créerait deux vérités qui divergent au
+                 premier changement. -->
+            <input type="text" id="lp-count" class="lp-nb__input" inputmode="numeric"
                    aria-label="Nombre de logements" />
             <button type="button" class="lp-nb__btn" id="lp-plus" aria-label="Un logement de plus">+</button>
           </div>

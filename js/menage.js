@@ -152,102 +152,11 @@ Layout.init('menage');
   });
   Object.values(F).forEach(el => el.addEventListener('change', render));
 
-  /* ---------- Ajout d'une tâche : on part du LOGEMENT, la réservation n'est qu'une info dérivée ---------- */
-  const logementSel = document.getElementById('mn-f-logement');
-  const typeSel = document.getElementById('mn-f-type');
-  const dateField = document.getElementById('mn-f-date');
-  const newtypeWrap = document.getElementById('mn-f-newtype-wrap');
-
-  // Réservation en cours pour ce logement (aujourd'hui compris dans le séjour) ;
-  // à défaut, la prochaine réservation à venir.
-  function reservationPourLogement(logementId) {
-    const resas = RESERVATIONS.filter(r => r.logementId === logementId && r.canal !== 'bloque');
-    const enCours = resas.find(r => parseDate(r.arrivee) <= parseDate(AUJOURDHUI) && parseDate(r.depart) >= parseDate(AUJOURDHUI));
-    if (enCours) return { r: enCours, enCours: true };
-    const aVenir = resas.filter(r => parseDate(r.arrivee) >= parseDate(AUJOURDHUI))
-      .sort((a, b) => parseDate(a.arrivee) - parseDate(b.arrivee))[0];
-    return aVenir ? { r: aVenir, enCours: false } : null;
-  }
-
-  function updateDerived() {
-    const box = document.getElementById('mn-f-derived');
-    const found = reservationPourLogement(logementSel.value);
-    if (!found) {
-      box.innerHTML = `Aucune réservation en cours ou à venir pour ce logement.`;
-      if (!dateField.value) dateField.value = AUJOURDHUI;
-      return;
-    }
-    const { r, enCours } = found;
-    box.innerHTML = `${enCours ? 'Réservation en cours' : 'Prochaine réservation'} : <b>${r.voyageur}</b> · ${formatPlage(r.arrivee, r.depart)}.`;
-    dateField.value = typeSel.value === 'checkin' ? r.arrivee : r.depart;
-  }
-
-  function fillTaskModal() {
-    logementSel.innerHTML = LOGEMENTS.map(l => `<option value="${l.id}">${l.nom} — ${l.ville}</option>`).join('');
-    typeSel.innerHTML = Object.entries(TACHE_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')
-      + '<option value="__new">＋ Nouvelle catégorie…</option>';
-    document.getElementById('mn-f-prest').innerHTML = PRESTATAIRES.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
-    newtypeWrap.classList.add('hidden');
-    dateField.value = '';
-    document.getElementById('mn-f-heure').value = '11:00';
-    updateDerived();
-  }
-  /* ---------- Dates planifiables pour une intervention ----------
-     Ici la frontière n'est pas la même que pour une réservation, et c'est
-     volontaire :
-
-     · IMPOSSIBLE — planifier dans le passé. Rien d'autre : une équipe peut
-       enchaîner plusieurs logements dans la journée, et un ménage de
-       mi-séjour se fait justement pendant l'occupation. Griser ces cas
-       interdirait des situations parfaitement légitimes.
-
-     · SIGNALÉ — le voyageur est sur place, c'est un jour d'arrivée ou de
-       départ, ou le prestataire a déjà des interventions ce jour-là. On
-       donne l'information, la décision reste à vous. */
-  const prestSel = document.getElementById('mn-f-prest');
-  DatePicker.attach(dateField, () => ({
-    min: AUJOURDHUI,
-    indispo: d => d < AUJOURDHUI ? 'Date passée' : null,
-    note: d => {
-      const bouts = [];
-      const occ = occupationLogement(logementSel.value, d);
-      if (occ) bouts.push(occ);
-      const charge = chargePrestataire(prestSel.value, d);
-      if (charge.length) {
-        const p = PRESTATAIRES.find(x => x.id === prestSel.value);
-        bouts.push(`${p ? p.nom : 'Le prestataire'} : ${charge.length} intervention${charge.length > 1 ? 's' : ''} déjà prévue${charge.length > 1 ? 's' : ''}`);
-      }
-      return bouts.length ? bouts.join(' · ') : null;
-    },
-    legende: [{ classe: 'off', texte: 'Passé' }, { classe: 'note', texte: 'Voyageur sur place ou prestataire chargé' }],
-  }));
-
-  logementSel.addEventListener('change', updateDerived);
-  typeSel.addEventListener('change', () => { newtypeWrap.classList.toggle('hidden', typeSel.value !== '__new'); updateDerived(); });
-  document.getElementById('mn-add').addEventListener('click', () => { fillTaskModal(); UI.openPanel('mn-modal'); });
-  document.getElementById('mn-create').addEventListener('click', () => {
-    const logementId = logementSel.value;
-    if (!logementId) { UI.toast('Sélectionnez un logement', false); return; }
-    if (!dateField.value) { UI.toast('Choisissez une date', false); return; }
-    let type = typeSel.value;
-    if (type === '__new') {
-      const label = document.getElementById('mn-f-newtype').value.trim();
-      if (!label) { UI.toast('Nommez la nouvelle catégorie', false); return; }
-      type = 'c' + Date.now().toString().slice(-6);
-      TACHE_LABEL[type] = label;
-    }
-    const found = reservationPourLogement(logementId);
-    TACHES.push({
-      id: 'T' + Date.now(), type,
-      logementId,
-      date: dateField.value,
-      heure: document.getElementById('mn-f-heure').value || '11:00',
-      prestataireId: document.getElementById('mn-f-prest').value,
-      statut: 'a_faire',
-      reservationId: found ? found.r.id : null,
-    });
-    UI.closeAll(); render(); UI.toast('Tâche créée');
-  });
+  /* ---------- Ajout d'une tâche ----------
+     Le formulaire vit dans js/tache-form.js : le calendrier l'ouvre aussi
+     depuis son mode Tâches prestataires. */
+  document.getElementById('mn-add').addEventListener('click', () => TacheForm.ouvrir());
+  document.addEventListener('tacheChanged', render);
 
   render();
 })();

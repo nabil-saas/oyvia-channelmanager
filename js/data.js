@@ -4536,16 +4536,240 @@ const BLOCS_PAGE_SEJOUR = [
   { id:'acces',        label:'Accès au logement',       desc:"Code de porte, étage et Wi-Fi." },
   { id:'instructions', label:"Instructions d'arrivée",  desc:"Les étapes, du point de rendez-vous à l'installation." },
   { id:'guide',        label:'Guide de bienvenue',      desc:"Horaires, quartier, équipements, bonnes adresses." },
+  { id:'services',     label:'Services additionnels',   desc:"Ce que le voyageur peut réserver en plus : transfert, ménage, petit-déjeuner." },
+  { id:'depart',       label:'Consignes de départ',     desc:"Ce qu'il faut faire en partant. Évite le message de dernière minute." },
   { id:'contact',      label:"Contacter l'hôte",        desc:"Bouton de contact direct depuis la page." },
 ];
 
+// Manières de joindre l'hôte depuis la page. Le canal choisi décide du
+// lien réellement posé sur le bouton : un bouton qui ouvre la mauvaise
+// application vaut moins qu'un numéro écrit en clair.
+const CONTACTS_SEJOUR = {
+  message:   { label:'Messagerie Oyvia', aide:"La réponse arrive dans votre messagerie, tous canaux confondus." },
+  whatsapp:  { label:'WhatsApp',         aide:'Ouvre une conversation WhatsApp avec le numéro indiqué.' },
+  telephone: { label:'Téléphone',        aide:'Lance un appel depuis le téléphone du voyageur.' },
+  email:     { label:'E-mail',           aide:'Ouvre un brouillon vers votre adresse.' },
+};
+
+/* Textes par défaut de chaque bloc. Ils vivent ici et non dans la page
+   voyageur : le titre d'une section est un contenu, pas de la mise en
+   page, et l'hôte doit pouvoir écrire « Votre arrivée » là où nous
+   proposons « Instructions d'arrivée ».
+
+   `titre` sert d'en-tête de section ; `texte` d'introduction, et pour
+   deux blocs (accueil, départ) il EST le contenu. */
+const TEXTES_SEJOUR_DEFAUT = {
+  accueil:      { titre:'',                          texte:"Nous sommes ravis de vous accueillir. Vous trouverez ici tout ce qu'il faut savoir avant et pendant votre séjour — écrivez-nous si quoi que ce soit vous manque." },
+  fiche_police: { titre:'Fiche de police voyageurs', texte:"Conformément à la réglementation, chaque voyageur doit compléter sa fiche individuelle avant l'arrivée. Ces informations sont conservées avec votre réservation et ne sont communiquées qu'aux autorités si la loi l'exige." },
+  acces:        { titre:'Accès au logement',         texte:'' },
+  instructions: { titre:"Instructions d'arrivée",    texte:'' },
+  guide:        { titre:'Le guide de bienvenue',     texte:'' },
+  services:     { titre:"Envie d'un extra ?",        texte:'Demandez-nous : nous ajoutons la prestation à votre séjour.' },
+  depart:       { titre:'En partant',                texte:"Laissez les clés dans la boîte, fermez les fenêtres et démarrez le lave-vaisselle si vous l'avez utilisé. Le reste, on s'en occupe." },
+  contact:      { titre:'Contacter votre hôte',      texte:'' },
+};
+
+// Un bloc dont le texte n'a jamais été touché retombe sur le défaut :
+// l'hôte n'a rien à écrire pour que la page soit correcte.
+function texteBloc(id) {
+  const perso = (PAGE_SEJOUR.textes || {})[id] || {};
+  const defaut = TEXTES_SEJOUR_DEFAUT[id] || { titre:'', texte:'' };
+  return {
+    titre: perso.titre !== undefined && perso.titre !== null ? perso.titre : defaut.titre,
+    texte: perso.texte !== undefined && perso.texte !== null ? perso.texte : defaut.texte,
+  };
+}
+function texteBlocParDefaut(id) { return TEXTES_SEJOUR_DEFAUT[id] || { titre:'', texte:'' }; }
+
+/* ------------------------------------------------------------
+   Éléments internes des sections
+
+   Les étapes d'arrivée et les tuiles du guide étaient écrites en dur
+   dans la page voyageur. Les rendre modifiables impose deux choses :
+   un stockage (ci-dessous) et des VARIABLES, car ces textes parlent du
+   logement — « Composez le code 4712 » n'a de sens que si 4712 se
+   recalcule pour chaque bien. Sans variables, l'hôte qui personnalise
+   une étape la figerait sur les données d'un seul logement.
+   ------------------------------------------------------------ */
+const VARIABLES_SEJOUR = [
+  { cle:'{logement}',  aide:'Nom du logement' },
+  { cle:'{adresse}',   aide:'Adresse complète' },
+  { cle:'{rue}',       aide:'Rue seule, sans code postal ni ville' },
+  { cle:'{quartier}',  aide:'Quartier' },
+  { cle:'{ville}',     aide:'Ville' },
+  { cle:'{code}',      aide:"Code d'accès — masqué tant qu'il n'est pas visible" },
+  { cle:'{cles}',      aide:'Emplacement des clés' },
+  { cle:'{etage}',     aide:'Étage (RDC si rez-de-chaussée)' },
+  { cle:'{wifi}',      aide:'Nom du réseau Wi-Fi' },
+  { cle:'{wifi_mdp}',  aide:'Mot de passe Wi-Fi' },
+  { cle:'{capacite}',  aide:'Nombre de voyageurs' },
+  { cle:'{chambres}',  aide:'Nombre de chambres' },
+  { cle:'{h_arrivee}', aide:"Heure d'arrivée" },
+  { cle:'{h_depart}',  aide:'Heure de départ' },
+  { cle:'{voyageur}',  aide:'Prénom du voyageur' },
+];
+
+/* Le code d'accès suit la même règle que partout ailleurs : tant que la
+   fenêtre d'affichage n'est pas ouverte, il ne sort pas — y compris via
+   une variable glissée dans un texte libre. */
+function remplirVariablesSejour(texte, ctx) {
+  if (!texte) return '';
+  const l = ctx.logement || {};
+  const acces = l.acces || {};
+  const wifi = l.wifi || {};
+  const sejour = l.sejour || {};
+  const masque = "communiqué avant votre arrivée";
+  const valeurs = {
+    '{logement}':  l.nom || '',
+    '{adresse}':   l.adresse || '',
+    '{rue}':       (l.adresse || '').split(',')[0],
+    '{quartier}':  l.quartier || '',
+    '{ville}':     l.ville || '',
+    '{code}':      ctx.codeVisible ? (l.codeAcces || '') : masque,
+    '{cles}':      acces.emplacementCles || '',
+    '{etage}':     acces.etage === 0 ? 'RDC' : (acces.etage != null ? acces.etage + 'ᵉ' : ''),
+    '{wifi}':      wifi.ssid || '',
+    '{wifi_mdp}':  ctx.codeVisible ? (wifi.pass || '') : masque,
+    '{capacite}':  l.capacite != null ? String(l.capacite) : '',
+    '{chambres}':  l.chambres != null ? String(l.chambres) : '',
+    '{h_arrivee}': sejour.arrivee || '',
+    '{h_depart}':  sejour.depart || '',
+    '{voyageur}':  ctx.prenom || '',
+  };
+  return String(texte).replace(/\{[a-z_]+\}/g, m => (valeurs[m] !== undefined ? valeurs[m] : m));
+}
+
+// Pictogrammes proposés pour les tuiles du guide.
+const ICONES_SEJOUR = {
+  wifi:     { label:'Wi-Fi',      path:'<path d="M5 12.55a11 11 0 0 1 14 0M2 8.5a16 16 0 0 1 20 0M8.5 16.5a6 6 0 0 1 7 0M12 20h.01"/>' },
+  horloge:  { label:'Horaire',    path:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' },
+  maison:   { label:'Logement',   path:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>' },
+  boussole: { label:'Quartier',   path:'<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zM2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/>' },
+  epingle:  { label:'Adresse',    path:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>' },
+  cafe:     { label:'Café',       path:'<path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4zM6 1v3M10 1v3M14 1v3"/>' },
+  cle:      { label:'Clés',       path:'<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8-8 2 2-2 2 2 2-3 3-2-2-2 2"/>' },
+  poubelle: { label:'Déchets',    path:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>' },
+  info:     { label:'Information',path:'<circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/>' },
+};
+
+/* Informations d'accès. Le Wi-Fi n'y figure plus : entrer dans le
+   logement et s'y connecter sont deux besoins distincts, à deux moments
+   différents. Le mot de passe vit désormais dans le guide de bienvenue,
+   où le voyageur le retrouve une fois installé.
+
+   `large` occupe toute la largeur : une phrase comme « boîte à clés
+   noire à droite de la porte » ne tient pas dans une demi-case. */
+const ACCES_SEJOUR_DEFAUT = [
+  { titre:'Code porte', texte:'{code}' },
+  { titre:'Étage',      texte:'{etage}' },
+  { titre:'Clés',       texte:'{cles}', large:true },
+];
+
+// Étapes d'arrivée par défaut, écrites avec des variables.
+const ETAPES_SEJOUR_DEFAUT = [
+  { titre:'Rendez-vous au {rue}', texte:'Le quartier {quartier} est facilement accessible.' },
+  { titre:'{cles}',               texte:'Composez le code {code} puis récupérez les clés.' },
+  { titre:'Installez-vous',       texte:"Le wifi et le guide de bienvenue vous attendent à l'intérieur. Arrivée à partir de {h_arrivee}." },
+];
+
+// Tuiles du guide par défaut.
+const TUILES_SEJOUR_DEFAUT = [
+  // Le mot de passe rejoint le réseau : c'est ici, et non dans le bloc
+  // d'accès, qu'on vient chercher de quoi se connecter.
+  { icone:'wifi',     titre:'Wifi',      texte:'{wifi} · {wifi_mdp}' },
+  { icone:'horloge',  titre:'Départ',    texte:'Avant {h_depart} le jour du départ' },
+  { icone:'maison',   titre:'Sur place', texte:'{capacite} voyageurs · {chambres} ch.' },
+  { icone:'boussole', titre:'Quartier',  texte:'{quartier}, {ville}' },
+  { icone:'epingle',  titre:'Adresse',   texte:'{adresse}' },
+  { icone:'cafe',     titre:'Petit-déj', texte:'Café & thé offerts en cuisine' },
+];
+
+// Les listes personnalisées remplacent les défauts en bloc : une liste
+// vide est un choix (« je ne veux pas d'étapes »), pas un oubli.
+function accesSejour() { return Array.isArray(PAGE_SEJOUR.acces) ? PAGE_SEJOUR.acces : ACCES_SEJOUR_DEFAUT; }
+function etapesSejour() { return Array.isArray(PAGE_SEJOUR.etapes) ? PAGE_SEJOUR.etapes : ETAPES_SEJOUR_DEFAUT; }
+function tuilesSejour() { return Array.isArray(PAGE_SEJOUR.tuiles) ? PAGE_SEJOUR.tuiles : TUILES_SEJOUR_DEFAUT; }
+
 const PAGE_SEJOUR = {
-  blocs: ['accueil', 'fiche_police', 'acces', 'instructions', 'guide', 'contact'],
-  messageAccueil: "Nous sommes ravis de vous accueillir. Vous trouverez ici tout ce qu'il faut savoir avant et pendant votre séjour — écrivez-nous si quoi que ce soit vous manque.",
+  blocs: ['accueil', 'fiche_police', 'acces', 'instructions', 'guide', 'services', 'depart', 'contact'],
   joursAvantCode: 1,
+  /* Textes par bloc, vides au départ : chaque champ non renseigné suit
+     TEXTES_SEJOUR_DEFAUT. On ne recopie pas les défauts ici, sinon une
+     reformulation de notre part ne parviendrait jamais aux hôtes qui
+     n'ont rien personnalisé. */
+  textes: {},
+  // null tant que l'hôte n'a rien changé : il suit alors nos listes de
+  // référence, mises à jour avec le produit.
+  acces: null,
+  etapes: null,
+  tuiles: null,
+  // Identité affichée au voyageur. Le logo Oyvia n'a rien à faire en
+  // tête d'une page qui représente l'hôte : c'est son nom qui rassure.
+  enseigne: 'Conciergerie Lumia',
+  signature: "Camille, votre hôte",
+  couleur: '#5B6BF5',
+  contact: { canal: 'message', numero: '+33 6 12 45 78 90', email: 'camille@conciergerie-lumia.fr' },
 };
 
 function blocPageSejourActif(id) { return PAGE_SEJOUR.blocs.includes(id); }
+
+/* Page séjour enregistrée avant que chaque bloc ait son titre et son
+   texte. Le mot d'accueil et les consignes de départ vivaient dans deux
+   champs à part ; on les verse dans `textes` pour ne pas faire perdre à
+   l'hôte ce qu'il avait écrit. Les blocs ajoutés depuis (services,
+   départ) manquent aussi de la liste : on les ajoute à la fin plutôt
+   qu'en tête, l'ordre existant étant un choix de l'utilisateur. */
+function _migrerPageSejour() {
+  if (!PAGE_SEJOUR.textes || typeof PAGE_SEJOUR.textes !== 'object') PAGE_SEJOUR.textes = {};
+  const reprendre = (champ, bloc) => {
+    if (!PAGE_SEJOUR[champ]) return;
+    PAGE_SEJOUR.textes[bloc] = { ...(PAGE_SEJOUR.textes[bloc] || {}), texte: PAGE_SEJOUR[champ] };
+    delete PAGE_SEJOUR[champ];
+  };
+  reprendre('messageAccueil', 'accueil');
+  reprendre('consignesDepart', 'depart');
+
+  if (!Array.isArray(PAGE_SEJOUR.blocs)) PAGE_SEJOUR.blocs = BLOCS_PAGE_SEJOUR.map(b => b.id);
+  // Un identifiant disparu du catalogue ne doit pas rester dans l'ordre :
+  // il ferait un trou silencieux dans le rendu.
+  PAGE_SEJOUR.blocs = PAGE_SEJOUR.blocs.filter(id => BLOCS_PAGE_SEJOUR.some(b => b.id === id));
+}
+
+/* Ordre d'affichage réel : la liste `blocs` fait foi, y compris pour la
+   position. Les blocs absents sont simplement désactivés. */
+function blocsPageSejourOrdonnes() {
+  return PAGE_SEJOUR.blocs.map(id => BLOCS_PAGE_SEJOUR.find(b => b.id === id)).filter(Boolean);
+}
+
+/* Liste affichée dans l'écran de réglage : les blocs actifs dans leur
+   ordre, suivis des inactifs. Un bloc décoché garde sa place dans la
+   liste des réglages, pas dans la page. */
+function blocsPageSejourTous() {
+  const actifs = blocsPageSejourOrdonnes();
+  const restants = BLOCS_PAGE_SEJOUR.filter(b => !PAGE_SEJOUR.blocs.includes(b.id));
+  return [...actifs, ...restants];
+}
+
+/* Lien du bouton de contact, selon le canal choisi. Renvoie null pour la
+   messagerie interne : il n'y a pas d'URL à ouvrir, la page poste le
+   message elle-même. */
+function lienContactSejour() {
+  const c = PAGE_SEJOUR.contact || {};
+  const num = String(c.numero || '').replace(/[^0-9+]/g, '');
+  if (c.canal === 'whatsapp')  return num ? `https://wa.me/${num.replace(/^\+/, '')}` : null;
+  if (c.canal === 'telephone') return num ? `tel:${num}` : null;
+  if (c.canal === 'email')     return c.email ? `mailto:${c.email}` : null;
+  return null;
+}
+
+/* Services proposés au voyageur sur sa page séjour : ceux qui sont
+   actifs ET qui couvrent son logement. Filtrer ici plutôt que dans la
+   page évite d'afficher un transfert aéroport sur un bien où il n'a
+   jamais été paramétré. */
+function servicesPageSejour(logementId) {
+  if (typeof SERVICES === 'undefined') return [];
+  return SERVICES.filter(s => s.actif && serviceCouvreLogement(s, logementId));
+}
 
 // Les informations sensibles sont-elles déjà visibles pour cette réservation ?
 function codeAccesVisible(r, aujourdhui = AUJOURDHUI) {
@@ -5060,6 +5284,8 @@ _migrerTachesSansMontant();
 _migrerConformite();
 // Fiches de police enregistrées avec les quatre anciens statuts.
 _migrerFichesPolice();
+// Page séjour enregistrée avant les textes par bloc et leur ordre.
+_migrerPageSejour();
 // Déroulé complet sur les messages qui signalent un besoin d'intervention :
 // Vivi répond, puis prépare la tâche. Appelé APRÈS la restauration, pour que
 // les signalements déjà traités soient connus — un rechargement ne renvoie
@@ -5067,6 +5293,19 @@ _migrerFichesPolice();
 _viviTraiterSignalements();
 
 let _oyviaResetting = false;
+
+/* Un aperçu ne doit RIEN écrire.
+
+   La page séjour s'affiche dans un cadre depuis l'écran « Fiche séjour »,
+   et partage le même stockage local que l'application. Or data.js arme
+   une sauvegarde automatique dans chaque document : le cadre réécrivait
+   donc l'état complet avec sa propre copie, prise au chargement — et
+   annulait, deux secondes plus tard, les réglages qu'on venait de
+   modifier. On voyait les couleurs et les blocs revenir seuls à leurs
+   valeurs d'origine, sans rien pour l'expliquer à l'écran.
+
+   Les documents ouverts avec ?apercu= sont donc en lecture seule. */
+const _oyviaApercu = /[?&]apercu=/.test(location.search);
 /* Renvoie false si l'enregistrement a échoué. Le silence d'origine
    convenait tant que l'état pesait quelques kilo-octets ; depuis que le
    back-office permet d'embarquer des images dans un article, le quota
@@ -5084,6 +5323,7 @@ let _oyviaResetting = false;
    entités effectivement gérées ici. */
 function saveOyviaState() {
   if (_oyviaResetting) return true; // une réinitialisation est en cours : ne pas réécrire l'ancien état
+  if (_oyviaApercu) return true;    // aperçu : on affiche, on n'enregistre pas
   try {
     const snapshot = Object.assign({}, _oyviaSnapshot || {});
     Object.keys(_OYVIA_ENTITIES).forEach(name => { snapshot[name] = _OYVIA_ENTITIES[name]; });

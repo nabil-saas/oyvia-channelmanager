@@ -57,30 +57,152 @@
   // même si le lien a été envoyé plus tôt (cf. PAGE_SEJOUR.joursAvantCode).
   const codeVisible = codeAccesVisible(r);
 
-  const GUIDE = [
-    { ic: '<path d="M5 12.55a11 11 0 0 1 14 0M2 8.5a16 16 0 0 1 20 0M8.5 16.5a6 6 0 0 1 7 0M12 20h.01"/>', t: 'Wifi', p: `${l.wifi.ssid}` },
-    { ic: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', t: 'Départ', p: 'Avant 11h le jour du départ' },
-    { ic: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>', t: 'Sur place', p: `${l.capacite} voyageurs · ${l.chambres} ch.` },
-    { ic: '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zM2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/>', t: 'Quartier', p: `${l.quartier}, ${l.ville}` },
-    { ic: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>', t: 'Adresse', p: l.adresse },
-    { ic: '<path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4zM6 1v3M10 1v3M14 1v3"/>', t: 'Petit-déj', p: 'Café & thé offerts en cuisine' },
-  ];
+  // Contexte des variables ({code}, {wifi}…) : il porte aussi la règle de
+  // visibilité du code, pour qu'un texte libre ne puisse pas la contourner.
+  const CTX = { logement: l, prenom, codeVisible };
+  const vars = t => remplirVariablesSejour(t, CTX);
+
+
+
+  // Couleur d'accent choisie par l'hôte : posée en variable CSS plutôt
+  // qu'en style sur chaque élément, pour qu'un seul réglage repeigne
+  // boutons, pastilles et liens de la page.
+  if (PAGE_SEJOUR.couleur) document.documentElement.style.setProperty('--g-accent', PAGE_SEJOUR.couleur);
+
+  /* Rendu d'un bloc, par identifiant. Une fonction par bloc plutôt qu'un
+     long gabarit : l'ordre d'affichage se règle depuis l'application,
+     et il faut pouvoir composer la page dans n'importe quelle suite. */
+  const section = (id, corps) => {
+    const t = texteBloc(id);
+    if (!corps) return '';
+    return `<div class="g-section">
+      ${t.titre ? `<h2>${vars(t.titre)}</h2>` : ''}
+      ${t.texte ? `<p class="g-intro">${vars(t.texte)}</p>` : ''}
+      ${corps}
+    </div>`;
+  };
+
+  const BLOCS = {
+    // Le mot d'accueil n'est pas une section : il s'inscrit sous le titre
+    // du logement, dans l'en-tête. Rendu à part, plus bas.
+    accueil: () => '',
+
+    fiche_police: () => `<div class="g-card"><div id="fp-section"><!-- injecté --></div></div>`,
+
+    acces: () => {
+      const items = accesSejour();
+      if (!items.length) return '';
+      /* Tant que le code n'est pas visible, on remplace la grille par une
+         explication plutôt que par trois cases « communiqué avant votre
+         arrivée » : le voyageur veut savoir QUAND, pas lire trois fois
+         qu'il ne saura pas encore. */
+      const sensible = items.some(x => /\{code\}|\{wifi_mdp\}/.test(x.texte || ''));
+      if (!codeVisible && sensible) {
+        return `<div class="g-card g-masque">
+          ${ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>')}
+          <p>Le code d'accès apparaîtra ici ${PAGE_SEJOUR.joursAvantCode === 1 ? 'la veille de votre arrivée' : `${PAGE_SEJOUR.joursAvantCode} jours avant votre arrivée`}.</p>
+        </div>`;
+      }
+      // Une information vide ne laisse pas de case orpheline.
+      const rendus = items.map(x => ({ ...x, valeur: vars(x.texte).trim() })).filter(x => x.valeur);
+      if (!rendus.length) return '';
+      return `<div class="g-codes">
+        ${rendus.map(x => `<div class="g-code ${x.large ? 'g-code--full' : ''}">
+          <small>${vars(x.titre)}</small><b>${x.valeur}</b></div>`).join('')}
+      </div>`;
+    },
+
+    instructions: () => {
+      const etapes = etapesSejour();
+      if (!etapes.length) return '';
+      return `<div class="g-card"><div class="g-steps">
+        ${etapes.map((e, i) => `
+          <div class="g-step">
+            <span class="g-step__num">${i + 1}</span>
+            <div class="g-step__txt"><b>${vars(e.titre)}</b>${e.texte ? `<p>${vars(e.texte)}</p>` : ''}</div>
+          </div>`).join('')}
+      </div></div>`;
+    },
+
+    guide: () => {
+      const tuiles = tuilesSejour();
+      if (!tuiles.length) return '';
+      return `<div class="g-guide">
+        ${tuiles.map(g => `
+          <div class="g-tile">
+            <div class="g-tile__ic">${ic((ICONES_SEJOUR[g.icone] || ICONES_SEJOUR.info).path)}</div>
+            <b>${vars(g.titre)}</b><p>${vars(g.texte)}</p>
+          </div>`).join('')}
+      </div>`;
+    },
+
+    // Rubrique vide = rubrique absente : une section « Envie d'un extra ? »
+    // sans rien en dessous fait une page en travaux.
+    services: () => {
+      const dispo = servicesPageSejour(l.id);
+      if (!dispo.length) return '';
+      return `<div class="g-services">
+        ${dispo.map(sv => `
+          <div class="g-service">
+            <div class="g-service__txt"><b>${sv.nom}</b><p>${sv.desc || ''}</p></div>
+            <div class="g-service__prix">
+              <b>${sv.prix ? formatMontant(sv.prix) : 'Offert'}</b>
+              <small>${SERVICES_UNITES[sv.unite] || ''}</small>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    },
+
+    // Le bloc « départ » n'a d'autre contenu que son texte : il est rendu
+    // plus bas, pour disparaître entièrement si l'hôte l'efface.
+    depart: () => '',
+
+    contact: () => {
+      const lien = lienContactSejour();
+      const libelle = vars(texteBloc('contact').titre) || 'Contacter votre hôte';
+      // Un lien réel quand il en existe un : rien n'agace autant qu'un
+      // bouton « Appeler » qui ouvre une boîte de dialogue.
+      return `<a class="g-cta" ${lien ? `href="${lien}" target="_blank" rel="noopener"` : `href="#" onclick="event.preventDefault(); alert('Un message a été envoyé à votre hôte. (démo)')"`}>
+          ${ic('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>')}
+          ${libelle}
+        </a>`;
+    },
+  };
+
+  /* Deux blocs n'ont pas d'en-tête : l'accueil vit dans le hero, et le
+     bouton de contact se suffit à lui-même. */
+  const SANS_ENTETE = { accueil: true, contact: true };
+
+  const corpsPage = blocsPageSejourOrdonnes().map(b => {
+    if (b.id === 'depart') {
+      const t = texteBloc('depart');
+      return t.texte
+        ? `<div class="g-section">${t.titre ? `<h2>${vars(t.titre)}</h2>` : ''}<div class="g-card"><p class="text-sm">${vars(t.texte)}</p></div></div>`
+        : '';
+    }
+    const rendu = BLOCS[b.id] ? BLOCS[b.id]() : '';
+    if (!rendu) return '';
+    if (SANS_ENTETE[b.id]) return `<div class="g-section">${rendu}</div>`;
+    return section(b.id, rendu);
+  }).join('');
+
+  const accueil = blocPageSejourActif('accueil') ? vars(texteBloc('accueil').texte) : '';
 
   shell.innerHTML = `
     <div class="g-top">
-      <div class="g-brand"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></div>
+      <div class="g-brand">${PAGE_SEJOUR.enseigne
+        ? `<span class="g-enseigne">${PAGE_SEJOUR.enseigne}</span>`
+        : '<img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo">'}</div>
       <span class="g-top__tag">Votre séjour</span>
     </div>
 
     <div class="g-hero">
-      <div class="g-hero__cover" style="background:linear-gradient(135deg, ${l.couleur}, var(--ch-airbnb))">
+      <div class="g-hero__cover" style="background:linear-gradient(135deg, ${PAGE_SEJOUR.couleur || l.couleur}, ${l.couleur})">
         <h1>${l.nom}</h1>
       </div>
       <div class="g-hero__body">
         <p class="g-hero__welcome">Bienvenue ${prenom} 👋</p>
-        <p class="g-hero__sub">${blocPageSejourActif('accueil') && PAGE_SEJOUR.messageAccueil
-          ? PAGE_SEJOUR.messageAccueil
-          : `${l.ville} · ${l.quartier}`}</p>
+        <p class="g-hero__sub">${accueil || `${l.ville} · ${l.quartier}`}</p>
         <div class="g-dates">
           <div class="g-dates__box"><small>Arrivée</small><b>${formatDate(r.arrivee, { moisLong: false })}</b></div>
           <div class="g-dates__arrow">${ic('<path d="M5 12h14M13 6l6 6-6 6"/>')}</div>
@@ -89,56 +211,9 @@
       </div>
     </div>
 
-    ${!blocPageSejourActif('fiche_police') ? '' : `
-    <div class="g-section">
-      <h2>${ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>')} Fiche de police voyageurs</h2>
-      <div class="g-card">
-        <p class="text-soft text-sm mb-4">Conformément à la réglementation, chaque voyageur doit compléter sa fiche individuelle avant l'arrivée. Ces informations sont conservées avec votre réservation et ne sont communiquées qu'aux autorités si la loi l'exige.</p>
-        <div id="fp-section"><!-- injecté --></div>
-      </div>
-    </div>`}
+    ${corpsPage}
 
-    ${!blocPageSejourActif('acces') ? '' : `
-    <div class="g-section">
-      <h2>${ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>')} Accès au logement</h2>
-      ${codeVisible ? `
-      <div class="g-codes">
-        <div class="g-code"><small>Code porte</small><b>${l.codeAcces}</b></div>
-        <div class="g-code"><small>Étage</small><b>${l.acces.etage === 0 ? 'RDC' : l.acces.etage + 'ᵉ'}</b></div>
-        <div class="g-code g-code--full"><small>Wifi — ${l.wifi.ssid}</small><b>${l.wifi.pass}</b></div>
-      </div>` : `
-      <div class="g-card g-masque">
-        ${ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>')}
-        <p>Le code d'accès et le Wi-Fi apparaîtront ici ${PAGE_SEJOUR.joursAvantCode === 1 ? 'la veille de votre arrivée' : `${PAGE_SEJOUR.joursAvantCode} jours avant votre arrivée`}.</p>
-      </div>`}
-    </div>`}
-
-    ${!blocPageSejourActif('instructions') ? '' : `
-    <div class="g-section">
-      <h2>${ic('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>')} Instructions d'arrivée</h2>
-      <div class="g-card"><div class="g-steps">
-        <div class="g-step"><span class="g-step__num">1</span><div class="g-step__txt"><b>Rendez-vous au ${l.adresse.split(',')[0]}</b><p>Le quartier ${l.quartier} est facilement accessible.</p></div></div>
-        <div class="g-step"><span class="g-step__num">2</span><div class="g-step__txt"><b>${l.acces.emplacementCles || 'Récupérez les clés sur place'}</b><p>${codeVisible ? `Composez le code <strong>${l.codeAcces}</strong> puis récupérez les clés.` : "Le code vous sera affiché ici avant votre arrivée."}</p></div></div>
-        <div class="g-step"><span class="g-step__num">3</span><div class="g-step__txt"><b>Installez-vous</b><p>Le wifi et le guide de bienvenue vous attendent à l'intérieur. Arrivée à partir de ${l.sejour.arrivee}.</p></div></div>
-      </div></div>
-    </div>`}
-
-    ${!blocPageSejourActif('guide') ? '' : `
-    <div class="g-section">
-      <h2>${ic('<path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>')} Le guide de bienvenue</h2>
-      <div class="g-guide">
-        ${GUIDE.map(g => `<div class="g-tile"><div class="g-tile__ic">${ic(g.ic)}</div><b>${g.t}</b><p>${g.p}</p></div>`).join('')}
-      </div>
-    </div>`}
-
-    ${!blocPageSejourActif('contact') ? '' : `
-    <div class="g-section">
-      <a class="g-cta" href="#" onclick="event.preventDefault(); alert('Un message a été envoyé à votre hôte. (démo)')">
-        ${ic('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>')}
-        Contacter votre hôte
-      </a>
-    </div>`}
-
+    ${PAGE_SEJOUR.signature ? `<p class="g-signature">${vars(PAGE_SEJOUR.signature)}</p>` : ''}
     <p class="g-foot">Séjour géré avec <a href="index.html">Oyvia</a> · Merci de votre visite ✦</p>`;
 
   /* ---------- Fiches de police (une par voyageur de la réservation) ---------- */

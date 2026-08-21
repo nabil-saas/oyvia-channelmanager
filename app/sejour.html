@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia — Fiche séjour</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/vivi.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Fiche séjour</h1>
+            <p>La page que reçoit le voyageur avant son arrivée : accès, instructions, fiche de police, bonnes adresses. Chaque réglage s'applique à tous vos logements.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <a class="btn btn--secondary" id="sj-ouvrir" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+              Ouvrir en grand
+            </a>
+          </div>
+        </div>
+
+        <div class="sj-layout">
+          <!-- Réglages -->
+          <div class="sj-reglages">
+
+            <div class="card card--pad">
+              <p class="eyebrow mb-3">Contenu de la page</p>
+              <div class="sj-blocs" id="sj-blocs"><!-- injecté --></div>
+              <p class="field__hint mt-3">Cliquez sur un bloc pour en réécrire le titre et le texte ; les flèches changent l'ordre d'affichage sur la page.</p>
+            </div>
+
+            <div class="card card--pad">
+              <p class="eyebrow mb-4">Votre identité</p>
+              <div class="app-grid app-grid--2">
+                <div class="field">
+                  <label class="field__label" for="sj-enseigne">Nom affiché</label>
+                  <input class="input" id="sj-enseigne" placeholder="Ex. Conciergerie Lumia" />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="sj-signature">Signature</label>
+                  <input class="input" id="sj-signature" placeholder="Ex. Camille, votre hôte" />
+                </div>
+              </div>
+              <div class="field mt-4">
+                <label class="field__label">Couleur d'accent</label>
+                <div class="sj-couleurs" id="sj-couleurs"><!-- injecté --></div>
+              </div>
+            </div>
+
+            <div class="card card--pad">
+              <p class="eyebrow mb-4">Informations sensibles</p>
+              <div class="field">
+                <label class="field__label" for="sj-jcode">Afficher le code d'accès et le Wi-Fi</label>
+                <select class="select" id="sj-jcode"></select>
+                <p class="field__hint" id="sj-jcode-aide"></p>
+              </div>
+            </div>
+
+            <div class="card card--pad">
+              <p class="eyebrow mb-4">Bouton de contact</p>
+              <div class="field">
+                <label class="field__label" for="sj-canal">Canal</label>
+                <select class="select" id="sj-canal"></select>
+                <p class="field__hint" id="sj-canal-aide"></p>
+              </div>
+              <div class="field mt-4" id="sj-champ-numero">
+                <label class="field__label" for="sj-numero">Numéro</label>
+                <input class="input" id="sj-numero" placeholder="+33 6 12 45 78 90" />
+              </div>
+              <div class="field mt-4" id="sj-champ-email">
+                <label class="field__label" for="sj-email">Adresse e-mail</label>
+                <input class="input" type="email" id="sj-email" placeholder="contact@exemple.com" />
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Aperçu réel -->
+          <div class="sj-apercu">
+            <div class="sj-apercu__tete">
+              <div>
+                <p class="eyebrow">Aperçu</p>
+                <p class="text-xs text-muted" id="sj-apercu-note"></p>
+              </div>
+              <button class="btn btn--ghost btn--sm" id="sj-rafraichir" title="Recharger l'aperçu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+              </button>
+            </div>
+            <div class="sj-phone">
+              <iframe id="sj-frame" title="Aperçu de la fiche séjour" loading="lazy"></iframe>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : titre et texte d'un bloc -->
+  <div class="modal" id="sj-modal" role="dialog" aria-modal="true" aria-labelledby="sj-modal-titre">
+    <div class="modal__head">
+      <h3 class="modal__title" id="sj-modal-titre">Modifier le bloc</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <p class="field__hint mb-4" id="sj-modal-aide"></p>
+      <div class="field" id="sj-modal-champ-titre">
+        <label class="field__label" for="sj-f-titre">Titre affiché</label>
+        <input class="input" id="sj-f-titre" />
+      </div>
+      <div class="field mt-4">
+        <label class="field__label" for="sj-f-texte" id="sj-f-texte-label">Texte</label>
+        <textarea class="textarea" id="sj-f-texte" rows="4"></textarea>
+      </div>
+      <!-- Éléments de la section : étapes d'arrivée, tuiles du guide.
+           N'apparaît que sur les blocs qui en ont. -->
+      <div id="sj-items-zone" class="mt-5" hidden>
+        <hr class="divider" />
+        <div class="row-between mt-4 mb-2">
+          <p class="eyebrow" style="margin:0" id="sj-items-titre">Éléments</p>
+          <button class="btn btn--secondary btn--sm" id="sj-item-ajouter">＋ Ajouter</button>
+        </div>
+        <div id="sj-items"><!-- injecté --></div>
+        <details class="sj-vars mt-3">
+          <summary>Variables disponibles</summary>
+          <div id="sj-vars-liste"><!-- injecté --></div>
+        </details>
+      </div>
+
+      <button class="btn btn--ghost btn--sm mt-3" id="sj-f-defaut">Rétablir le texte d'origine</button>
+    </div>
+    <!-- Pas de bouton « Enregistrer » : le texte s'applique à la frappe,
+         comme les autres champs de l'écran. -->
+    <div class="modal__foot">
+      <span class="text-xs text-muted grow">Enregistré au fil de la frappe</span>
+      <button class="btn btn--primary" onclick="UI.closeAll()">Terminé</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/sejour.js"></script>
+  <script src="../js/vivi.js"></script>
+</body>
+</html>

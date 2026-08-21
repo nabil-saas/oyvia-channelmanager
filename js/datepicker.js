@@ -231,17 +231,25 @@ const DatePicker = (function () {
     for (let j = 1; j <= nbJours; j++) {
       const d = iso(new Date(annee, mois, j));
       const raison = raisonDe(d, o);
-      const note = raison ? null : (o.note ? o.note(d) : null);
+      /* Avertissement : la nuit est occupée, mais le choix reste permis.
+         Bloquer un logement pour travaux par-dessus un séjour est une
+         décision légitime — il faut la voir, pas l'interdire. Le jour est
+         donc barré, pas désactivé. `indispo` reste le refus ferme, pour
+         les cas où l'écriture n'aurait aucun sens (deux voyageurs dans le
+         même lit). */
+      const alerte = raison ? null : (o.avertir ? o.avertir(d) : null);
+      const note = (raison || alerte) ? null : (o.note ? o.note(d) : null);
       const classes = [
         'dp__jour',
         raison ? 'is-off' : '',
+        alerte ? 'is-barre' : '',
         note ? 'is-note' : '',
         d === AUJOURDHUI ? 'is-today' : '',
         courant.mode === 'plage' ? classesPlage(d) : (d === courant.input.value ? 'is-sel' : ''),
       ].filter(Boolean).join(' ');
 
       cases += `<button type="button" class="${classes}" data-dp-jour="${d}" ${raison ? 'disabled' : ''}
-        title="${(raison || note || formatDate(d, { jourSemaine: true, moisLong: true })).replace(/"/g, '&quot;')}"><span class="dp__pip">${j}</span></button>`;
+        title="${(raison || alerte || note || formatDate(d, { jourSemaine: true, moisLong: true })).replace(/"/g, '&quot;')}"><span class="dp__pip">${j}</span></button>`;
     }
 
     const legende = (o.legende || []).map(l => `<span class="dp__leg"><i class="${l.classe}"></i>${l.texte}</span>`).join('');

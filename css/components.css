@@ -299,6 +299,13 @@
 .dp__jour.is-off .dp__pip { color: var(--c-text-muted); opacity: .45; text-decoration: line-through; }
 .dp__jour.is-off { cursor: not-allowed; }
 .dp__jour.is-off:hover .dp__pip { background: none; }
+/* Averti = la nuit est occupée, mais on peut quand même la choisir
+   (blocage pour travaux par-dessus un séjour). Barré comme un jour
+   refusé, mais sans l'opacité : il reste lisible et cliquable. */
+.dp__jour.is-barre .dp__pip { text-decoration: line-through; text-decoration-color: var(--c-danger); color: var(--c-text-soft); }
+.dp__jour.is-barre:hover .dp__pip { color: var(--c-text); }
+.dp__jour.is-barre.is-start .dp__pip, .dp__jour.is-barre.is-end .dp__pip { color: #fff; text-decoration-color: #fff; }
+
 /* Signalé = possible, mais il se passe quelque chose ce jour-là. */
 .dp__jour.is-note::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: var(--r-full); background: var(--amber-500); }
 
@@ -328,3 +335,6 @@
 .dp__leg i { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 .dp__leg i.off { background: var(--c-border-strong); }
 .dp__leg i.note { background: var(--amber-500); border-radius: var(--r-full); }
+/* Pastille de légende « occupé mais sélectionnable » : un trait, comme
+   la barre qui traverse le chiffre. */
+.dp__leg i.barre { background: none; height: 2px; border-radius: 0; background-image: linear-gradient(var(--c-danger), var(--c-danger)); }

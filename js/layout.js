@@ -32,6 +32,7 @@ const Layout = (function () {
     police:    '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="12" cy="13" r="2"/><path d="M9 18c.5-1.5 1.6-2.4 3-2.4s2.5.9 3 2.4"/>',
     services:  '<path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
     epingle:   '<path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
+    sejour:    '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
     facturation:'<path d="M4 2h13l3 3v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M17 2v4h4"/><path d="M9 13h6M9 17h4"/>',
     depenses:  '<path d="M12 2v20"/><path d="M17 7H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"/>',
     chevrons:  '<path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/>',
@@ -52,6 +53,7 @@ const Layout = (function () {
     { id:'services',     label:'Services additionnels', title:'Services additionnels', href:'services.html' },
     { id:'messagerie',   label:'Messagerie',      title:'Messagerie',        href:'messagerie.html', badge:'unread' },
     { id:'automatisations', label:'Automatisations', title:'Automatisations', href:'automatisations.html' },
+    { id:'sejour',       label:'Fiche séjour',    title:'Fiche séjour',      href:'sejour.html' },
     { id:'vivi',         label:'Assistant IA',    title:'Vivi — Assistant IA', href:'vivi.html' },
     { id:'menage',       label:'Gestion des tâches', title:'Gestion des tâches', href:'menage.html' },
     { id:'equipe',       label:'Équipe',          title:'Équipe',            href:'equipe.html' },
@@ -67,7 +69,7 @@ const Layout = (function () {
   const NAV_GROUPS = [
     { label:'Principal',     items:['dashboard', 'calendrier', 'alertes', 'statistiques'] },
     { label:'Locations',     items:['logements', 'proprietaires', 'reservations', 'voyageurs', 'police'] },
-    { label:'Communication', items:['messagerie', 'avis', 'automatisations'] },
+    { label:'Communication', items:['messagerie', 'avis', 'automatisations', 'sejour'] },
     { label:'Vente directe', items:['site', 'services'] },
     { label:'Équipe',        items:['menage', 'equipe'] },
     // Accueille les outils branchés sur Oyvia — tiers comme maison.

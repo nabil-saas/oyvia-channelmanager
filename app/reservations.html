@@ -88,37 +88,10 @@
     </div>
   </div>
 
-  <!-- Modale : nouvelle réservation -->
-  <div class="modal" id="resa-modal" role="dialog" aria-modal="true" aria-labelledby="resa-modal-title">
-    <div class="modal__head">
-      <h3 class="modal__title" id="resa-modal-title">Nouvelle réservation</h3>
-      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-    </div>
-    <div class="modal__body">
-      <div class="app-grid app-grid--2">
-        <div class="field"><label class="field__label" for="rf-nom">Voyageur</label><input class="input" id="rf-nom" placeholder="Nom du voyageur" /></div>
-        <div class="field"><label class="field__label" for="rf-log">Logement</label><select class="select" id="rf-log"></select></div>
-      </div>
-      <div class="app-grid app-grid--3" style="margin-top:var(--sp-4)">
-        <div class="field"><label class="field__label" for="rf-canal">Canal</label><select class="select" id="rf-canal"><option value="direct">Direct</option><option value="airbnb">Airbnb</option><option value="booking">Booking.com</option></select></div>
-        <div class="field"><label class="field__label" for="rf-arrivee">Arrivée</label><input class="input" type="date" id="rf-arrivee" value="2026-08-01" /></div>
-        <div class="field"><label class="field__label" for="rf-depart">Départ</label><input class="input" type="date" id="rf-depart" value="2026-08-04" /></div>
-      </div>
-      <div class="app-grid app-grid--3" style="margin-top:var(--sp-4)">
-        <div class="field"><label class="field__label" for="rf-pers">Voyageurs</label><input class="input" type="number" min="1" id="rf-pers" value="2" /></div>
-        <div class="field"><label class="field__label" for="rf-montant">Montant (<span data-devise></span>)</label><input class="input" type="number" min="0" id="rf-montant" value="0" /></div>
-        <div class="field"><label class="field__label" for="rf-paiement">Paiement</label><select class="select" id="rf-paiement"><option value="acompte">Acompte</option><option value="paye">Payé</option><option value="impaye">Impayé</option></select></div>
-      </div>
-    </div>
-    <div class="modal__foot">
-      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
-      <button class="btn btn--primary" id="rf-create">Créer la réservation</button>
-    </div>
-  </div>
-
   <script src="../js/data.js"></script>
   <script src="../js/layout.js"></script>
   <script src="../js/datepicker.js"></script>
+  <script src="../js/resa-form.js"></script>
   <script src="../js/reservations.js"></script>
   <script src="../js/vivi.js"></script>
 </body>

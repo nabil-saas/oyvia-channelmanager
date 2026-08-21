@@ -95,3 +95,40 @@
 
 @media (max-width: 420px) { .g-guide, .g-codes { grid-template-columns: 1fr; } }
 @media (max-width: 480px) { .fp-form-grid { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   Personnalisation par l'hôte
+
+   La page représente l'hôte, pas l'outil : enseigne, couleur d'accent
+   et signature viennent de PAGE_SEJOUR (écran « Fiche séjour »).
+   `--g-accent` est posée par guest.js au chargement ; la valeur par
+   défaut ci-dessous garde la page correcte si rien n'a été choisi.
+   ============================================================ */
+:root { --g-accent: var(--blue-600); }
+
+.g-enseigne { font-size: var(--fs-md); font-weight: var(--fw-bold); letter-spacing: var(--tracking-tight); }
+
+/* Le bouton de contact suit la couleur choisie plutôt que le dégradé
+   d'origine : c'est l'élément le plus visible de la page. */
+.g-cta { background: var(--g-accent); }
+
+.g-signature { text-align: center; margin-top: var(--sp-8); font-size: var(--fs-sm); font-style: italic; color: var(--c-text-soft); }
+.g-foot { margin-top: var(--sp-3); }
+
+/* Services proposés pendant le séjour */
+.g-services { display: flex; flex-direction: column; gap: var(--sp-2); }
+.g-service {
+  display: flex; align-items: center; gap: var(--sp-4);
+  padding: var(--sp-4); background: var(--c-surface);
+  border: 1px solid var(--c-border); border-radius: var(--r-lg);
+}
+.g-service__txt { flex: 1; min-width: 0; }
+.g-service__txt b { display: block; font-weight: var(--fw-semibold); }
+.g-service__txt p { font-size: var(--fs-xs); color: var(--c-text-muted); line-height: var(--lh-snug); margin-top: 2px; }
+.g-service__prix { text-align: right; flex-shrink: 0; }
+.g-service__prix b { display: block; color: var(--g-accent); font-weight: var(--fw-bold); white-space: nowrap; }
+.g-service__prix small { font-size: 10px; color: var(--c-text-muted); }
+.g-services__note { font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: var(--sp-3); text-align: center; }
+
+/* Introduction d'une section : le texte que l'hôte place sous le titre. */
+.g-intro { font-size: var(--fs-sm); color: var(--c-text-soft); line-height: var(--lh-snug); margin-bottom: var(--sp-4); }

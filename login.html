@@ -44,8 +44,12 @@
       <p class="auth-foot">Pas encore de compte ? <a href="app/dashboard.html">Essayer gratuitement</a></p>
       <p class="auth-foot" style="margin-top:var(--sp-2)">Vous êtes prestataire ? <a href="prestataire.html">Accéder à votre espace</a></p>
       <p class="auth-foot" style="margin-top:var(--sp-2)">Vous êtes propriétaire ? <a href="proprietaire.html">Accéder à votre espace</a></p>
+      <!-- Le back-office n'a rien à faire dans un écran de connexion client.
+           Il figure ici uniquement parce que la démonstration n'a pas de
+           domaine séparé : en production, il vivrait sur son propre
+           sous-domaine, derrière une authentification distincte. -->
       <p class="auth-foot" style="margin-top:var(--sp-4);opacity:.55;font-size:var(--fs-xs)">
-        Équipe Oyvia</p>
+        Équipe Oyvia — <a href="admin/index.html">back-office interne</a></p>
     </div>
   </div>
 </body>
