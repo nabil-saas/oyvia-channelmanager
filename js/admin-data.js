@@ -41,6 +41,8 @@ const PERMISSIONS_ADMIN = [
   { id:'demandes',    label:'Demandes clients',          groupe:'Support' },
   { id:'plateforme',  label:'Santé de la plateforme',    groupe:'Technique' },
   { id:'incidents',   label:'Déclarer et clore un incident', groupe:'Technique' },
+  { id:'blog',        label:'Blog et contenus',          groupe:'Contenu',
+    aide:"Écrire, publier, programmer et retirer les articles du site public." },
   { id:'equipe',      label:'Équipe Oyvia et rôles',     groupe:'Administration' },
   { id:'journal',     label:"Journal d'audit",           groupe:'Administration' },
 ];
@@ -59,6 +61,12 @@ const ROLES_ADMIN = [
   { id:'technique', nom:'Technique', systeme:false,
     desc:"Surveille les intégrations et publie les incidents.",
     permissions:['vue','plateforme','incidents','comptes'] },
+  // Le contenu éditorial n'a rien à voir avec les comptes clients : un
+  // rôle qui écrit sur le blog n'a aucune raison de voir un chiffre
+  // d'affaires ou une adresse e-mail de client.
+  { id:'contenu', nom:'Contenu', systeme:false,
+    desc:"Rédige et publie les articles du blog public.",
+    permissions:['vue','blog'] },
 ];
 function getRoleAdmin(id) { return ROLES_ADMIN.find(r => r.id === id) || ROLES_ADMIN[0]; }
 
@@ -236,6 +244,15 @@ function _apresRestaurationAdmin() {
   const dernier = MRR_HISTORIQUE[MRR_HISTORIQUE.length - 1];
   dernier.mrr = Math.round(mrrTotal());
   dernier.comptes = clientsParStatut('actif').length;
+
+  /* Le rôle Direction est défini comme « accès complet ». Or ROLES_ADMIN
+     est sauvegardé : un instantané enregistré AVANT l'ajout d'une
+     permission (le blog, par exemple) la réintroduit amputée, et la
+     direction perd un accès qu'elle détient par définition. On la
+     recompose donc à chaque chargement, plutôt que d'écrire une
+     migration à chaque nouvelle permission. */
+  const direction = ROLES_ADMIN.find(r => r.id === 'direction');
+  if (direction) direction.permissions = [...TOUTES_PERMISSIONS_ADMIN];
 
   const parDate = cle => (a, b) => String(b[cle] || '').localeCompare(String(a[cle] || ''));
   JOURNAL_ADMIN.sort(parDate('le'));
@@ -435,7 +452,6 @@ const SERVICES_PLATEFORME = [
   { id:'airbnb',    nom:'Airbnb',            categorie:'Canaux',       statut:'ok',      latence:340, dispo:99.98, controleLe:'2026-07-23 09:40' },
   { id:'booking',   nom:'Booking.com',       categorie:'Canaux',       statut:'degrade', latence:1870,dispo:97.20, controleLe:'2026-07-23 09:40' },
   { id:'expedia',   nom:'Expedia',           categorie:'Canaux',       statut:'ok',      latence:520, dispo:99.91, controleLe:'2026-07-23 09:40' },
-  { id:'ical',      nom:'Synchronisation iCal', categorie:'Canaux',    statut:'ok',      latence:210, dispo:99.99, controleLe:'2026-07-23 09:35' },
   { id:'seam',      nom:'Seam (serrures connectées)', categorie:'Équipements', statut:'ok', latence:610, dispo:99.87, controleLe:'2026-07-23 09:38' },
   { id:'pricelabs', nom:'PriceLabs',         categorie:'Tarification', statut:'ok',      latence:430, dispo:99.95, controleLe:'2026-07-23 09:30' },
   { id:'stripe',    nom:'Paiements',         categorie:'Paiement',     statut:'ok',      latence:180, dispo:100,   controleLe:'2026-07-23 09:42' },

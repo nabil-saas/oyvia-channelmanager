@@ -149,14 +149,19 @@ if (AdminLayout.init('vue')) { /* accès refusé : la page a été remplacée */
       detail: inc.map(i => `${i.id} · ${i.titre}`).join(' — '),
     });
 
+    /* Le chevron de droite passe par une classe dédiée : posé nu dans le
+       lien, un SVG sans dimension s'étire à la hauteur de la ligne et
+       s'affiche en noir plein — une flèche de 60 px au milieu de la
+       liste. La taille des icônes est donc décidée en CSS, jamais
+       laissée au navigateur. */
     F('av-todo').innerHTML = lignes.length ? lignes.map(l => `
-      <a class="adm-ligne adm-clic" href="${l.href}" style="text-decoration:none;color:inherit">
-        <span class="kpi__icon" style="position:static;width:34px;height:34px">${ic(l.icone)}</span>
+      <a class="adm-ligne adm-clic adm-todo" href="${l.href}">
+        <span class="adm-todo__ic adm-todo__ic--${l.ton}">${ic(l.icone)}</span>
         <div class="adm-ligne__meta grow">
           <b>${l.titre}</b>
           <small>${l.detail}</small>
         </div>
-        ${ic('<path d="m9 18 6-6-6-6"/>')}
+        <span class="adm-todo__chev">${ic('<path d="m9 18 6-6-6-6"/>')}</span>
       </a>`).join('')
       : Adm.vide('Rien en attente', "Aucun impayé, aucune demande ouverte, aucun incident. Profitez-en.");
   }

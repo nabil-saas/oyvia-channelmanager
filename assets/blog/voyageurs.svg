@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Illustration voyageurs">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EAF1FF"/><stop offset="1" stop-color="#BBD2FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#g)"/>
+  <g fill="#fff" stroke="#2563EB" stroke-width="9" stroke-linejoin="round">
+    <path d="M330 470V300l160-110 160 110v170z"/>
+    <rect x="700" y="330" width="200" height="140" rx="16"/>
+  </g>
+  <g fill="none" stroke="#2563EB" stroke-width="9" stroke-linecap="round">
+    <path d="M440 470v-90h100v90M750 390h100M750 430h60"/>
+  </g>
+  <circle cx="890" cy="200" r="54" fill="#2563EB" opacity=".16"/>
+</svg>

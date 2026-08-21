@@ -55,3 +55,192 @@
   .blog-featured__media { min-height: 160px; }
   .blog-featured__body { padding: var(--sp-6); }
 }
+
+/* ============================================================
+   Page article — typographie et mise en page de lecture
+   ============================================================ */
+
+/* ---------- Ellipsis de pagination ---------- */
+.blog-pagination__ellipsis {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  font-size: var(--fs-sm); color: var(--c-text-muted);
+}
+
+/* ---------- En-tête de l'article ---------- */
+.article-section { padding-bottom: 0; }
+
+.article-breadcrumb {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fs-sm); color: var(--c-text-muted);
+  margin-bottom: var(--sp-6);
+}
+.article-breadcrumb a { color: var(--c-text-muted); }
+.article-breadcrumb a:hover { color: var(--c-accent); }
+
+.article-hero { max-width: 720px; margin-inline: auto; padding: var(--sp-8) 0 var(--sp-6); }
+.article-hero h1 {
+  font-size: clamp(1.75rem, 3.5vw, var(--fs-3xl));
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-snug);
+  margin-top: var(--sp-4);
+}
+/* Le chapô sert de résumé visuel : il doit être légèrement plus grand
+   que le corps du texte pour remplir ce rôle sans crier. */
+.article-chapo {
+  font-size: var(--fs-lg);
+  color: var(--c-text-soft);
+  line-height: var(--lh-snug);
+  margin-top: var(--sp-4);
+}
+.article-meta { margin-top: var(--sp-5); }
+
+/* ---------- Corps de l'article ---------- */
+/* Largeur de lecture de 720 px : au-delà, les yeux doivent faire un
+   aller-retour trop long entre les fins de ligne et le début de la
+   suivante. En dessous de 55 caractères par ligne, la lecture hache
+   trop. 720 px donne ~75–80 caractères dans notre typographie, ce
+   qui est dans la plage confortable pour du long-form. */
+.article-body {
+  max-width: 720px;
+  margin-inline: auto;
+  padding-top: var(--sp-8);
+  padding-bottom: var(--sp-12);
+}
+
+.article-body h2 {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-snug);
+  margin-top: var(--sp-10);
+  margin-bottom: var(--sp-4);
+  color: var(--c-text);
+}
+
+/* Premier h2 après le chapô : on réduit la marge du dessus pour ne
+   pas creuser un gouffre entre l'introduction et le premier titre.
+   On ne peut pas cibler :first-child ici car contenuArticleHtml()
+   peut ou non ouvrir sur un h2 — on cible donc via adjacent. */
+.article-body h2:first-child { margin-top: 0; }
+
+.article-body p {
+  line-height: 1.75;
+  color: var(--c-text-soft);
+  margin-top: var(--sp-4);
+}
+
+/* Les listes du blog sont des listes de conseils, pas de navigation :
+   un bullet rond suffit, un retrait standard les différencie bien du
+   texte courant sans les sur-formatter. */
+.article-body ul {
+  margin-top: var(--sp-4);
+  padding-left: var(--sp-6);
+  list-style: disc;
+}
+.article-body ul li {
+  line-height: 1.75;
+  color: var(--c-text-soft);
+  margin-top: var(--sp-2);
+}
+.article-body ul li:first-child { margin-top: 0; }
+
+/* ---------- Articles liés ---------- */
+.article-lies { padding-top: var(--sp-10); }
+.article-lies__titre {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--sp-6);
+}
+
+/* ---------- Navigation retour ---------- */
+.article-nav {
+  padding-top: var(--sp-4);
+  padding-bottom: var(--sp-10);
+}
+.article-nav__back {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  font-size: var(--fs-sm); font-weight: var(--fw-medium);
+  color: var(--c-text-muted);
+  transition: color var(--t-fast);
+}
+.article-nav__back:hover { color: var(--c-accent); }
+.article-nav__back svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ---------- État « article introuvable » ---------- */
+.article-notfound {
+  text-align: center;
+  padding: var(--sp-20) var(--sp-4);
+}
+.article-notfound h1 {
+  font-size: clamp(1.75rem, 3.5vw, var(--fs-3xl));
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.article-notfound p {
+  color: var(--c-text-soft);
+  margin-bottom: var(--sp-8);
+}
+
+/* ---------- Media queries article ---------- */
+@media (max-width: 720px) {
+  .article-hero { padding: var(--sp-6) 0 var(--sp-4); }
+  .article-hero h1 { font-size: var(--fs-2xl); }
+  .article-chapo { font-size: var(--fs-base); }
+  .article-body h2 { font-size: var(--fs-lg); margin-top: var(--sp-8); }
+}
+
+/* ============================================================
+   Illustrations d'articles
+
+   Le blog n'avait que des dégradés et des pictogrammes ; le
+   back-office permet désormais d'attacher une image de couverture et
+   d'en insérer dans le corps du texte. Les règles ci-dessous ne font
+   qu'accueillir ces images dans une mise en page qui n'en attendait
+   pas.
+   ============================================================ */
+
+/* Vignette d'une carte de grille. Le ratio est imposé : des images de
+   proportions différentes désaligneraient les titres d'une carte à
+   l'autre, ce qui se voit immédiatement dans une grille. */
+/* La vignette remonte dans le rembourrage de la carte : sans overflow
+   masqué, ses angles carrés dépasseraient des coins arrondis. */
+.lp-blog__post.has-media { overflow: hidden; }
+.lp-blog__media {
+  display: block; margin: calc(-1 * var(--sp-6)) calc(-1 * var(--sp-6)) var(--sp-5);
+  aspect-ratio: 16 / 9; overflow: hidden; background: var(--c-surface-alt);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+.lp-blog__media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--t); }
+.lp-blog__post.has-media:hover .lp-blog__media img { transform: scale(1.03); }
+
+/* Article à la une : l'image occupe toute la colonne de gauche, à la
+   place du pictogramme de repli. */
+.blog-featured__media.has-image { padding: 0; }
+.blog-featured__media.has-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Couverture en tête d'article */
+.article-couv { margin: 0 auto var(--sp-8); }
+.article-couv img { width: 100%; max-height: 460px; object-fit: cover; border-radius: var(--r-2xl); display: block; }
+.article-couv figcaption { font-size: var(--fs-xs); color: var(--c-text-muted); text-align: center; margin-top: var(--sp-3); }
+
+/* Illustrations dans le corps du texte. Elles débordent légèrement de
+   la colonne de lecture (720 px) : une image à la largeur exacte du
+   texte passe inaperçue, un débordement mesuré la fait respirer. */
+.article-figure { margin: var(--sp-8) 0; }
+.article-figure img { width: 100%; border-radius: var(--r-xl); display: block; }
+.article-figure figcaption { font-size: var(--fs-xs); color: var(--c-text-muted); text-align: center; margin-top: var(--sp-3); }
+.article-media-absente { font-size: var(--fs-xs); color: var(--c-text-muted); font-style: italic; }
+
+/* Citations : la syntaxe « > » existe désormais dans l'éditeur. */
+.article-body blockquote {
+  border-left: 3px solid var(--c-accent); padding-left: var(--sp-5);
+  margin: var(--sp-6) 0; color: var(--c-text-soft); font-size: var(--fs-md);
+}
+.article-body a { color: var(--c-accent); text-decoration: underline; text-underline-offset: 2px; }
+.article-body strong { font-weight: var(--fw-semibold); }
+
+@media (min-width: 900px) {
+  .article-figure { margin-inline: calc(-1 * var(--sp-8)); }
+}

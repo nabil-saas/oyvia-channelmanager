@@ -104,6 +104,23 @@ body.is-admin .app-topbar__title { margin-right: var(--sp-2); }
 .adm-clic { cursor: pointer; }
 .adm-clic:hover { background: var(--c-surface-alt); }
 
+/* File « À traiter » de la vue d'ensemble. Les deux icônes sont
+   dimensionnées ici : un SVG sans largeur ni hauteur explicites prend
+   la taille de son conteneur flex, ce qui donnait un chevron noir de la
+   hauteur de la ligne entière. */
+.adm-todo { text-decoration: none; color: inherit; }
+.adm-todo__ic {
+  width: 34px; height: 34px; flex-shrink: 0; border-radius: var(--r-md);
+  display: grid; place-items: center;
+  background: var(--c-accent-soft); color: var(--c-accent);
+}
+.adm-todo__ic svg { width: 17px; height: 17px; }
+.adm-todo__ic--danger  { background: var(--c-danger-soft);  color: var(--c-danger-ink); }
+.adm-todo__ic--warning { background: var(--c-warning-soft); color: var(--c-warning-ink); }
+.adm-todo__chev { flex-shrink: 0; color: var(--c-text-muted); display: grid; place-items: center; }
+.adm-todo__chev svg { width: 18px; height: 18px; }
+.adm-todo:hover .adm-todo__chev { color: var(--c-text); }
+
 /* Pastille d'état d'un service */
 .adm-dot { width: 9px; height: 9px; border-radius: var(--r-full); flex-shrink: 0; display: inline-block; }
 .adm-dot.is-ok      { background: var(--c-positive); }
@@ -186,8 +203,159 @@ body.is-admin .app-topbar__title { margin-right: var(--sp-2); }
 .adm-perm__case.is-non { color: var(--ink-300, #cbd5e1); }
 .adm-perm__groupe { grid-column: 1 / -1; font-size: var(--fs-xs); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); padding-top: var(--sp-3); border-top: 1px solid var(--c-border); }
 
+/* ------------------------------------------------------------
+   Blog — liste et éditeur
+
+   L'éditeur occupe la page entière : écrire 800 mots dans une modale de
+   720 px revenait à rédiger par le trou d'une serrure. Texte à gauche,
+   décisions de publication à droite — l'ordre dans lequel on travaille.
+   ------------------------------------------------------------ */
+
+/* --- Liste en cartes --- */
+.bl-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--sp-4); }
+.bl-carte {
+  display: flex; flex-direction: column; cursor: pointer; overflow: hidden;
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--r-xl); transition: box-shadow var(--t-fast), transform var(--t-fast);
+}
+.bl-carte:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.bl-carte.is-brouillon { border-style: dashed; }
+.bl-carte__media { position: relative; aspect-ratio: 16 / 9; background: var(--c-surface-alt); display: grid; place-items: center; }
+.bl-carte__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bl-carte__vide { color: var(--c-text-muted); }
+.bl-carte__vide svg { width: 30px; height: 30px; }
+.bl-carte__une {
+  position: absolute; top: var(--sp-3); left: var(--sp-3);
+  background: var(--c-accent); color: #fff; font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold); padding: 2px var(--sp-3); border-radius: var(--r-full);
+}
+.bl-carte__corps { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); flex: 1; }
+.bl-carte__tete { display: flex; align-items: center; gap: var(--sp-2); }
+.bl-carte h3 { font-size: var(--fs-base); font-weight: var(--fw-semibold); line-height: var(--lh-snug); }
+.bl-carte p { font-size: var(--fs-sm); color: var(--c-text-soft); flex: 1; }
+.bl-carte__pied { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-xs); color: var(--c-text-muted); }
+.bl-carte__pied .icon-btn { width: 30px; height: 30px; }
+.bl-carte__pied .icon-btn svg { width: 15px; height: 15px; }
+
+/* --- Barre de l'éditeur --- */
+.bl-barre {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  padding: var(--sp-3) 0 var(--sp-4); margin-bottom: var(--sp-2);
+  background: var(--c-bg, var(--bg-subtle));
+}
+.bl-barre__etat { font-size: var(--fs-xs); color: var(--c-text-muted); }
+.bl-barre__etat.is-modifie { color: var(--c-warning-ink); font-weight: var(--fw-semibold); }
+
+/* --- Disposition --- */
+.bl-edit { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--sp-5); align-items: start; }
+.bl-edit__main { min-width: 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl); padding: var(--sp-6); }
+.bl-side { display: flex; flex-direction: column; gap: var(--sp-4); position: sticky; top: 72px; }
+
+/* --- Champs de rédaction : le texte doit ressembler à du texte, pas à
+   un formulaire. Pas de bordure, pas de fond : seule la page compte. --- */
+.bl-titre {
+  width: 100%; border: 0; padding: 0; background: none;
+  font-size: var(--fs-3xl); font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight); line-height: var(--lh-tight);
+}
+.bl-titre::placeholder { color: var(--ink-300, #cbd5e1); }
+.bl-titre:focus { outline: none; }
+.bl-chapo {
+  width: 100%; border: 0; padding: var(--sp-3) 0 0; background: none; resize: none;
+  font-size: var(--fs-md); color: var(--c-text-soft); line-height: var(--lh-snug);
+  font-family: inherit;
+}
+.bl-chapo:focus { outline: none; }
+.bl-contenu {
+  width: 100%; min-height: 460px; border: 0; padding: var(--sp-4) 0; background: none; resize: vertical;
+  font-family: inherit; font-size: var(--fs-md); line-height: var(--lh-base); color: var(--c-text);
+}
+.bl-contenu:focus { outline: none; }
+.bl-aide { border-top: 1px solid var(--c-border); padding-top: var(--sp-3); }
+.bl-aide code { background: var(--c-surface-alt); border-radius: var(--r-sm); padding: 1px 5px; font-size: var(--fs-xs); }
+
+/* --- Barre d'outils --- */
+.bl-outils {
+  display: flex; align-items: center; gap: var(--sp-1); flex-wrap: wrap;
+  border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border);
+  margin-top: var(--sp-4); padding: var(--sp-2) 0;
+}
+.bl-outils button {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  height: 34px; padding: 0 var(--sp-3); border-radius: var(--r-md);
+  color: var(--c-text-soft); font-size: var(--fs-sm); font-weight: var(--fw-medium);
+}
+.bl-outils button:hover { background: var(--c-surface-alt); color: var(--c-text); }
+.bl-outils button svg { width: 17px; height: 17px; }
+.bl-outils__sep { width: 1px; height: 20px; background: var(--c-border); margin: 0 var(--sp-2); }
+.bl-outils__mesure { font-size: var(--fs-xs); color: var(--c-text-muted); font-variant-numeric: tabular-nums; }
+
+/* --- Couverture --- */
+.bl-depot {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  width: 100%; padding: var(--sp-6) var(--sp-4); text-align: center;
+  border: 1px dashed var(--c-border-strong); border-radius: var(--r-lg);
+  color: var(--c-text-soft); transition: border-color var(--t-fast), background var(--t-fast);
+}
+.bl-depot:hover { border-color: var(--c-accent); background: var(--c-accent-soft); }
+.bl-depot svg { width: 26px; height: 26px; color: var(--c-text-muted); }
+.bl-depot b { font-size: var(--fs-sm); color: var(--c-text); }
+.bl-depot small { font-size: var(--fs-xs); color: var(--c-text-muted); line-height: var(--lh-snug); }
+.bl-couv img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--r-lg); display: block; }
+.bl-couv__actions { display: flex; gap: var(--sp-2); margin: var(--sp-3) 0 var(--sp-2); }
+
+/* --- Adresse --- */
+.bl-slug { display: flex; align-items: center; gap: var(--sp-2); }
+.bl-slug__base { font-size: var(--fs-xs); color: var(--c-text-muted); white-space: nowrap; }
+.bl-slug .input { font-family: var(--font-mono); font-size: var(--fs-xs); height: 38px; }
+
+/* --- Aperçu --- */
+.bl-apercu { padding: var(--sp-6); border: 1px dashed var(--c-border-strong); border-radius: var(--r-xl); background: var(--c-surface-alt); margin-top: var(--sp-5); }
+.bl-apercu__couv { width: 100%; max-height: 260px; object-fit: cover; border-radius: var(--r-lg); margin-bottom: var(--sp-4); display: block; }
+.bl-apercu h2 { font-size: var(--fs-2xl); line-height: var(--lh-snug); margin: var(--sp-3) 0; }
+.bl-apercu__chapo { color: var(--c-text-soft); font-size: var(--fs-md); }
+.bl-apercu__corps { max-width: 68ch; margin-top: var(--sp-5); }
+.bl-apercu__corps h2 { font-size: var(--fs-lg); margin: var(--sp-5) 0 var(--sp-2); }
+.bl-apercu__corps p { margin-bottom: var(--sp-3); line-height: var(--lh-base); }
+.bl-apercu__corps ul { margin: 0 0 var(--sp-3) var(--sp-5); list-style: disc; }
+.bl-apercu__corps li { margin-bottom: var(--sp-1); line-height: var(--lh-base); }
+.bl-apercu__corps blockquote { border-left: 3px solid var(--c-accent); padding-left: var(--sp-4); color: var(--c-text-soft); margin-bottom: var(--sp-3); }
+.bl-apercu__corps figure { margin: var(--sp-5) 0; }
+.bl-apercu__corps figure img { width: 100%; border-radius: var(--r-lg); display: block; }
+.bl-apercu__corps figcaption { font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: var(--sp-2); text-align: center; }
+
+.bl-modal-image__apercu img { width: 100%; max-height: 300px; object-fit: contain; background: var(--c-surface-alt); border-radius: var(--r-lg); display: block; }
+
+/* --- Menu d'actions secondaires, positionné en JS sous son bouton --- */
+.bl-menu {
+  position: fixed; z-index: var(--z-modal); width: 190px; padding: var(--sp-2);
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-lg);
+  opacity: 0; visibility: hidden; transform: translateY(-4px);
+  transition: opacity var(--t-fast), visibility var(--t-fast), transform var(--t-fast);
+}
+.bl-menu.is-open { opacity: 1; visibility: visible; transform: translateY(0); }
+.bl-menu button {
+  display: block; width: 100%; text-align: left; padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md); font-size: var(--fs-sm); color: var(--c-text);
+}
+.bl-menu button:hover { background: var(--c-surface-alt); }
+.bl-menu button.is-danger { color: var(--c-danger-ink); }
+.bl-menu button.is-danger:hover { background: var(--c-danger-soft); }
+
+@media (max-width: 1100px) {
+  /* La colonne latérale passe SOUS le texte plutôt que de l'étrangler :
+     en dessous de 1100 px, 320 px de réglages ne laissent plus de quoi
+     écrire une ligne complète. */
+  .bl-edit { grid-template-columns: minmax(0, 1fr); }
+  .bl-side { position: static; }
+}
+
 @media (max-width: 900px) {
   .adm-membre { display: none; }
+  .bl-contenu { min-height: 300px; }
+  .bl-titre { font-size: var(--fs-2xl); }
   .adm-chart { height: 150px; }
   .adm-perm { grid-template-columns: minmax(0, 1fr) repeat(var(--roles, 4), 58px); }
 }

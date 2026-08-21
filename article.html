@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oyvia — Blog : conseils & actualités pour les hôtes</title>
+  <!-- title et meta description mis à jour par article.js une fois l'article chargé -->
+  <title>Oyvia — Blog</title>
+  <meta name="description" content="" />
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
-  <meta name="description" content="Réglementation, organisation, automatisation, expérience voyageur : les guides Oyvia pour gérer votre location courte durée sereinement." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
@@ -43,37 +44,8 @@
     </nav>
   </div>
 
-  <!-- HERO BLOG -->
-  <header class="blog-hero">
-    <div class="lp-shell">
-      <span class="eyebrow">Blog Oyvia</span>
-      <h1>Conseils & actualités pour les hôtes et conciergeries</h1>
-      <p>Réglementation, organisation, automatisation, expérience voyageur : nos guides pour gérer votre location courte durée sereinement.</p>
-    </div>
-  </header>
-
-  <!-- FILTRES — remplis dynamiquement par blog.js depuis BLOG_CATEGORIES -->
-  <div class="lp-shell">
-    <div class="blog-filters" id="blog-filters" role="tablist" aria-label="Filtrer les articles par catégorie"></div>
-  </div>
-
-  <!-- ARTICLE À LA UNE — injecté par blog.js via articleALaUne() -->
-  <section class="lp-section" style="padding-top:var(--sp-6)">
-    <div class="lp-shell">
-      <div id="blog-featured"></div>
-    </div>
-  </section>
-
-  <!-- GRILLE D'ARTICLES — injectée par blog.js via articlesPublies() -->
-  <section class="lp-section" style="padding-top:0">
-    <div class="lp-shell">
-      <div class="lp-blog" id="blog-grid"></div>
-
-      <p class="blog-empty" id="blog-empty" hidden>Aucun article dans cette catégorie pour le moment.</p>
-
-      <div class="blog-pagination" id="blog-pagination" aria-label="Pagination des articles"></div>
-    </div>
-  </section>
+  <!-- CONTENU PRINCIPAL — injecté par article.js -->
+  <main id="article-main"></main>
 
   <!-- CTA FINAL -->
   <section class="lp-cta">
@@ -134,6 +106,6 @@
   <script src="js/data.js"></script>
   <script src="js/blog-data.js"></script>
   <script src="js/landing-anim.js"></script>
-  <script src="js/blog.js"></script>
+  <script src="js/article.js"></script>
 </body>
 </html>

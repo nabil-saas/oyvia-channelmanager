@@ -20,6 +20,7 @@ const AdminLayout = (function () {
     revenus:    '<path d="M12 2v20"/><path d="M17 7H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"/>',
     plateforme: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
     equipe:     '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><circle cx="8" cy="15" r="1.6"/><path d="M13 14h5M13 17h3"/>',
+    blog:       '<path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M14 4v6h6"/><path d="M7 13h8M7 17h5"/>',
     retour:     '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
     menu:       '<path d="M4 6h16M4 12h16M4 18h16"/>',
   };
@@ -30,6 +31,7 @@ const AdminLayout = (function () {
     { id:'demandes',   label:'Demandes',        title:'Demandes clients',     href:'demandes.html',   perm:'demandes', badge:'demandes' },
     { id:'revenus',    label:'Revenus',         title:'Revenus & facturation',href:'revenus.html',    perm:'revenus' },
     { id:'plateforme', label:'Plateforme',      title:'Santé de la plateforme',href:'plateforme.html',perm:'plateforme', badge:'incidents' },
+    { id:'blog',       label:'Blog',            title:'Blog — articles',      href:'blog.html',       perm:'blog', badge:'brouillons' },
     { id:'equipe',     label:'Équipe Oyvia',    title:'Équipe Oyvia & journal',href:'equipe.html',    perm:'equipe' },
   ];
 
@@ -38,12 +40,17 @@ const AdminLayout = (function () {
     { label:'Clients',   items:['comptes', 'demandes'] },
     { label:'Finance',   items:['revenus'] },
     { label:'Technique', items:['plateforme'] },
+    { label:'Contenu',   items:['blog'] },
     { label:'Oyvia',     items:['equipe'] },
   ];
 
   const BADGES = {
     demandes:  () => demandesOuvertes().length,
     incidents: () => incidentsOuverts().length,
+    // Compte ce qui attend une décision éditoriale : brouillons et
+    // articles programmés. Les articles en ligne, eux, ne demandent rien.
+    brouillons: () => (typeof ARTICLES === 'undefined' ? 0
+      : ARTICLES.filter(a => statutArticleReel(a) !== 'publie').length),
   };
   function badgeCount(id) {
     const f = BADGES[id];

@@ -763,13 +763,7 @@ Layout.init('logements');
               <button class="btn btn--secondary btn--sm" onclick="UI.toast('Connexion ${CH[k].label} à configurer dans Paramètres')">Connecter</button>
             </div>`).join('')}
         </div>` : ''}
-
-      <div class="card card--pad mt-4">
-        <p class="eyebrow mb-4">Synchronisation iCal</p>
-        ${row('Flux exporté', l.ical.exporte ? `<span class="font-mono text-xs">${l.ical.exporte}</span>` : vide)}
-        ${row('Flux importés', l.ical.importe.length ? l.ical.importe.map(u => `<span class="font-mono text-xs">${u}</span>`).join('<br>') : 'Aucun')}
-        <p class="text-xs text-muted" style="margin-top:var(--sp-3)">L'iCal sert de secours pour les plateformes sans connexion directe : il ne transporte que les dates, jamais les tarifs ni les voyageurs.</p>
-      </div>`;
+`;
   }
 
   function panePhotos(l) {

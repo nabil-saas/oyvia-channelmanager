@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Illustration réglementation">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EEF1FF"/><stop offset="1" stop-color="#C9D3FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#g)"/>
+  <g fill="none" stroke="#4B63E8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity=".85">
+    <rect x="420" y="150" width="300" height="390" rx="24" fill="#fff"/>
+    <path d="M470 240h200M470 300h200M470 360h130"/>
+    <path d="M760 430l60 60 120-150" stroke-width="22"/>
+  </g>
+  <circle cx="300" cy="520" r="70" fill="#4B63E8" opacity=".12"/>
+  <circle cx="880" cy="180" r="46" fill="#4B63E8" opacity=".18"/>
+</svg>

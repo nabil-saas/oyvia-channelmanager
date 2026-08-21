@@ -398,7 +398,6 @@ const DEFAUTS_LOGEMENT = {
        rien — l'annonce et l'identifiant restent, on arrête juste d'échanger.
      statut : ok | attention | erreur · listingId = identifiant chez le canal */
   canaux: {},
-  ical: { importe: [], exporte: '' },
 };
 
 // Chaque fiche ne déclare que ses spécificités : la fusion garantit qu'aucun
@@ -421,7 +420,6 @@ function _logement(o) {
                   personne:   { ...D.acces.personne,   ...((o.acces || {}).personne   || {}) } },
     conformite: { ...D.conformite, ...(o.conformite || {}) },
     notesDetail:{ ...D.notesDetail,...(o.notesDetail|| {}) },
-    ical:       { ...D.ical,       ...(o.ical       || {}) },
     // Un canal branché synchronise, sauf mention contraire : `actif` est donc
     // implicite dans les fiches, et seule une mise en pause s'écrit.
     canaux: Object.fromEntries(Object.entries(o.canaux || {}).map(([k, c]) => [k, { actif: true, ...c }])),
@@ -473,7 +471,6 @@ const LOGEMENTS = [
       booking:{ connecte:true, statut:'ok', listingId:'BK-8842190',  url:'https://booking.com/hotel/fr/8842190', note:9.2, avis:29, commission:15, derniereSynchro:'2026-07-23 12:38' },
       direct: { connecte:true, statut:'ok', listingId:'OY-L001',     url:'https://oyvia.com/l/t2-vieux-lyon', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
     },
-    ical:{ importe:['https://calendar.google.com/…/lyon.ics'], exporte:'https://oyvia.com/ical/L001.ics' },
   }),
 
   _logement({
@@ -515,7 +512,6 @@ const LOGEMENTS = [
       booking:{ connecte:true, statut:'ok', listingId:'BK-6610233',  url:'https://booking.com/hotel/fr/6610233', note:8.9, avis:36, commission:15, derniereSynchro:'2026-07-23 12:39' },
       direct: { connecte:true, statut:'ok', listingId:'OY-L002',     url:'https://oyvia.com/l/studio-montmartre', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
     },
-    ical:{ exporte:'https://oyvia.com/ical/L002.ics' },
   }),
 
   _logement({
@@ -607,7 +603,6 @@ const LOGEMENTS = [
       direct: { connecte:true, statut:'ok', listingId:'OY-L004',     url:'https://oyvia.com/l/chalet-annecy', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
       vrbo:   { connecte:true, statut:'ok', listingId:'VR-2299013',  url:'https://vrbo.com/2299013', note:4.8, avis:12, commission:8, derniereSynchro:'2026-07-23 11:05' },
     },
-    ical:{ importe:['https://ical.booking.com/…/7719004.ics'], exporte:'https://oyvia.com/ical/L004.ics' },
   }),
 
   _logement({
@@ -660,7 +655,6 @@ const LOGEMENTS = [
       direct: { connecte:true, statut:'ok', listingId:'OY-L005',     url:'https://oyvia.com/l/villa-biarritz', note:null, avis:0, commission:0, derniereSynchro:'2026-07-23 12:41' },
       vrbo:   { connecte:true, statut:'ok', listingId:'VR-3390771',  url:'https://vrbo.com/3390771', note:4.9, avis:9, commission:8, derniereSynchro:'2026-07-23 11:05' },
     },
-    ical:{ exporte:'https://oyvia.com/ical/L005.ics' },
   }),
 
   _logement({
@@ -2760,8 +2754,8 @@ const PLANS = [
     herite:null,
     groupes:[
       { titre:'Inclus', items:[
-        { titre:'Calendrier unifié multi-canaux',    desc:"Airbnb, Booking, Expedia… plus de 60 OTA" },
-        { titre:'Messagerie centralisée',            desc:"Airbnb, Booking, e-mail et WhatsApp" },
+        { titre:'Calendrier unifié multi-canaux',    desc:"Airbnb, Booking, Expedia… plus de 60 autres" },
+        { titre:'Messagerie centralisée',            desc:"Airbnb, Booking, Expedia… plus de 60 autres" },
         { titre:'Messages automatiques',             desc:"Confirmation, avant arrivée, check-out, demande d'avis — envoyés sur Airbnb, Booking, e-mail et WhatsApp" },
         { titre:'Réservations directes sans commission' },
         { titre:'Gestion du ménage et des équipes',  desc:"Tâches automatiques, assignation, check-list mobile" },
@@ -3001,16 +2995,17 @@ const MATRICE_OFFRES = [
   ]},
 
   { groupe: 'Canaux & réservations', lignes: [
-    { nom: 'Calendrier unifié multi-canaux', desc: 'Airbnb, Booking, Expedia… plus de 60 OTA',
+    { nom: 'Calendrier unifié multi-canaux', desc: 'Airbnb, Booking, Expedia… plus de 60 autres',
       v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
-    { nom: 'Synchronisation iCal',      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
-    { nom: 'Réservations directes sans commission', v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
+    // « Bientôt » plutôt qu'une coche : annoncer comme livré ce qui ne
+    // l'est pas encore se paie au premier client qui l'active.
+    { nom: 'Réservations directes sans commission', v: ['non', 'Bientôt', 'Bientôt', 'Bientôt', 'Bientôt'] },
     { nom: 'Création de site web',      desc: 'Pour vos réservations directes',
-      v: ['non', 'option', 'inclus', 'inclus', 'inclus'] },
+      v: ['non', 'Bientôt', 'Bientôt', 'Bientôt', 'Bientôt'] },
   ]},
 
   { groupe: 'Communication voyageurs', lignes: [
-    { nom: 'Messagerie centralisée',    desc: 'Airbnb, Booking, e-mail et WhatsApp',
+    { nom: 'Messagerie centralisée',    desc: 'Airbnb, Booking, Expedia… plus de 60 autres',
       v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
     { nom: 'Intégration WhatsApp',      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
     { nom: 'Messages automatiques',     desc: "Confirmation, avant arrivée, check-out, demande d'avis",
@@ -3031,7 +3026,7 @@ const MATRICE_OFFRES = [
 
   { groupe: 'Tarification', lignes: [
     { nom: 'Tarification dynamique Oyvia', desc: 'Occupation, saison, jour, durée, délai',
-      v: ['non', 'option', 'inclus', 'inclus', 'inclus'] },
+      v: ['non', 'inclus', 'inclus', 'inclus', 'inclus'] },
     { nom: 'Connexion à une plateforme externe', desc: 'PriceLabs, Beyond, Wheelhouse',
       v: ['non', 'option', 'option', 'option', 'option'] },
   ]},
@@ -3231,7 +3226,6 @@ const PLATEFORMES = [
   { id:'whatsapp',   section:'connexions',   nom:'WhatsApp',     lettre:'W', connecte:true,  desc:"Recevez et répondez aux messages WhatsApp de vos voyageurs directement dans la messagerie Oyvia." },
   { id:'google',     section:'connexions',   nom:'Google',       lettre:'G', connecte:false, desc:"Affichez vos disponibilités sur Google (Recherche et Maps)." },
   { id:'pricelabs',  section:'applications', nom:'PriceLabs',    lettre:'P', connecte:false, desc:"Synchronisez une tarification dynamique, logement par logement." },
-  { id:'ical',       section:'applications', nom:'iCal',         lettre:'I', connecte:true,  desc:"Importez un calendrier externe (Airbnb, Vrbo, Google…) pour bloquer les dates." },
 ];
 
 /* ============================================================
@@ -5073,15 +5067,32 @@ _migrerFichesPolice();
 _viviTraiterSignalements();
 
 let _oyviaResetting = false;
+/* Renvoie false si l'enregistrement a échoué. Le silence d'origine
+   convenait tant que l'état pesait quelques kilo-octets ; depuis que le
+   back-office permet d'embarquer des images dans un article, le quota
+   (~5 Mo) devient atteignable, et un échec muet ferait perdre un texte
+   qu'on croyait sauvegardé. Les appelants qui peuvent prévenir
+   l'utilisateur testent donc le retour.
+
+   IMPORTANT — l'instantané est FUSIONNÉ, pas remplacé. Toutes les pages
+   ne chargent pas les mêmes modules : le site public ignore le
+   back-office, l'application cliente ignore les articles de blog. Une
+   sauvegarde qui n'écrirait que `_OYVIA_ENTITIES` effacerait donc tout
+   ce que la page courante ne connaît pas — il suffisait d'ouvrir le
+   tableau de bord après avoir écrit un article pour le perdre. On
+   repart de l'instantané lu au chargement et on n'écrase que les
+   entités effectivement gérées ici. */
 function saveOyviaState() {
-  if (_oyviaResetting) return; // une réinitialisation est en cours : ne pas réécrire l'ancien état
+  if (_oyviaResetting) return true; // une réinitialisation est en cours : ne pas réécrire l'ancien état
   try {
-    const snapshot = {};
+    const snapshot = Object.assign({}, _oyviaSnapshot || {});
     Object.keys(_OYVIA_ENTITIES).forEach(name => { snapshot[name] = _OYVIA_ENTITIES[name]; });
     // Ce qui a disparu compte autant que ce qui reste (cf. OYVIA_SUPPRIMES).
-    snapshot.__supprimes = OYVIA_SUPPRIMES;
+    // Même raisonnement : les suppressions faites ailleurs sont conservées.
+    snapshot.__supprimes = Object.assign({}, (_oyviaSnapshot || {}).__supprimes || {}, OYVIA_SUPPRIMES);
     localStorage.setItem(OYVIA_STATE_KEY, JSON.stringify(snapshot));
-  } catch (e) { /* quota dépassé, navigation privée… on ignore silencieusement */ }
+    return true;
+  } catch (e) { return false; /* quota dépassé, navigation privée… */ }
 }
 
 // Sauvegarde automatique : à la fermeture/navigation, quand l'onglet
