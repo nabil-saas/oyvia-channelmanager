@@ -1018,6 +1018,17 @@
 .rp-section { padding: var(--sp-4) 0; border-bottom: 1px solid var(--c-border); }
 .rp-section:last-child { border-bottom: 0; }
 .rp-row { display: flex; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-1) 0; font-size: var(--fs-sm); }
+
+/* Extras demandés depuis la page séjour. Chaque ligne porte sa décision :
+   un montant global aurait caché la seule chose qui demande une action —
+   la demande qu'on n'a pas encore confirmée. */
+.rp-extra { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3) 0; border-bottom: 1px solid var(--c-border); }
+.rp-extra:last-of-type { border-bottom: 0; }
+.rp-extra__txt { flex: 1; min-width: 0; }
+.rp-extra__txt b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.rp-extra__txt small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 1px; }
+.rp-extra__prix { font-size: var(--fs-sm); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rp-row--total { border-top: 1px solid var(--c-border-strong); margin-top: var(--sp-2); padding-top: var(--sp-3); }
 .rp-row span:first-child { color: var(--c-text-soft); }
 .rp-row span:last-child { font-weight: var(--fw-medium); text-align: right; }
 .rp-guest { display: flex; align-items: center; gap: var(--sp-3); }
@@ -1800,6 +1811,30 @@
 .sv-item__meta b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
 .sv-item__meta small { display: block; font-size: var(--fs-xs); color: var(--c-text-soft); margin-top: 1px; }
 .sv-item__tags { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+/* ---------- Demandes des voyageurs ----------
+   L'onglet porte le nombre de décisions en attente, et lui seul : un
+   compteur qui affiche aussi les demandes déjà traitées ne redescend
+   jamais à zéro et cesse d'être lu. */
+.sv-compteur { display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-left: var(--sp-2);
+  border-radius: var(--r-full); background: var(--c-warning-soft); color: var(--c-warning-ink);
+  font-size: 10px; font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+.sv-c-compteur { font-size: var(--fs-sm); color: var(--c-text-muted); margin-left: auto; }
+.sv-cmd__titre { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+.sv-cmd__droite { text-align: right; }
+/* Les deux décisions restent côte à côte : empilées, elles se cliquent
+   l'une pour l'autre. `.icon-btn` est en `display:grid`, donc de niveau
+   bloc — d'où l'empilement tant qu'on ne le remet pas en ligne. */
+.sv-cmd__actions { text-align: right; white-space: nowrap; width: 1%; }
+.sv-cmd__actions .icon-btn { display: inline-grid; vertical-align: middle; }
+/* Une demande déclinée reste dans la liste : la réponse est une trace,
+   pas un effacement. Elle s'efface visuellement, sans disparaître. */
+.sv-cmd--refuse td { opacity: .5; }
+.sv-serre { display: inline-block; margin-left: var(--sp-2);
+  font-size: 10px; font-weight: var(--fw-bold); text-transform: uppercase;
+  letter-spacing: var(--tracking-wider); color: var(--c-warning-ink);
+  background: var(--c-warning-soft); padding: 2px var(--sp-2); border-radius: var(--r-full); }
+
 .sv-tag { font-size: 11px; font-weight: var(--fw-semibold); padding: 2px var(--sp-2); border-radius: var(--r-full);
   background: var(--c-accent-soft); color: var(--blue-700); }
 .sv-tag--muted { background: var(--bg-subtle); color: var(--c-text-muted); font-weight: var(--fw-regular); }

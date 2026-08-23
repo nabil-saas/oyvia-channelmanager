@@ -130,5 +130,49 @@
 .g-service__prix small { font-size: 10px; color: var(--c-text-muted); }
 .g-services__note { font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: var(--sp-3); text-align: center; }
 
+/* ---------- Choix des extras ----------
+   Un extra retenu se voit sans qu'on relise : bordure et fond changent.
+   Le bouton seul ne suffisait pas — sur une liste de huit services, on
+   ne repère pas quatre boutons dans un état différent. */
+.g-service.is-choisi { border-color: var(--g-accent); background: color-mix(in srgb, var(--g-accent) 7%, transparent); }
+/* Indisponible : visible et expliqué, jamais masqué. Un service absent
+   se redemande par message ; un service grisé avec sa raison, non. */
+.g-service.is-indispo { opacity: .62; }
+.g-service__non { font-size: 10px; font-weight: var(--fw-semibold); color: var(--c-warning-ink); margin-top: 3px; }
+.g-service__non--ok { color: var(--c-positive-ink); }
+
+.g-service__action { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
+.g-choix {
+  display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 var(--sp-4);
+  border-radius: var(--r-full); border: 1px solid var(--c-border-strong);
+  background: var(--c-surface); color: var(--c-text);
+  font-size: var(--fs-sm); font-weight: var(--fw-semibold); white-space: nowrap; cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.g-choix svg { width: 15px; height: 15px; }
+.g-choix:hover { border-color: var(--g-accent); color: var(--g-accent); }
+.g-choix.is-on { background: var(--g-accent); border-color: var(--g-accent); color: #fff; }
+.g-choix:disabled { opacity: .7; cursor: default; }
+
+/* Quantité, seulement là où elle appartient au voyageur. */
+.g-qte { display: inline-flex; align-items: center; gap: var(--sp-2); border: 1px solid var(--c-border); border-radius: var(--r-full); padding: 0 var(--sp-2); height: 34px; }
+.g-qte button { width: 22px; height: 22px; border-radius: var(--r-full); font-size: var(--fs-md); line-height: 1; color: var(--c-text-soft); cursor: pointer; }
+.g-qte button:hover { background: var(--bg-subtle); color: var(--c-text); }
+.g-qte b { min-width: 14px; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* Récapitulatif : le total ET le fait que rien n'est encore facturé.
+   Sans cette phrase, un voyageur croit avoir payé en cliquant. */
+.g-panier { margin-top: var(--sp-3); padding: var(--sp-4); border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--g-accent) 9%, transparent); }
+.g-panier__l { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
+.g-panier__l span { font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.g-panier__l b { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--g-accent); }
+.g-panier p { font-size: var(--fs-xs); color: var(--c-text-muted); line-height: var(--lh-snug); margin-top: var(--sp-2); }
+
+@media (max-width: 520px) {
+  .g-service { flex-wrap: wrap; }
+  .g-service__action { width: 100%; justify-content: flex-end; }
+}
+
 /* Introduction d'une section : le texte que l'hôte place sous le titre. */
 .g-intro { font-size: var(--fs-sm); color: var(--c-text-soft); line-height: var(--lh-snug); margin-bottom: var(--sp-4); }

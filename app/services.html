@@ -35,7 +35,28 @@
         </div>
 
 
-        <div id="sv-liste"><!-- injecté --></div>
+        <div class="tabs" id="sv-tabs">
+          <button type="button" class="is-active" data-tab="catalogue">Catalogue</button>
+          <button type="button" data-tab="commandes">Demandes des voyageurs <span class="sv-compteur" id="sv-nb"></span></button>
+        </div>
+
+        <div class="tabpane is-active" data-pane="catalogue">
+          <div id="sv-liste"><!-- injecté --></div>
+        </div>
+
+        <div class="tabpane" data-pane="commandes">
+          <p class="text-sm text-soft mb-4">Ce que les voyageurs ont demandé depuis leur page séjour. Regroupé par prestation : quinze paniers d'accueil se commandent en une fois, pas réservation par réservation.</p>
+          <div class="app-filters">
+            <select class="select" id="sv-c-statut">
+              <option value="demande">À traiter</option>
+              <option value="tous">Toutes les demandes</option>
+              <option value="confirme">Confirmées</option>
+              <option value="refuse">Refusées</option>
+            </select>
+            <span class="sv-c-compteur" id="sv-c-compteur"></span>
+          </div>
+          <div id="sv-commandes"><!-- injecté --></div>
+        </div>
 
       </main>
     </div>
