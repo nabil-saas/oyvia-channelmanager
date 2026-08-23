@@ -777,6 +777,15 @@ const UI = {
             ${field('N° de pièce', f.numeroPiece)}
             <div class="fiche-doc__f fiche-doc__f--full"><small>Domicile habituel</small><b>${f.adresse || '—'}</b></div>
           </div>
+          ${(f.pieces || []).length ? `
+            <div class="fiche-doc__pieces">
+              <p class="eyebrow mb-2">Document${f.pieces.length > 1 ? 's' : ''} d'identité fourni${f.pieces.length > 1 ? 's' : ''} par le voyageur</p>
+              <div class="fiche-doc__pjs">
+                ${f.pieces.map(p => p.type === 'photo'
+                  ? `<a class="fiche-doc__pj" href="${p.data}" target="_blank" rel="noopener" title="${p.nom} — ouvrir en grand"><img src="${p.data}" alt="${p.nom}" /></a>`
+                  : `<a class="fiche-doc__pj fiche-doc__pj--pdf" href="${p.data}" target="_blank" rel="noopener" title="${p.nom}"><span>PDF</span><small>${p.nom}</small></a>`).join('')}
+              </div>
+            </div>` : ''}
           <div class="rp-section" style="border-top:1px solid var(--c-border); margin-top:var(--sp-4); padding-top:var(--sp-4);">
             <div class="rp-row"><span>Logement</span><span>${l.nom} · ${l.ville}</span></div>
             <div class="rp-row"><span>Séjour</span><span>${formatPlage(r.arrivee, r.depart)}</span></div>
@@ -851,7 +860,38 @@ const UI = {
       row('Référence de réservation', r.ref);
       row('Fiche soumise le', f.soumisLe ? new Date(f.soumisLe).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '—');
 
+      /* Le document d'identité part avec le PDF.
+
+         C'est le document qu'on présente en cas de contrôle : un PDF qui
+         renverrait à une image restée dans le navigateur ne vaudrait
+         rien le jour où on l'imprime. Les PDF joints, eux, ne
+         s'imbriquent pas — on les mentionne, sans les inclure. */
+      const photos = (f.pieces || []).filter(p => p.type === 'photo');
+      if (photos.length) {
+        photos.forEach((p, n) => {
+          doc.addPage();
+          doc.setFontSize(11); doc.setTextColor(30);
+          doc.text(`Document d'identité fourni par le voyageur${photos.length > 1 ? ` (${n + 1}/${photos.length})` : ''}`, marginX, 20);
+          doc.setFontSize(9); doc.setTextColor(140);
+          doc.text(`${f.prenom} ${f.nom} — ${TYPE_PIECE_LABEL[f.typePiece] || f.typePiece} n° ${f.numeroPiece}`, marginX, 26);
+          try {
+            const dispo = { l: pageW - marginX * 2, h: 240 };
+            const props = doc.getImageProperties(p.data);
+            const ratio = Math.min(dispo.l / props.width, dispo.h / props.height);
+            doc.addImage(p.data, 'JPEG', marginX, 34, props.width * ratio, props.height * ratio);
+          } catch (e) {
+            doc.setTextColor(180);
+            doc.text('Image illisible.', marginX, 40);
+          }
+        });
+      }
+      const pdfJoints = (f.pieces || []).filter(p => p.type === 'pdf');
+
+      doc.setPage(1);
       doc.setFontSize(8.5); doc.setTextColor(150);
+      if (pdfJoints.length) {
+        doc.text(`${pdfJoints.length} document${pdfJoints.length > 1 ? 's' : ''} PDF joint${pdfJoints.length > 1 ? 's' : ''} par le voyageur, consultable${pdfJoints.length > 1 ? 's' : ''} dans la fiche.`, marginX, 278);
+      }
       doc.text('Document généré automatiquement par Oyvia — à conserver avec le dossier de réservation.', marginX, 284);
 
       const filename = `fiche-police-${(f.nom || 'voyageur')}-${(f.prenom || '')}`
@@ -932,7 +972,8 @@ const UI = {
       if (f) return `<div class="rp-fiche">
           <div class="rp-fiche__who">
             <span class="rp-fiche__ic rp-fiche__ic--done">${UI._ic('<path d="M20 6 9 17l-5-5"/>')}</span>
-            <div><b>${f.prenom} ${f.nom}</b><small class="text-muted">${f.nationalite || '—'} · ${TYPE_PIECE_LABEL[f.typePiece] || f.typePiece} n° ${f.numeroPiece}</small></div>
+            <div><b>${f.prenom} ${f.nom}</b><small class="text-muted">${f.nationalite || '—'} · ${TYPE_PIECE_LABEL[f.typePiece] || f.typePiece} n° ${f.numeroPiece}${
+              (f.pieces || []).length ? ` · ${f.pieces.length} document${f.pieces.length > 1 ? 's' : ''} joint${f.pieces.length > 1 ? 's' : ''}` : ''}</small></div>
           </div>
           <div class="rp-fiche__actions">
             <span class="badge badge--positive">Complétée</span>

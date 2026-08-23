@@ -384,9 +384,102 @@
       document.querySelectorAll('[data-fp-edit]').forEach(b => b.addEventListener('click', () => openModal(parseInt(b.dataset.fpEdit, 10))));
     }
 
+    /* ---------- Document d'identité ----------
+
+       Le DOCUMENT, pas la photo d'identité : ce qu'on demande est la
+       carte ou le passeport, pas le portrait qui s'y trouve.
+
+       Le champ accepte une photo prise sur le moment comme un fichier
+       déjà enregistré : c'est le même document, et forcer l'un ou
+       l'autre reviendrait à exclure la moitié des voyageurs — ceux qui
+       lisent sur téléphone photographient, ceux qui lisent sur
+       ordinateur joignent un scan reçu par courriel.
+
+       Les images sont réduites avant d'être stockées. Une photo de
+       téléphone pèse 3 à 5 Mo ; le navigateur n'accepte que 5 Mo au
+       total pour toute l'application. Sans compression, la deuxième
+       fiche ferait échouer l'enregistrement de tout le reste —
+       réservations comprises. */
+    const LARGEUR_PIECE = 1400;
+    let piecesEnCours = [];
+
+    function compresserPiece(fichier) {
+      return new Promise((resolve, reject) => {
+        const lecteur = new FileReader();
+        lecteur.onerror = () => reject(new Error('Lecture impossible'));
+        lecteur.onload = () => {
+          // Un PDF ne se rasterise pas : on le garde tel quel, et son
+          // poids est vérifié à part.
+          if (fichier.type === 'application/pdf') {
+            return resolve({ nom: fichier.name, type: 'pdf', data: lecteur.result });
+          }
+          const img = new Image();
+          img.onerror = () => reject(new Error('Image illisible'));
+          img.onload = () => {
+            const ratio = Math.min(1, LARGEUR_PIECE / img.width);
+            const c = document.createElement('canvas');
+            c.width = Math.round(img.width * ratio);
+            c.height = Math.round(img.height * ratio);
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, c.width, c.height);
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            let data = c.toDataURL('image/jpeg', 0.72);
+            // Une pièce d'identité doit rester LISIBLE : on ne descend en
+            // qualité qu'au-delà d'un mégaoctet, et jamais sous 0,55.
+            if (data.length > 1024 * 1024) data = c.toDataURL('image/jpeg', 0.55);
+            resolve({ nom: fichier.name, type: 'photo', data });
+          };
+          img.src = lecteur.result;
+        };
+        lecteur.readAsDataURL(fichier);
+      });
+    }
+
+    function renderPieces() {
+      const zone = document.getElementById('fp-pj-liste');
+      zone.innerHTML = piecesEnCours.map((p, i) => `
+        <div class="fp-pj__item">
+          ${p.type === 'photo'
+            ? `<img src="${p.data}" alt="" />`
+            : `<span class="fp-pj__pdf">PDF</span>`}
+          <span class="fp-pj__nom">${p.nom}</span>
+          <button type="button" class="icon-btn" data-pj-del="${i}" aria-label="Retirer ${p.nom}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>`).join('');
+    }
+
+    document.getElementById('fp-pj-input').addEventListener('change', async e => {
+      const fichiers = [...e.target.files];
+      e.target.value = '';
+      for (const fichier of fichiers) {
+        if (piecesEnCours.length >= 4) { toast('Quatre documents au maximum', false); break; }
+        try {
+          const p = await compresserPiece(fichier);
+          if (p.data.length > 2.5 * 1024 * 1024) { toast(`${fichier.name} est trop lourd`, false); continue; }
+          piecesEnCours.push(p);
+        } catch (err) {
+          toast(`${fichier.name} : ${err.message}`, false);
+        }
+      }
+      renderPieces();
+    });
+
+    document.getElementById('fp-pj-liste').addEventListener('click', e => {
+      const b = e.target.closest('[data-pj-del]');
+      if (!b) return;
+      piecesEnCours.splice(Number(b.dataset.pjDel), 1);
+      renderPieces();
+    });
+
     function openModal(i) {
       editingSlot = i;
       const f = getFichesPolice(r.id)[i] || {};
+      // Les pièces déjà envoyées se rouvrent avec la fiche : sans ça,
+      // corriger une faute de frappe les effacerait toutes.
+      piecesEnCours = (f.pieces || []).map(p => ({ ...p }));
+      renderPieces();
       const set = (id, val) => { document.getElementById(id).value = val || ''; };
       set('fp-civilite', f.civilite || 'M.');
       set('fp-nom', f.nom);
@@ -434,11 +527,16 @@
       const consent = document.getElementById('fp-consent').checked;
       if (!nom || !prenom || !naissance || !nationalite || !numero) { toast('Merci de compléter tous les champs obligatoires', false); return; }
       if (!consent) { toast('Merci de certifier l\'exactitude des informations', false); return; }
-      saveFichePolice(r.id, editingSlot, {
+      const enregistre = saveFichePolice(r.id, editingSlot, {
         civilite: document.getElementById('fp-civilite').value,
         nom, prenom, dateNaissance: naissance, lieuNaissance: lieu, nationalite, adresse,
         typePiece: document.getElementById('fp-type-piece').value, numeroPiece: numero,
+        pieces: piecesEnCours.map(p => ({ ...p, ajouteLe: AUJOURDHUI })),
       });
+      if (!enregistre) {
+        toast('Enregistrement impossible : les documents sont trop lourds. Retirez-en un et réessayez.', false);
+        return;
+      }
       closeOverlay();
       renderSection();
       toast('Fiche enregistrée, merci !');

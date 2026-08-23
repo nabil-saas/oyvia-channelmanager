@@ -40,6 +40,27 @@
         <div class="field"><label class="field__label" for="fp-numero">Numéro de la pièce *</label><input class="input" id="fp-numero" placeholder="N° du document" /></div>
         <div class="field field--full"><label class="field__label" for="fp-adresse">Domicile habituel</label><input class="input" id="fp-adresse" placeholder="Adresse complète" /></div>
       </div>
+      <!-- Le DOCUMENT d'identité, pas une photo d'identité : ce qu'on
+           demande est la carte ou le passeport lui-même, pas le portrait
+           qui s'y trouve. Le champ accepte l'appareil photo comme un
+           fichier déjà enregistré — sur téléphone on photographie, sur
+           ordinateur on joint un scan — parce que c'est le même
+           document dans les deux cas. -->
+      <div class="fp-pj">
+        <div class="fp-pj__tete">
+          <div>
+            <b>Votre document d'identité</b>
+            <small>Facultatif. Photographiez-le ou joignez un fichier : cela nous évite de vous recontacter si le numéro saisi est illisible. Recto et verso si nécessaire.</small>
+          </div>
+          <label class="btn btn--secondary btn--sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            Ajouter
+            <input type="file" id="fp-pj-input" accept="image/*,application/pdf" capture="environment" multiple hidden />
+          </label>
+        </div>
+        <div class="fp-pj__liste" id="fp-pj-liste"><!-- injecté --></div>
+      </div>
+
       <label class="fp-consent"><input type="checkbox" id="fp-consent" /> Je certifie l'exactitude des informations fournies et j'autorise leur conservation dans le cadre légal de l'accueil touristique.</label>
     </div>
     <div class="modal__foot">

@@ -5111,8 +5111,17 @@ function _lireFichesPolice() {
   try { return JSON.parse(localStorage.getItem(FICHES_POLICE_KEY)) || {}; }
   catch { return {}; }
 }
+/* Les fiches portent désormais des photos de pièces d'identité, donc du
+   poids. Le navigateur plafonne à 5 Mo : au-delà, `setItem` LÈVE une
+   exception, et sans ce filet le voyageur verrait « Fiche enregistrée »
+   alors que rien n'a été écrit. On préfère un refus honnête. */
 function _ecrireFichesPolice(all) {
-  localStorage.setItem(FICHES_POLICE_KEY, JSON.stringify(all));
+  try {
+    localStorage.setItem(FICHES_POLICE_KEY, JSON.stringify(all));
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 // Retourne un tableau (index = n° voyageur), les cases vides valent undefined.
 function getFichesPolice(reservationId) {
@@ -5124,8 +5133,7 @@ function saveFichePolice(reservationId, index, data) {
   const list = all[reservationId] ? [...all[reservationId]] : [];
   list[index] = { ...data, soumisLe: new Date().toISOString() };
   all[reservationId] = list;
-  _ecrireFichesPolice(all);
-  return list;
+  return _ecrireFichesPolice(all) ? list : null;
 }
 
 // Libellés lisibles
