@@ -29,19 +29,17 @@ const ResaForm = (function () {
         </button>
       </div>
       <div class="modal__body">
-        <div class="app-grid app-grid--2">
-          <div class="field"><label class="field__label" for="rf-nom">Voyageur</label>
-            <input class="input" id="rf-nom" placeholder="Nom du voyageur" /></div>
-          <div class="field"><label class="field__label" for="rf-log">Logement</label>
-            <select class="select" id="rf-log"></select></div>
+        <div class="app-grid app-grid--3">
+          <div class="field"><label class="field__label" for="rf-prenom">Prénom</label>
+            <input class="input" id="rf-prenom" placeholder="Emma" autocomplete="given-name" /></div>
+          <div class="field"><label class="field__label" for="rf-nom">Nom</label>
+            <input class="input" id="rf-nom" placeholder="Laurent" autocomplete="family-name" /></div>
+          <div class="field"><label class="field__label" for="rf-tel">Téléphone</label>
+            <input class="input" type="tel" id="rf-tel" placeholder="+33 6 12 45 78 90" autocomplete="tel" /></div>
         </div>
         <div class="app-grid app-grid--3" style="margin-top:var(--sp-4)">
-          <div class="field"><label class="field__label" for="rf-canal">Canal</label>
-            <select class="select" id="rf-canal">
-              <option value="direct">Direct</option>
-              <option value="airbnb">Airbnb</option>
-              <option value="booking">Booking.com</option>
-            </select></div>
+          <div class="field"><label class="field__label" for="rf-log">Logement</label>
+            <select class="select" id="rf-log"></select></div>
           <div class="field"><label class="field__label" for="rf-arrivee">Arrivée</label>
             <input class="input" type="date" id="rf-arrivee" /></div>
           <div class="field"><label class="field__label" for="rf-depart">Départ</label>
@@ -75,7 +73,7 @@ const ResaForm = (function () {
 
     const F = id => document.getElementById(id);
     champs = {
-      nom: F('rf-nom'), log: F('rf-log'), canal: F('rf-canal'),
+      prenom: F('rf-prenom'), nom: F('rf-nom'), tel: F('rf-tel'), log: F('rf-log'),
       arrivee: F('rf-arrivee'), depart: F('rf-depart'),
       pers: F('rf-pers'), montant: F('rf-montant'), paiement: F('rf-paiement'),
     };
@@ -138,9 +136,44 @@ const ResaForm = (function () {
     return null;
   }
 
+  /* Le voyageur saisi ici entre dans le fichier clients.
+
+     Sans ça, le téléphone qu'on vient de demander ne s'afficherait
+     nulle part : le panneau de réservation ne montre les coordonnées que
+     pour un voyageur RATTACHÉ (`voyageurId`), et une réservation créée à
+     la main n'en avait aucun. Demander une information qu'on ne restitue
+     pas est la meilleure façon de la faire saisir n'importe comment.
+
+     Un numéro déjà connu rattache au même voyageur plutôt que d'en
+     créer un jumeau — c'est le téléphone qui identifie, pas
+     l'orthographe du prénom. */
+  function rattacherVoyageur(prenom, nom, tel, resa) {
+    const nomComplet = `${prenom} ${nom}`.trim();
+    const normalise = t => String(t || '').replace(/[^0-9+]/g, '');
+    const connu = normalise(tel) && VOYAGEURS.find(v => normalise(v.tel) === normalise(tel));
+
+    if (connu) {
+      connu.nom = nomComplet || connu.nom;
+      connu.nbSejours = (connu.nbSejours || 0) + 1;
+      connu.totalDepense = (connu.totalDepense || 0) + resa.montant;
+      connu.dernierSejour = resa.arrivee;
+      return connu.id;
+    }
+    const n = VOYAGEURS.reduce((m, v) => Math.max(m, parseInt(String(v.id).replace(/\D/g, ''), 10) || 0), 0);
+    const v = {
+      id: 'V' + String(n + 1).padStart(2, '0'),
+      nom: nomComplet, email: '', tel: tel.trim(), pays: '',
+      nbSejours: 1, totalDepense: resa.montant, dernierSejour: resa.arrivee,
+      note: 'Créé depuis une réservation saisie à la main.',
+    };
+    VOYAGEURS.push(v);
+    return v.id;
+  }
+
   function creer() {
+    const prenom = champs.prenom.value.trim();
     const nom = champs.nom.value.trim();
-    if (!nom) return UI.toast('Renseignez le nom du voyageur', false);
+    if (!prenom && !nom) return UI.toast('Renseignez le nom du voyageur', false);
     if (!champs.arrivee.value || !champs.depart.value
         || parseDate(champs.depart.value) <= parseDate(champs.arrivee.value)) {
       return UI.toast('Dates invalides', false);
@@ -150,17 +183,26 @@ const ResaForm = (function () {
       return UI.toast(`Le ${formatDate(conflit.date)} est déjà pris — ${conflit.resa.canal === 'bloque' ? 'dates bloquées' : conflit.resa.voyageur}`, false);
     }
 
-    const canal = champs.canal.value;
-    const prefix = { direct: 'CL-', airbnb: 'HM', booking: 'BK' }[canal];
+    /* Canal imposé : DIRECT.
+
+       Le choix a disparu du formulaire, et c'est cohérent — une
+       réservation Airbnb ou Booking arrive par la synchronisation des
+       canaux, elle ne se saisit pas à la main. Laisser cocher « Airbnb »
+       permettait d'inventer une réservation de plateforme que la
+       plateforme ignore : la ligne apparaissait dans les statistiques
+       par canal et dans les commissions, sans exister nulle part
+       ailleurs. Ce qu'on tape ici, on l'a pris soi-même. */
     const resa = {
-      id: 'R' + Date.now(), logementId: champs.log.value, voyageurId: null, voyageur: nom, canal,
+      id: 'R' + Date.now(), logementId: champs.log.value, voyageurId: null,
+      voyageur: `${prenom} ${nom}`.trim(), canal: 'direct',
       arrivee: champs.arrivee.value, depart: champs.depart.value,
       pers: parseInt(champs.pers.value, 10) || 1,
       montant: lireMontantSaisi(champs.montant.value, null) || 0,
       paiement: champs.paiement.value, statut: 'confirme',
-      ref: prefix + Math.floor(1000 + Math.random() * 9000),
+      ref: 'CL-' + Math.floor(1000 + Math.random() * 9000),
       nuits: nuitsEntre(champs.arrivee.value, champs.depart.value),
     };
+    resa.voyageurId = rattacherVoyageur(prenom, nom, champs.tel.value, resa);
     RESERVATIONS.push(resa);
     if (typeof saveOyviaState === 'function') saveOyviaState();
 
@@ -174,18 +216,19 @@ const ResaForm = (function () {
     monter();
     onCree = opts.onCree || null;
 
+    champs.prenom.value = '';
     champs.nom.value = '';
+    champs.tel.value = '';
     if (opts.logementId && getLogement(opts.logementId)) champs.log.value = opts.logementId;
     // Des dates pré-remplies déjà occupées seraient refusées au moment de
     // valider : autant ne pas les proposer du tout.
     const libres = opts.arrivee && opts.depart && !chevauchement(champs.log.value, opts.arrivee, opts.depart);
     champs.arrivee.value = libres ? opts.arrivee : '';
     champs.depart.value = libres ? opts.depart : '';
-    if (opts.canal) champs.canal.value = opts.canal;
     suggererMontant();
 
     UI.openPanel('resaform-modal');
-    setTimeout(() => champs.nom.focus(), 120);
+    setTimeout(() => champs.prenom.focus(), 120);
   }
 
   return { ouvrir, chevauchement };

@@ -68,7 +68,116 @@ Layout.init('services');
       </div>`).join('');
   }
 
-  function render() { renderListe(); }
+  /* ============================================================
+     DEMANDES DES VOYAGEURS
+
+     Regroupées PAR PRESTATION et non par réservation. C'est la
+     différence utile avec la fiche de réservation, qui répond à « que
+     veut ce voyageur ? ». Ici la question est celle de l'exploitation :
+     « combien de paniers d'accueil dois-je commander cette semaine, et
+     pour quand ? ». Quinze demandes éparpillées dans quinze fiches ne
+     répondent pas à ça.
+
+     Chaque ligne porte sa date d'échéance — l'arrivée pour les services
+     d'arrivée, le départ pour les autres — parce que c'est elle qui
+     ordonne le travail, pas la date de la demande.
+     ============================================================ */
+  let filtreCommandes = 'demande';
+
+  function echeanceCommande(c) {
+    const r = getReservation(c.reservationId);
+    const sv = getService(c.serviceId);
+    if (!r || !sv) return null;
+    return sv.categorie === 'arrivee' ? r.arrivee : r.depart;
+  }
+
+  function commandesFiltrees() {
+    return COMMANDES_SERVICE
+      .filter(c => filtreCommandes === 'tous' || c.statut === filtreCommandes)
+      .filter(c => getReservation(c.reservationId) && getService(c.serviceId))
+      .sort((a, b) => String(echeanceCommande(a)).localeCompare(String(echeanceCommande(b))));
+  }
+
+  function renderCommandes() {
+    const liste = commandesFiltrees();
+    const enAttente = COMMANDES_SERVICE.filter(c => c.statut === 'demande').length;
+
+    // Pastille de l'onglet : ce qui attend une décision, rien d'autre.
+    F('sv-nb').textContent = enAttente || '';
+    F('sv-nb').hidden = !enAttente;
+    F('sv-c-compteur').textContent = `${liste.length} demande${liste.length > 1 ? 's' : ''}`;
+
+    if (!liste.length) {
+      F('sv-commandes').innerHTML = `<div class="card card--pad"><div class="empty">
+        ${ic('<circle cx="12" cy="12" r="9"/><path d="M9 12h6"/>')}
+        <h4>Rien à traiter</h4>
+        <p>${filtreCommandes === 'demande'
+          ? 'Aucune demande en attente. Les extras choisis par vos voyageurs apparaîtront ici.'
+          : 'Aucune demande ne correspond à ce filtre.'}</p></div></div>`;
+      return;
+    }
+
+    // Groupement par service, en conservant l'ordre d'échéance.
+    const groupes = [];
+    liste.forEach(c => {
+      let g = groupes.find(x => x.serviceId === c.serviceId);
+      if (!g) { g = { serviceId: c.serviceId, items: [] }; groupes.push(g); }
+      g.items.push(c);
+    });
+
+    F('sv-commandes').innerHTML = groupes.map(g => {
+      const sv = getService(g.serviceId);
+      const total = g.items.filter(c => c.statut !== 'refuse').reduce((t, c) => t + montantCommande(c), 0);
+      const unites = g.items.reduce((t, c) => t + (c.quantite || 1), 0);
+      return `<div class="card card--pad mb-4">
+        <div class="row-between mb-4">
+          <div>
+            <p class="eyebrow">${SERVICES_CATEGORIES[sv.categorie] || ''}</p>
+            <b class="sv-cmd__titre">${sv.nom}</b>
+            <span class="text-xs text-muted"> · ${sv.prestataire || 'en interne'} · ${sv.delaiPrevenance} h de prévenance</span>
+          </div>
+          <div class="sv-cmd__droite">
+            <b>${sv.prix ? formatMontant(total) : 'Offert'}</b>
+            <div class="text-xs text-muted">${g.items.length} demande${g.items.length > 1 ? 's' : ''} · ${unites} ${SERVICES_UNITES[sv.unite] || ''}</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Voyageur</th><th>Logement</th><th>Pour le</th><th class="num">Quantité</th><th class="num">Montant</th><th>Statut</th><th></th></tr></thead>
+            <tbody>${g.items.map(c => ligneCommandeHTML(c, sv)).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function ligneCommandeHTML(c, sv) {
+    const r = getReservation(c.reservationId);
+    const l = getLogement(r.logementId);
+    const st = STATUTS_COMMANDE[c.statut] || STATUTS_COMMANDE.demande;
+    const ech = echeanceCommande(c);
+    const jours = Math.round((parseDate(ech) - parseDate(AUJOURDHUI)) / 86400000);
+    // Le préavis est-il encore tenable ? La question ne se pose que tant
+    // qu'on n'a pas répondu.
+    const tendu = c.statut === 'demande' && jours * 24 - (sv.delaiPrevenance || 0) <= 24;
+    return `<tr class="${c.statut === 'refuse' ? 'sv-cmd--refuse' : ''}">
+      <td><b>${r.voyageur}</b><div class="text-xs text-muted">${formatPlage(r.arrivee, r.depart)}</div></td>
+      <td>${l ? `${l.nom}<div class="text-xs text-muted">${l.ville}</div>` : '—'}</td>
+      <td class="text-sm">${formatDate(ech)}
+        ${tendu ? '<span class="sv-serre">préavis serré</span>' : ''}</td>
+      <td class="num">${c.quantite || 1}</td>
+      <td class="num">${sv.prix ? formatMontant(montantCommande(c)) : '—'}</td>
+      <td><span class="badge ${st.badge}">${st.label}</span></td>
+      <td class="sv-cmd__actions">
+        ${c.statut === 'demande' ? `
+          <button class="icon-btn" data-cmd-ok="${c.id}" title="Confirmer au voyageur" aria-label="Confirmer">${ic('<path d="M20 6 9 17l-5-5"/>')}</button>
+          <button class="icon-btn icon-btn--danger" data-cmd-non="${c.id}" title="Décliner" aria-label="Décliner">${ic('<path d="M18 6 6 18M6 6l12 12"/>')}</button>`
+          : `<button class="icon-btn" data-cmd-resa="${c.reservationId}" title="Ouvrir la réservation" aria-label="Ouvrir la réservation">${ic('<path d="m9 18 6-6-6-6"/>')}</button>`}
+      </td>
+    </tr>`;
+  }
+
+  function render() { renderListe(); renderCommandes(); }
 
   /* ---------- Formulaire ---------- */
   F('sv-f-cat').innerHTML = Object.entries(SERVICES_CATEGORIES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
@@ -191,6 +300,36 @@ Layout.init('services');
     s.actif = t.checked;
     saveOyviaState(); render();
     UI.toast(s.actif ? `${s.nom} proposé aux voyageurs` : `${s.nom} retiré du catalogue`);
+  });
+
+  /* ---------- Onglets ---------- */
+  F('sv-tabs').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    F('sv-tabs').querySelectorAll('button').forEach(x => x.classList.remove('is-active'));
+    b.classList.add('is-active');
+    document.querySelectorAll('.tabpane').forEach(p => p.classList.toggle('is-active', p.dataset.pane === b.dataset.tab));
+  });
+  F('sv-c-statut').addEventListener('change', e => { filtreCommandes = e.target.value; renderCommandes(); });
+
+  F('sv-commandes').addEventListener('click', e => {
+    const ouvrir = e.target.closest('[data-cmd-resa]');
+    if (ouvrir) { UI.openResa(ouvrir.dataset.cmdResa); return; }
+
+    const oui = e.target.closest('[data-cmd-ok]');
+    const non = e.target.closest('[data-cmd-non]');
+    const btn = oui || non;
+    if (!btn) return;
+    const c = COMMANDES_SERVICE.find(x => x.id === (oui ? btn.dataset.cmdOk : btn.dataset.cmdNon));
+    if (!c) return;
+    const sv = getService(c.serviceId), r = getReservation(c.reservationId);
+    c.statut = oui ? 'confirme' : 'refuse';
+    saveOyviaState();
+    renderCommandes();
+    if (Layout.refreshSidebarBadges) Layout.refreshSidebarBadges();
+    if (UI.refreshBellBadge) UI.refreshBellBadge();
+    UI.toast(oui
+      ? `${sv.nom} confirmé à ${r.voyageur}`
+      : `${sv.nom} décliné pour ${r.voyageur}`);
   });
 
   render();

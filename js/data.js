@@ -2213,6 +2213,125 @@ function servicesPourLogement(logementId) {
   return SERVICES.filter(s => s.actif && serviceCouvreLogement(s, logementId));
 }
 function servicesActifs() { return SERVICES.filter(s => s.actif); }
+/* ------------------------------------------------------------
+   EXTRAS COMMANDÉS PAR LE VOYAGEUR
+
+   Le voyageur choisit ses extras depuis sa page séjour ; l'hôte les
+   retrouve dans la fiche de réservation. Une commande n'est donc PAS
+   une vente : c'est une demande, que l'hôte confirme. Le contraire
+   ferait promettre un chef à domicile sans que personne l'ait prévenu.
+
+   La quantité ne se demande au voyageur que lorsqu'elle lui appartient.
+   Un lit d'appoint se compte par séjour, un petit-déjeuner par personne
+   et par jour : ces nombres-là, le séjour les connaît déjà. Les faire
+   saisir, c'est inviter à se tromper sur une facture.
+   ------------------------------------------------------------ */
+const COMMANDES_SERVICE = [
+  // Quelques demandes en cours, pour que la fiche de réservation ne
+  // soit pas vide à la première ouverture.
+  { id:'CS01', reservationId:'R07', serviceId:'SV01', quantite:1, commandeLe:'2026-07-21', statut:'demande' },
+  { id:'CS02', reservationId:'R07', serviceId:'SV05', quantite:1, commandeLe:'2026-07-21', statut:'confirme' },
+  { id:'CS03', reservationId:'R14', serviceId:'SV03', quantite:1, commandeLe:'2026-07-19', statut:'confirme' },
+];
+const STATUTS_COMMANDE = {
+  demande:  { label:'Demandé',  badge:'badge--warning',  aide:"Le voyageur l'a demandé, vous ne l'avez pas encore confirmé." },
+  confirme: { label:'Confirmé', badge:'badge--positive', aide:'Prestation confirmée au voyageur.' },
+  refuse:   { label:'Refusé',   badge:'badge--neutral',  aide:'Vous avez décliné cette demande.' },
+};
+
+// Les unités dont le séjour dicte la quantité. Les autres (trajet,
+// unité, heure) sont au choix du voyageur.
+const _UNITES_CALCULEES = ['sejour', 'personne', 'personne_jour', 'nuit'];
+function quantiteService(sv, r) {
+  const nuits = r.nuits || Math.max(1, nuitsEntre(r.arrivee, r.depart));
+  const pers = r.pers || 1;
+  switch (sv.unite) {
+    case 'sejour':        return { quantite: 1, ajustable: false, detail: 'pour le séjour' };
+    case 'personne':      return { quantite: pers, ajustable: false, detail: `${pers} voyageur${pers > 1 ? 's' : ''}` };
+    case 'personne_jour': return { quantite: pers * nuits, ajustable: false, detail: `${pers} × ${nuits} jour${nuits > 1 ? 's' : ''}` };
+    case 'nuit':          return { quantite: nuits, ajustable: false, detail: `${nuits} nuit${nuits > 1 ? 's' : ''}` };
+    default:              return { quantite: 1, ajustable: true, detail: '' };
+  }
+}
+
+/* Commandable ? Le délai de prévenance est une promesse, pas un
+   affichage : un chef à domicile demandé la veille pour le lendemain ne
+   sera pas là. On refuse AVANT la commande plutôt que de décevoir après.
+
+   Encore faut-il savoir de QUOI on compte le délai. Deux cas, et les
+   confondre rendait la rubrique inutilisable :
+
+   — les services attachés à l'arrivée ou au départ (arrivée anticipée,
+     départ tardif) se mesurent depuis l'arrivée ;
+   — tous les autres se rendent à un moment quelconque du séjour. Un
+     ménage en milieu de séjour ou une table au restaurant se commandent
+     très bien le troisième jour. Les mesurer depuis l'arrivée revenait à
+     tout fermer dès que le voyageur était sur place — c'est-à-dire
+     exactement quand il consulte sa page. */
+function serviceCommandable(sv, r, aujourdhui = AUJOURDHUI) {
+  if (!sv.actif) return { ok: false, raison: 'Ce service n’est pas proposé actuellement.' };
+  const requis = sv.delaiPrevenance || 0;
+  const heuresJusqu = d => Math.round((parseDate(d) - parseDate(aujourdhui)) / 3600000);
+
+  if (sv.categorie === 'arrivee') {
+    if (heuresJusqu(r.arrivee) < requis) {
+      return { ok: false, raison: `À demander au moins ${requis} h avant l’arrivée.` };
+    }
+    return { ok: true };
+  }
+  // Reste-t-il assez de séjour pour honorer le délai ?
+  if (heuresJusqu(r.depart) < requis) {
+    return { ok: false, raison: `Il faut ${requis} h de préavis : trop tard pour ce séjour.` };
+  }
+  return { ok: true };
+}
+
+function commandesReservation(id) { return COMMANDES_SERVICE.filter(c => c.reservationId === id); }
+function commandeReservationService(resaId, serviceId) {
+  return COMMANDES_SERVICE.find(c => c.reservationId === resaId && c.serviceId === serviceId) || null;
+}
+function montantCommande(c) {
+  const sv = getService(c.serviceId);
+  return sv ? sv.prix * (c.quantite || 1) : 0;
+}
+function totalCommandes(id) {
+  return commandesReservation(id).filter(c => c.statut !== 'refuse').reduce((t, c) => t + montantCommande(c), 0);
+}
+
+function commanderService(resaId, serviceId, quantite) {
+  const r = getReservation(resaId), sv = getService(serviceId);
+  if (!r || !sv) return null;
+  const existante = commandeReservationService(resaId, serviceId);
+  if (existante) {
+    existante.quantite = Math.max(1, quantite || 1);
+    // Modifier une demande déjà refusée la remet en jeu : c'est un
+    // nouveau geste du voyageur, pas la résurrection de l'ancien.
+    if (existante.statut === 'refuse') existante.statut = 'demande';
+    if (typeof saveOyviaState === 'function') saveOyviaState();
+    return existante;
+  }
+  const n = COMMANDES_SERVICE.reduce((m, c) => Math.max(m, parseInt(String(c.id).replace(/\D/g, ''), 10) || 0), 0);
+  const c = {
+    id: 'CS' + String(n + 1).padStart(2, '0'),
+    reservationId: resaId, serviceId, quantite: Math.max(1, quantite || 1),
+    commandeLe: AUJOURDHUI, statut: 'demande',
+  };
+  COMMANDES_SERVICE.push(c);
+  if (typeof saveOyviaState === 'function') saveOyviaState();
+  return c;
+}
+
+function retirerCommandeService(resaId, serviceId) {
+  const i = COMMANDES_SERVICE.findIndex(c => c.reservationId === resaId && c.serviceId === serviceId);
+  if (i < 0) return false;
+  // Un extra déjà confirmé n'est plus au voyageur de l'annuler seul :
+  // l'hôte a pu commander le panier ou réserver le VTC.
+  if (COMMANDES_SERVICE[i].statut === 'confirme') return false;
+  COMMANDES_SERVICE.splice(i, 1);
+  if (typeof saveOyviaState === 'function') saveOyviaState();
+  return true;
+}
+
 function servicesParCategorie() {
   return Object.keys(SERVICES_CATEGORIES)
     .map(c => ({ cat:c, label:SERVICES_CATEGORIES[c], items:SERVICES.filter(s => s.categorie === c) }))
@@ -5119,6 +5238,37 @@ function getNotifications() {
     });
   }
 
+  /* --- Extras demandés par un voyageur, sans réponse ---
+
+     Le voyageur clique « Ajouter » sur sa page séjour et lit « demandé à
+     votre hôte ». Sans cette alerte, la phrase serait un mensonge : la
+     demande n'apparaîtrait que dans la fiche de la réservation, et
+     seulement si quelqu'un pense à l'ouvrir.
+
+     L'urgence ne vient pas de l'arrivée mais du DÉLAI DE PRÉVENANCE.
+     Un panier d'accueil demandé pour dans huit jours peut attendre ; le
+     même demandé pour après-demain, avec 48 h de préavis, doit être
+     traité aujourd'hui ou refusé. C'est cette marge qui décide. */
+  if (typeof COMMANDES_SERVICE !== 'undefined') {
+    COMMANDES_SERVICE.filter(c => c.statut === 'demande').forEach(c => {
+      const r = getReservation(c.reservationId);
+      const sv = getService(c.serviceId);
+      if (!r || !sv || r.statut === 'annule') return;
+      // Marge restante avant que la prestation ne devienne intenable.
+      const limite = joursAvantArrivee(sv.categorie === 'arrivee' ? r.arrivee : r.depart) * 24
+        - (sv.delaiPrevenance || 0);
+      if (limite < -24) return;   // trop tard depuis plus d'un jour : l'alerte n'aide plus
+      notifs.push({
+        id: `extra-${c.id}`,
+        type: 'extra',
+        urgence: limite <= 24 ? 'high' : 'medium',
+        titre: limite <= 24 ? 'Extra à confirmer aujourd’hui' : 'Extra demandé par un voyageur',
+        message: `${sv.nom} · ${r.voyageur} · ${formatPlage(r.arrivee, r.depart)}`,
+        resaId: r.id,
+      });
+    });
+  }
+
   /* --- Réponse du propriétaire à une demande de gestion ---
      La conciergerie a candidaté sur la marketplace ; le propriétaire a
      tranché. Sans cette alerte, elle ne l'apprendrait qu'en repassant
@@ -5240,9 +5390,10 @@ const _OYVIA_ENTITIES = {
   COMPTE, UTILISATEUR, PARAMETRES_GENERAUX, CONFORMITE, TACHE_LABEL,
   PROPRIETAIRES, DEPENSES, FACTURES,
   ROLES, UTILISATEURS, ROLES_PRESTATAIRE,
-  ALERTES, FICHES_POLICE, SERVICES,
+  ALERTES, FICHES_POLICE, SERVICES, COMMANDES_SERVICE,
   VIVI_CONFIG, VIVI_REPONSES, VIVI_SIGNALEMENTS, PAGE_SEJOUR, SITE_WEB,
   TARIF_DYNAMIQUE, TD_OVERRIDES, TD_JOURNAL,
+  BAREME_INTERVENTIONS, FACTURES_PRESTATAIRE,
   AVIS, EVALUATIONS,
 };
 

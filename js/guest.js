@@ -141,16 +141,8 @@
     services: () => {
       const dispo = servicesPageSejour(l.id);
       if (!dispo.length) return '';
-      return `<div class="g-services">
-        ${dispo.map(sv => `
-          <div class="g-service">
-            <div class="g-service__txt"><b>${sv.nom}</b><p>${sv.desc || ''}</p></div>
-            <div class="g-service__prix">
-              <b>${sv.prix ? formatMontant(sv.prix) : 'Offert'}</b>
-              <small>${SERVICES_UNITES[sv.unite] || ''}</small>
-            </div>
-          </div>`).join('')}
-      </div>`;
+      return `<div class="g-services" id="g-services">${servicesHTML(dispo)}</div>
+        <div id="g-panier">${panierHTML()}</div>`;
     },
 
     // Le bloc « départ » n'a d'autre contenu que son texte : il est rendu
@@ -168,6 +160,77 @@
         </a>`;
     },
   };
+
+  /* ---------- Extras choisis par le voyageur ----------
+
+     Le prix affiché est le prix TOTAL, pas le prix unitaire. « 12 € par
+     personne et par jour » oblige le voyageur à multiplier de tête et à
+     découvrir la somme réelle sur la facture ; on annonce donc « 96 € »
+     et l'on montre le calcul en dessous. Un extra dont on découvre le
+     montant après coup est un litige.
+
+     Un service dont le délai de prévenance est dépassé reste VISIBLE
+     mais grisé, avec sa raison. Le masquer laisserait croire qu'il
+     n'existe pas, et le voyageur le redemanderait par message. */
+  function servicesHTML(dispo) {
+    return dispo.map(sv => {
+      const q = quantiteService(sv, r);
+      const cmd = commandeReservationService(r.id, sv.id);
+      const quantite = cmd ? cmd.quantite : q.quantite;
+      const dispoOk = serviceCommandable(sv, r);
+      const total = sv.prix * quantite;
+      const choisi = !!cmd;
+      const verrouille = choisi && cmd.statut === 'confirme';
+
+      const prix = sv.prix
+        ? `<b>${formatMontant(total)}</b><small>${q.detail || (q.ajustable && quantite > 1 ? `${quantite} × ${formatMontant(sv.prix)}` : SERVICES_UNITES[sv.unite] || '')}</small>`
+        : `<b>Offert</b><small>${SERVICES_UNITES[sv.unite] || ''}</small>`;
+
+      return `<div class="g-service ${choisi ? 'is-choisi' : ''} ${dispoOk.ok ? '' : 'is-indispo'}" data-sv="${sv.id}">
+        <div class="g-service__txt">
+          <b>${sv.nom}</b>
+          <p>${sv.desc || ''}</p>
+          ${dispoOk.ok ? '' : `<p class="g-service__non">${dispoOk.raison}</p>`}
+          ${verrouille ? '<p class="g-service__non g-service__non--ok">Confirmé par votre hôte</p>' : ''}
+        </div>
+        <div class="g-service__prix">${prix}</div>
+        <div class="g-service__action">
+          ${q.ajustable && dispoOk.ok && !verrouille ? `
+            <span class="g-qte">
+              <button type="button" data-qte="-1" aria-label="Retirer un">−</button>
+              <b>${quantite}</b>
+              <button type="button" data-qte="1" aria-label="Ajouter un">+</button>
+            </span>` : ''}
+          ${dispoOk.ok ? `
+            <button type="button" class="g-choix ${choisi ? 'is-on' : ''}" data-choisir="${sv.id}" ${verrouille ? 'disabled' : ''}>
+              ${choisi
+                ? `${ic('<path d="M20 6 9 17l-5-5"/>')} ${verrouille ? 'Réservé' : 'Choisi'}`
+                : 'Ajouter'}
+            </button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function panierHTML() {
+    const cmds = commandesReservation(r.id).filter(c => c.statut !== 'refuse');
+    if (!cmds.length) return '';
+    const enAttente = cmds.filter(c => c.statut === 'demande').length;
+    return `<div class="g-panier">
+      <div class="g-panier__l"><span>${cmds.length} extra${cmds.length > 1 ? 's' : ''} sélectionné${cmds.length > 1 ? 's' : ''}</span>
+        <b>${formatMontant(totalCommandes(r.id))}</b></div>
+      <p>${enAttente
+        ? `Votre hôte confirme ${enAttente > 1 ? 'ces demandes' : 'cette demande'} avant votre arrivée. Rien n'est encore facturé.`
+        : 'Tout est confirmé par votre hôte.'}</p>
+    </div>`;
+  }
+
+  function rafraichirServices() {
+    const zone = document.getElementById('g-services');
+    if (!zone) return;
+    zone.innerHTML = servicesHTML(servicesPageSejour(l.id));
+    document.getElementById('g-panier').innerHTML = panierHTML();
+  }
 
   /* Deux blocs n'ont pas d'en-tête : l'accueil vit dans le hero, et le
      bouton de contact se suffit à lui-même. */
@@ -215,6 +278,70 @@
 
     ${PAGE_SEJOUR.signature ? `<p class="g-signature">${vars(PAGE_SEJOUR.signature)}</p>` : ''}
     <p class="g-foot">Séjour géré avec <a href="index.html">Oyvia</a> · Merci de votre visite ✦</p>`;
+
+  /* ---------- Choix des extras ----------
+
+     Un seul écouteur posé sur la zone, et non un par bouton : la liste
+     se redessine à chaque clic, et des écouteurs attachés aux anciens
+     boutons disparaîtraient avec eux. */
+  (function extras() {
+    const zone = document.getElementById('g-services');
+    if (!zone) return;
+
+    // Quantité en attente, avant validation : tant que le voyageur n'a
+    // pas cliqué « Ajouter », rien ne part côté hôte.
+    const brouillon = {};
+
+    zone.addEventListener('click', e => {
+      const carte = e.target.closest('[data-sv]');
+      if (!carte) return;
+      const sv = getService(carte.dataset.sv);
+      if (!sv) return;
+
+      const pas = e.target.closest('[data-qte]');
+      if (pas) {
+        const q = quantiteService(sv, r);
+        const cmd = commandeReservationService(r.id, sv.id);
+        const actuelle = cmd ? cmd.quantite : (brouillon[sv.id] || q.quantite);
+        const neuve = Math.max(1, actuelle + Number(pas.dataset.qte));
+        if (cmd) commanderService(r.id, sv.id, neuve);
+        else brouillon[sv.id] = neuve;
+        rafraichirServices();
+        return;
+      }
+
+      const choisir = e.target.closest('[data-choisir]');
+      if (!choisir) return;
+      const cmd = commandeReservationService(r.id, sv.id);
+      if (cmd) {
+        if (retirerCommandeService(r.id, sv.id)) {
+          delete brouillon[sv.id];
+          toastGuest(`${sv.nom} retiré`);
+        } else {
+          toastGuest('Votre hôte a déjà confirmé cet extra — écrivez-lui pour l’annuler', false);
+        }
+      } else {
+        const q = quantiteService(sv, r);
+        commanderService(r.id, sv.id, brouillon[sv.id] || q.quantite);
+        toastGuest(`${sv.nom} demandé à votre hôte`);
+      }
+      rafraichirServices();
+    });
+  })();
+
+  /* Le même toast que la fiche de police, sorti de son module pour être
+     partagé : deux implémentations auraient fini par ne plus se
+     ressembler. */
+  function toastGuest(msg, ok = true) {
+    let zone = document.querySelector('.toast-zone');
+    if (!zone) { zone = document.createElement('div'); zone.className = 'toast-zone'; document.body.appendChild(zone); }
+    const t = document.createElement('div');
+    t.className = 'toast';
+    const svgIc = ok ? '<path d="M20 6 9 17l-5-5"/>' : '<path d="M18 6 6 18M6 6l12 12"/>';
+    t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${svgIc}</svg> ${msg}`;
+    zone.appendChild(t);
+    setTimeout(() => t.remove(), 2600);
+  }
 
   /* ---------- Fiches de police (une par voyageur de la réservation) ---------- */
   (function fichesPolice() {

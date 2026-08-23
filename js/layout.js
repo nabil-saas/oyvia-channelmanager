@@ -542,6 +542,8 @@ const UI = {
       paiement: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
       // Même pictogramme que l'entrée de menu « Assistant IA »
       vivi: '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 17h4"/><path d="M2 13h2M20 13h2"/>',
+      // Extra demandé par un voyageur depuis sa page séjour
+      extra: '<path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 21V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
       // Réponse du propriétaire à une demande de gestion
       mandat: '<path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M14 4v6h6"/><path d="m8 15 2 2 4-4"/>',
     };
@@ -652,6 +654,22 @@ const UI = {
     UI.openPanel('ui-resa-panel');
     el.querySelectorAll('[data-fiche-view]').forEach(b => b.addEventListener('click', () => UI.viewFiche(r.id, parseInt(b.dataset.ficheView, 10))));
     el.querySelectorAll('[data-fiche-pdf]').forEach(b => b.addEventListener('click', () => UI.downloadFichePDF(r.id, parseInt(b.dataset.fichePdf, 10))));
+
+    /* Confirmer ou décliner un extra, sans quitter la fiche. Refuser est
+       une réponse, pas un oubli : la ligne reste visible, barrée, pour
+       que le voyageur qui relance obtienne la même réponse. */
+    const repondreExtra = (cmdId, statut, message) => {
+      const c = COMMANDES_SERVICE.find(x => x.id === cmdId);
+      if (!c) return;
+      c.statut = statut;
+      if (typeof saveOyviaState === 'function') saveOyviaState();
+      UI.openResa(r.id);
+      UI.toast(message);
+    };
+    el.querySelectorAll('[data-extra-ok]').forEach(b => b.addEventListener('click',
+      () => repondreExtra(b.dataset.extraOk, 'confirme', 'Extra confirmé au voyageur')));
+    el.querySelectorAll('[data-extra-non]').forEach(b => b.addEventListener('click',
+      () => repondreExtra(b.dataset.extraNon, 'refuse', 'Extra décliné')));
     // Accepter / refuser une demande. Le panneau est partagé : la même
     // décision est donc possible depuis le calendrier et depuis la liste.
     el.querySelectorAll('[data-demande-ok]').forEach(b => b.addEventListener('click', () => {
@@ -878,11 +896,17 @@ const UI = {
     const conv = getConversationByReservation(r.id);
     const taches = TACHES.filter(t => t.reservationId === r.id);
     const payBadge = { paye: 'badge--positive', acompte: 'badge--warning', impaye: 'badge--danger', rembourse: 'badge--neutral' }[r.paiement] || 'badge--neutral';
-    const guestRows = v ? `
-      <div class="rp-row"><span>E-mail</span><span>${v.email}</span></div>
-      <div class="rp-row"><span>Téléphone</span><span>${v.tel}</span></div>
-      <div class="rp-row"><span>Pays</span><span>${v.pays}</span></div>
-      <div class="rp-row"><span>Historique</span><span>${v.nbSejours} séjour${v.nbSejours > 1 ? 's' : ''} · ${formatMontant(v.totalDepense)}</span></div>` : '';
+    /* Chaque coordonnée n'apparaît que si elle existe. Un voyageur saisi
+       à la main n'a ni e-mail ni pays : afficher « E-mail : » suivi du
+       vide donnerait l'impression d'une donnée perdue plutôt que d'une
+       donnée jamais demandée. */
+    const ligneSiRenseigne = (lab, val) => val ? `<div class="rp-row"><span>${lab}</span><span>${val}</span></div>` : '';
+    const guestRows = v ? [
+      ligneSiRenseigne('E-mail', v.email),
+      ligneSiRenseigne('Téléphone', v.tel),
+      ligneSiRenseigne('Pays', v.pays),
+      `<div class="rp-row"><span>Historique</span><span>${v.nbSejours} séjour${v.nbSejours > 1 ? 's' : ''} · ${formatMontant(v.totalDepense)}</span></div>`,
+    ].join('') : '';
     const tacheRows = taches.length ? taches.map(t =>
       `<div class="rp-row"><span>${TACHE_LABEL[t.type]} · ${formatDate(t.date)} ${t.heure}</span><span>${getPrestataire(t.prestataireId) ? getPrestataire(t.prestataireId).nom : '—'}</span></div>`).join('')
       : '<p class="text-muted text-sm">Aucune tâche liée.</p>';
@@ -910,6 +934,43 @@ const UI = {
           <span class="badge badge--warning">En attente</span>
         </div>`;
     }).join('');
+
+    /* Extras choisis par le voyageur depuis sa page séjour.
+
+       Ils apparaissent ici et pas seulement dans un total, parce qu'une
+       demande n'est pas une vente : un transfert aéroport « demandé »
+       attend une confirmation, et c'est l'hôte qui doit voir qu'elle
+       manque. D'où le statut sur chaque ligne, et l'action juste à côté.
+
+       La section disparaît entièrement s'il n'y a rien : un intertitre
+       « Extras » suivi du vide laisserait croire à une panne. */
+    const cmds = typeof commandesReservation === 'function' ? commandesReservation(r.id) : [];
+    const extrasRows = cmds.map(c => {
+      const sv = getService(c.serviceId);
+      const st = STATUTS_COMMANDE[c.statut] || STATUTS_COMMANDE.demande;
+      const q = sv ? quantiteService(sv, r) : { detail: '' };
+      const detail = c.quantite > 1 && !q.detail ? `${c.quantite} × ${formatMontant(sv.prix)}` : q.detail;
+      return `<div class="rp-extra">
+        <div class="rp-extra__txt">
+          <b>${sv ? sv.nom : 'Service retiré'}</b>
+          <small>${detail ? detail + ' · ' : ''}demandé le ${formatDate(c.commandeLe)}</small>
+        </div>
+        <span class="rp-extra__prix">${sv && sv.prix ? formatMontant(montantCommande(c)) : 'Offert'}</span>
+        <span class="badge ${st.badge}">${st.label}</span>
+        ${c.statut === 'demande'
+          ? `<button type="button" class="icon-btn" title="Confirmer au voyageur" aria-label="Confirmer" data-extra-ok="${c.id}">${UI._ic('<path d="M20 6 9 17l-5-5"/>')}</button>
+             <button type="button" class="icon-btn" title="Décliner" aria-label="Décliner" data-extra-non="${c.id}">${UI._ic('<path d="M18 6 6 18M6 6l12 12"/>')}</button>`
+          : ''}
+      </div>`;
+    }).join('');
+    const enAttenteExtras = cmds.filter(c => c.statut === 'demande').length;
+    const extrasSection = cmds.length ? `
+      <div class="rp-section"><p class="eyebrow mb-2">Extras demandés (${cmds.length})</p>
+        ${extrasRows}
+        <div class="rp-row rp-row--total"><span>${enAttenteExtras
+          ? `${enAttenteExtras} en attente de votre confirmation`
+          : 'Tout est confirmé'}</span><span><b>${formatMontant(totalCommandes(r.id))}</b></span></div>
+      </div>` : '';
 
     // Lien de la page séjour : l'hôte doit pouvoir le prévisualiser et le
     // renvoyer à la main, sans attendre l'automatisation J-1.
@@ -968,6 +1029,7 @@ const UI = {
           <div class="rp-row"><span>Montant total</span><span class="fw-semibold">${formatMontant(r.montant)}</span></div>
           <div class="rp-row"><span>Statut</span><span><span class="badge ${payBadge}">${PAIEMENT_LABEL[r.paiement]}</span></span></div></div>
         <div class="rp-section"><p class="eyebrow mb-2">Voyageur</p>${guestRows}</div>
+        ${extrasSection}
         <div class="rp-section"><p class="eyebrow mb-2">Fiches de police (${ficheDone}/${totalVoy})</p>${ficheRows}</div>
         <div class="rp-section"><p class="eyebrow mb-2">Tâches liées</p>${tacheRows}</div>
         <div class="rp-section"><p class="eyebrow mb-2">Page séjour du voyageur</p>${lienRows}</div>
