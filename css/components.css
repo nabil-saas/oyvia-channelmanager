@@ -203,6 +203,12 @@
 
 .thumb { border-radius: var(--r-md); display: grid; place-items: center; color: #fff; font-weight: var(--fw-bold); overflow: hidden; flex-shrink: 0; position: relative; background-size: cover; background-position: center; }
 
+/* Vignette d'un logement : la photo recouvre la couleur et les initiales
+   qui la précèdent dans le flux. Rien à masquer, rien à basculer —
+   l'image absente (fichier manquant, réseau coupé) laisse simplement
+   apparaître ce qui était dessous. */
+.lg-vign > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
 /* ------------------------------------------------------------
    Modale
    ------------------------------------------------------------ */

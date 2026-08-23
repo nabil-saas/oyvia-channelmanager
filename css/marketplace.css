@@ -1,0 +1,215 @@
+/* ============================================================
+   OYVIA — Marketplace des mandats
+
+   Deux écrans du channel manager : la liste des biens à prendre en
+   gestion, et le suivi des demandes envoyées. Le vocabulaire de
+   l'application est réutilisé tel quel (card, badge, table, panel) ;
+   on ne définit ici que ce qui lui manque — la carte d'annonce, les
+   coordonnées masquées et le pipeline de prospection.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Filtres et compteur, communs aux deux écrans
+   ------------------------------------------------------------ */
+.mp-filtres { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+.mp-filtres .input, .mp-filtres .select { height: 40px; width: auto; min-width: 180px; }
+.mp-filtres .input[type="search"] { min-width: 260px; }
+.mp-compteur { font-size: var(--fs-sm); color: var(--c-text-muted); margin-left: auto; }
+
+.mp-vide { text-align: center; padding: var(--sp-10) var(--sp-6); color: var(--c-text-soft); }
+.mp-vide h4 { font-size: var(--fs-lg); color: var(--c-text); margin-bottom: var(--sp-2); }
+
+/* ------------------------------------------------------------
+   Tableau des biens
+
+   Les vignettes ont été abandonnées : une conciergerie qui prospecte
+   compare des lignes — ville, quartier, type — et cherche ce qui la
+   concerne. Les cartes obligeaient à balayer l'écran pour la même
+   information.
+   ------------------------------------------------------------ */
+.mp-type {
+  display: inline-block; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
+  text-transform: uppercase; letter-spacing: var(--tracking-wide);
+  background: var(--bg-ink); color: #fff;
+  padding: 3px var(--sp-3); border-radius: var(--r-sm);
+}
+.mp-neuf {
+  display: inline-block; margin-left: var(--sp-2);
+  font-size: 10px; font-weight: var(--fw-bold); text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  background: var(--c-accent-soft); color: var(--c-accent-ink);
+  padding: 2px var(--sp-2); border-radius: var(--r-full);
+}
+/* Un bien pourvu reste dans la liste : voir qu'un secteur bouge vaut
+   mieux qu'une liste artificiellement courte. Il s'efface, sans plus. */
+.mp-ligne-prise td { opacity: .55; }
+.mp-suivi { display: inline-block; }
+
+/* ------------------------------------------------------------
+   Rapport de candidature
+   ------------------------------------------------------------ */
+.mp-rapport { border: 1px solid var(--c-border); border-radius: var(--r-xl); padding: var(--sp-5); }
+.mp-rapport__tete { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+.mp-rapport__tete h4 { font-size: var(--fs-lg); font-weight: var(--fw-bold); }
+.mp-rapport__tete p { font-size: var(--fs-sm); color: var(--c-text-muted); margin-top: 2px; }
+.mp-rapport__chiffres {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-3);
+  margin-top: var(--sp-4); padding: var(--sp-4) 0;
+  border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border);
+}
+.mp-rapport__chiffres span { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.mp-rapport__chiffres b { display: block; font-size: var(--fs-xl); font-weight: var(--fw-bold); line-height: 1.2; }
+.mp-rapport__chiffres small { font-size: var(--fs-xs); color: var(--c-text-muted); }
+.mp-rapport__types tr.is-pertinent { background: var(--c-accent-soft); }
+.mp-rapport__note { font-size: var(--fs-sm); color: var(--c-text-soft); margin-top: var(--sp-4); }
+.mp-rapport__note--alerte { color: var(--c-warning-ink); }
+
+/* ------------------------------------------------------------
+   Modale de demande de gestion
+   ------------------------------------------------------------ */
+.mp-recap {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--sp-3);
+  padding: var(--sp-4); background: var(--c-surface-alt); border-radius: var(--r-lg);
+}
+.mp-recap span { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.mp-recap b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+
+.mp-note {
+  font-size: var(--fs-sm); color: var(--c-text-soft); font-style: italic;
+  line-height: var(--lh-base); margin-top: var(--sp-3);
+  border-left: 3px solid var(--c-border-strong); padding-left: var(--sp-4);
+}
+
+/* ------------------------------------------------------------
+   Mes prospects
+   ------------------------------------------------------------ */
+.mp-pipeline { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.mp-etape {
+  flex: 1 1 140px; display: flex; flex-direction: column; gap: 2px;
+  padding: var(--sp-4); text-align: left;
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl);
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+.mp-etape:hover { border-color: var(--c-border-strong); }
+.mp-etape.is-active { border-color: var(--c-accent); background: var(--c-accent-soft); }
+.mp-etape--info { opacity: .7; cursor: default; }
+.mp-etape__n { font-size: var(--fs-2xl); font-weight: var(--fw-bold); line-height: 1; }
+.mp-etape__label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-wider); color: var(--c-text-muted); }
+
+.mp-clic { cursor: pointer; }
+
+/* Réponse du propriétaire, annoncée en haut du suivi et une seule fois.
+   Elle n'apparaît que tant que la décision n'a pas été lue : la répéter
+   à chaque ouverture ferait d'une nouvelle un décor. */
+.mp-reponse { padding: var(--sp-4); border-radius: var(--r-lg); margin-bottom: var(--sp-4); }
+.mp-reponse b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.mp-reponse p { font-size: var(--fs-sm); margin-top: 2px; }
+.mp-reponse--oui { background: var(--c-positive-soft); color: var(--c-positive-ink); }
+.mp-reponse--non { background: var(--c-surface-alt);   color: var(--c-text-soft); }
+
+/* Une demande sans nouvelle depuis une semaine : le signal est discret
+   mais visible en balayant la colonne. */
+.mp-alerte {
+  display: inline-block; margin-left: var(--sp-2);
+  font-size: 10px; font-weight: var(--fw-bold); text-transform: uppercase;
+  letter-spacing: var(--tracking-wider); color: var(--c-warning-ink);
+  background: var(--c-warning-soft); padding: 2px var(--sp-2); border-radius: var(--r-full);
+}
+
+/* Fil de suivi du panneau */
+.mp-fil { position: relative; padding-left: var(--sp-6); }
+.mp-fil::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: var(--c-border); }
+.mp-fil__pt { position: relative; padding-bottom: var(--sp-4); }
+.mp-fil__pt:last-child { padding-bottom: 0; }
+.mp-fil__pt::before {
+  content: ''; position: absolute; left: calc(-1 * var(--sp-6) + 1px); top: 5px;
+  width: 10px; height: 10px; border-radius: var(--r-full);
+  background: var(--c-surface); border: 2px solid var(--c-border-strong);
+}
+.mp-fil__pt.is-fort::before { background: var(--c-accent); border-color: var(--c-accent); }
+.mp-fil__date { font-size: var(--fs-xs); color: var(--c-text-muted); }
+.mp-fil__txt { font-size: var(--fs-sm); }
+
+@media (max-width: 900px) {
+  .mp-grille { grid-template-columns: minmax(0, 1fr); }
+  .mp-filtres .input[type="search"] { min-width: 0; width: 100%; }
+}
+
+/* ============================================================
+   Marketplace vue du back-office
+
+   Ces deux écrans (logements propriétaires, demandes de gestion) vivent
+   maintenant DANS le back-office : ils héritent du menu, de la barre et
+   des cartes. Ne restent ici que les objets qu'eux seuls emploient —
+   le classement, la jauge de compatibilité, le rang.
+   ============================================================ */
+
+/* En-tête d'un groupe de candidatures : le bien, puis ses postulants. */
+.mg-tete { display: flex; align-items: flex-start; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4); }
+.mg-tete__titre { font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); }
+
+/* Retenir une candidature. Un seul bouton par ligne : la coche.
+
+   Au repos elle reste discrète — un tableau de dix lignes constellé de
+   pastilles vertes ne se lit plus. La couleur n'apparaît qu'au survol,
+   et reste sur celle qui porte le mandat. */
+.mg-act {
+  width: 32px; height: 32px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: var(--r-md); border: 1px solid var(--c-border);
+  background: var(--c-surface); color: var(--c-text-muted); cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.mg-act svg { width: 16px; height: 16px; }
+.mg-act--oui:hover { background: var(--c-positive-soft); border-color: var(--c-positive); color: var(--c-positive-ink); }
+
+/* Mandat attribué : la coche pleine remplace la colonne « statut »
+   qu'elle rendait redondante. Elle reste cliquable — c'est le seul
+   chemin de retour. */
+.mg-act--oui.is-actif { background: var(--c-positive); border-color: var(--c-positive); color: #fff; }
+.mg-act--oui.is-actif:hover { background: var(--c-positive-ink); border-color: var(--c-positive-ink); color: #fff; }
+
+/* Le logement examiné qui n'a rien donné : l'écran doit le dire en
+   toutes lettres, sinon la liste ressemble à un travail terminé. */
+.mg-rien {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  margin-top: var(--sp-4); padding: var(--sp-4);
+  background: var(--c-warning-soft); color: var(--c-warning-ink);
+  border-radius: var(--r-lg); font-size: var(--fs-sm);
+}
+.mg-rien svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+
+/* Rang dans le classement. Le premier se détache : c'est la
+   candidature dont on parlera au propriétaire. */
+.mpa-rang {
+  width: 28px; height: 28px; flex-shrink: 0; border-radius: var(--r-full);
+  background: var(--c-surface-alt); color: var(--c-text-soft);
+  display: grid; place-items: center; font-size: var(--fs-sm); font-weight: var(--fw-bold);
+}
+.mpa-rang.is-premier { background: var(--c-accent); color: #fff; }
+
+.mpa-score { display: flex; align-items: center; gap: var(--sp-4); margin: var(--sp-4) 0; }
+.mpa-score__chiffre b { font-size: var(--fs-2xl); font-weight: var(--fw-bold); }
+.mpa-score__chiffre span { font-size: var(--fs-sm); color: var(--c-text-muted); }
+
+/* La jauge répète le score sous forme visuelle : on compare deux
+   candidatures d'un coup d'œil, sans lire deux nombres. */
+.mpa-jauge { display: block; height: 8px; border-radius: var(--r-full); background: var(--c-surface-alt); overflow: hidden; }
+.mpa-jauge i { display: block; height: 100%; background: var(--c-accent); }
+.mpa-jauge--fort i { background: var(--c-positive); }
+.mpa-jauge--moyen i { background: var(--amber-500); }
+.mpa-jauge--faible i { background: var(--c-border-strong); }
+
+.mpa-criteres td { padding: var(--sp-2) 0; }
+.mpa-criteres tr:last-child td { border-bottom: 0; }
+
+/* Candidature résumée dans la fiche d'un bien */
+.mpa-cand { padding: var(--sp-3) 0; border-bottom: 1px solid var(--c-border); }
+.mpa-cand:last-child { border-bottom: 0; }
+.mpa-cand__tete { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.mpa-cand__score { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-2); }
+.mpa-cand__score .mpa-jauge { flex: 1; }
+
+@media (max-width: 900px) {
+  .mg-tete { flex-direction: column; align-items: flex-start; gap: var(--sp-2); }
+}
