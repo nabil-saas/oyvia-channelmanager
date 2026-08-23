@@ -187,6 +187,17 @@
 .tabs button:hover { color: var(--c-text); }
 .tabs button.is-active { color: var(--c-accent); border-bottom-color: var(--c-accent); }
 
+/* Second niveau d'onglets. Il doit se lire comme SUBORDONNÉ au premier,
+   pas comme son égal : sans hiérarchie visible, deux barres empilées
+   donnent six onglets de même rang et on ne sait plus lequel commande
+   l'autre. D'où le texte plus petit, le trait absent et la pastille
+   pleine à la place du soulignement. */
+.tabs--sous { border-bottom: 0; gap: var(--sp-1); margin-top: var(--sp-3); }
+.tabs--sous button { font-size: var(--fs-sm); padding: var(--sp-2) var(--sp-3); border-bottom: 0; margin-bottom: 0;
+  border-radius: var(--r-full); }
+.tabs--sous button:hover { background: var(--bg-subtle); }
+.tabs--sous button.is-active { background: var(--c-accent-soft); color: var(--c-accent-ink); }
+
 /* Panneau d'onglet générique (affiché/masqué via .is-active) */
 .tabpane { display: none; padding-top: var(--sp-5); }
 .tabpane.is-active { display: block; }

@@ -589,6 +589,19 @@
 .lg-channelrow { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); margin-bottom: var(--sp-3); }
 .lg-channelrow__ic { width: 40px; height: 40px; border-radius: var(--r-md); display: grid; place-items: center; color: #fff; font-weight: var(--fw-bold); flex-shrink: 0; }
 .lg-equip { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+/* Coût des interventions d'un bien. Chaque champ dit ce dont il hérite
+   tant qu'il est vide, et ce qu'il remplace dès qu'il est rempli : sans
+   cette mention, un tarif posé six mois plus tôt devient un chiffre sans
+   raison, qu'on n'ose plus toucher. */
+.lg-couts { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--sp-3); }
+.lg-cout { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2) var(--sp-3); align-items: center;
+  padding: var(--sp-3) var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); cursor: pointer; }
+.lg-cout__t { font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.lg-cout .input { width: 84px; text-align: right; }
+.lg-cout__h { grid-column: 1 / -1; font-size: var(--fs-xs); color: var(--c-text-muted); }
+.lg-cout.is-perso { border-color: var(--c-positive); background: var(--c-positive-soft); }
+.lg-cout.is-perso .lg-cout__h { color: var(--c-positive-ink); }
 .lg-equip span { background: var(--bg-subtle); border: 1px solid var(--c-border); border-radius: var(--r-full); padding: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); }
 
 /* --- Carte : structure et alertes --- */
@@ -1108,6 +1121,81 @@
 .cp-ownercard__rate { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); font-weight: var(--fw-medium); }
 .cp-ownercard__rate input { width: 64px; text-align: right; }
 .cp-months { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-2); }
+
+/* ---------- Barème des interventions ----------
+
+   Ce bloc n'est pas un prestataire de plus. Il en avait pourtant toute
+   l'anatomie — carte blanche, chevron à gauche, nom en gras, sous-titre
+   gris — et se lisait donc comme la première ligne de la liste.
+
+   On change donc de VOCABULAIRE, pas seulement de couleur : fond sourd
+   au lieu de blanc, bordure discontinue au lieu de pleine, aucune ombre
+   (une carte flotte, un réglage est posé), une pastille d'étiquette de
+   prix à gauche, le mot « Réglage » au-dessus du titre, et le chevron
+   renvoyé à droite avec son verbe. Un objet qu'on règle, pas un objet
+   qu'on consulte. */
+.cp-bareme { margin-bottom: var(--sp-6); background: var(--bg-subtle);
+  border: 1px dashed var(--c-border-strong); border-radius: var(--r-xl); }
+.cp-bareme[open] { background: var(--c-surface); border-style: solid; }
+.cp-bareme__head { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-5); cursor: pointer; list-style: none; }
+.cp-bareme__head::-webkit-details-marker { display: none; }
+.cp-bareme__head b { display: block; font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+.cp-bareme__head small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 2px; }
+.cp-bareme__eyebrow { display: block; font-size: 10px; font-weight: var(--fw-bold);
+  text-transform: uppercase; letter-spacing: var(--tracking-wider);
+  color: var(--c-text-muted); margin-bottom: 2px; }
+
+/* Étiquette de prix : dit le sujet du réglage avant qu'on lise le titre. */
+.cp-bareme__ic { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center;
+  border-radius: var(--r-md); background: var(--c-surface); border: 1px solid var(--c-border);
+  color: var(--c-text-soft); }
+.cp-bareme__ic svg { width: 19px; height: 19px; }
+
+.cp-bareme__action { display: inline-flex; align-items: center; gap: var(--sp-2); flex-shrink: 0;
+  font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--c-text-soft); }
+.cp-bareme__chevron { display: grid; place-items: center; transition: transform var(--t-fast); }
+.cp-bareme__chevron svg { width: 18px; height: 18px; }
+.cp-bareme[open] .cp-bareme__chevron { transform: rotate(180deg); }
+.cp-bareme[open] .cp-bareme__mot { visibility: hidden; }
+.cp-bareme__head:hover .cp-bareme__action { color: var(--c-text); }
+
+.cp-bareme__corps { padding: 0 var(--sp-5) var(--sp-5); border-top: 1px solid var(--c-border); padding-top: var(--sp-5); }
+.cp-bareme__table td, .cp-bareme__table th { vertical-align: middle; }
+/* La ligne des tarifs par défaut se détache : c'est elle qui s'applique
+   partout où les autres cases restent vides. */
+.cp-bareme__defaut td { background: var(--c-surface-alt); }
+/* Un type de bien sans aucun logement reste modifiable — le parc change —
+   mais s'efface, pour ne pas encombrer la lecture. */
+.cp-bareme__vide { opacity: .55; }
+.cp-bareme__champ { width: 84px; text-align: right; margin-left: auto; }
+
+/* La liste commence ici, et le dit : sans ce titre, le barème et la
+   première carte se suivaient comme deux éléments d'une même série. */
+.cp-presta-titre { margin-bottom: var(--sp-3); }
+
+/* Exceptions posées sur un logement : on les liste ici sans les rendre
+   modifiables. Le bon endroit pour les changer est la fiche du bien, où
+   l'on voit aussi ce qu'il demande comme interventions. */
+.cp-except { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-3); }
+.cp-except__l { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4); border: 1px solid var(--c-border); border-radius: var(--r-lg);
+  font-size: var(--fs-sm); transition: border-color var(--t-fast); }
+.cp-except__l:hover { border-color: var(--c-border-strong); }
+.cp-except__l span { color: var(--c-text-muted); font-size: var(--fs-xs); }
+
+/* D'où sort le tarif d'une ligne. Trois niveaux, trois teintes : une
+   facture dont on ne peut pas retracer le montant ne se conteste pas,
+   elle se subit. */
+.cp-origine { display: inline-flex; align-items: center; height: 20px; padding: 0 var(--sp-2);
+  border-radius: var(--r-full); font-size: 10px; font-weight: var(--fw-semibold);
+  text-transform: uppercase; letter-spacing: var(--tracking-wider); }
+.cp-origine--defaut { background: var(--ink-100); color: var(--ink-600); }
+.cp-origine--type { background: var(--c-accent-soft); color: var(--c-accent-ink); }
+.cp-origine--logement { background: var(--c-positive-soft); color: var(--c-positive-ink); }
+.cp-origine--inconnu { background: var(--c-warning-soft); color: var(--c-warning-ink); }
+
+/* Champ compact des tableaux de réglage. */
+.input--sm { height: 34px; padding: 0 var(--sp-3); font-size: var(--fs-sm); }
 .cp-month { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3); border: 1px solid var(--c-border); border-radius: var(--r-md); font-size: var(--fs-sm); cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast); background: none; text-align: left; }
 .cp-month:hover { background: var(--c-surface-alt); }
 .cp-month__ic { width: 20px; height: 20px; flex-shrink: 0; }

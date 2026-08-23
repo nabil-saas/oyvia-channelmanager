@@ -24,11 +24,18 @@
         <div class="app-pagehead">
           <div>
             <h1>Comptabilité</h1>
-            <p>Suivi financier par propriétaire : chiffre d'affaires, commission et dépenses.</p>
+            <p>Les deux versants de l'exploitation : ce qui revient aux propriétaires, ce qui est dû aux prestataires.</p>
           </div>
         </div>
 
+        <!-- Premier niveau : de quel côté de l'exploitation on se place.
+             Les trois vues propriétaire ne changent pas ; elles passent
+             simplement d'un cran en dessous, sous leur versant. -->
         <div class="tabs" id="cp-tabs">
+          <button type="button" class="is-active" data-tab="proprietaires">Propriétaires</button>
+          <button type="button" data-tab="prestataires">Prestataires</button>
+        </div>
+        <div class="tabs tabs--sous" id="cp-subtabs">
           <button type="button" class="is-active" data-tab="synthese">Synthèse comptable</button>
           <button type="button" data-tab="facturation">Facturation</button>
           <button type="button" data-tab="depenses">Dépenses</button>
@@ -109,6 +116,46 @@
               <tbody id="cp-dep-table"><!-- injecté --></tbody>
             </table>
           </div>
+        </div>
+
+        <!-- ============ PRESTATAIRES ============ -->
+        <div class="tabpane" data-pane="prestataires" id="cp-pane-prestataires">
+          <p class="text-sm text-soft mb-4">Ce que vous devez à ceux qui interviennent sur le parc. Le montant de chaque facture vient du barème ci-dessous appliqué aux interventions <b>terminées</b> du mois : une tâche planifiée n'est pas due.</p>
+
+          <!-- Le barème vit ici, à côté des factures qu'il produit :
+               c'est la réponse à « pourquoi cette facture fait 640 € ». -->
+          <details class="cp-bareme" id="cp-bareme">
+            <summary class="cp-bareme__head">
+              <span class="cp-bareme__ic" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 12 22l-9-9V4a1 1 0 0 1 1-1h9l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>
+              </span>
+              <div class="grow">
+                <span class="cp-bareme__eyebrow">Réglage</span>
+                <b>Barème des interventions</b>
+                <small id="cp-bareme-resume"><!-- injecté --></small>
+              </div>
+              <span class="cp-bareme__action">
+                <span class="cp-bareme__mot">Régler</span>
+                <span class="cp-bareme__chevron" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+                </span>
+              </span>
+            </summary>
+            <div class="cp-bareme__corps">
+              <p class="text-sm text-soft mb-4">Un tarif par défaut suffit à démarrer. Il s'affine par type de bien, et chaque logement peut porter son exception — un chalet de cinq pièces ne se nettoie pas au prix d'un studio. Le plus précis l'emporte.</p>
+              <div class="table-wrap">
+                <table class="table cp-bareme__table">
+                  <thead><tr id="cp-bareme-head"><!-- injecté --></tr></thead>
+                  <tbody id="cp-bareme-body"><!-- injecté --></tbody>
+                </table>
+              </div>
+              <p class="text-xs text-muted" style="margin-top:var(--sp-3)">Une case vide reprend le tarif par défaut de la colonne. Les exceptions propres à un logement se règlent dans sa fiche, onglet <b>Tâches récurrentes</b>.</p>
+              <div id="cp-bareme-exceptions"><!-- injecté --></div>
+            </div>
+          </details>
+
+          <p class="eyebrow cp-presta-titre" id="cp-presta-titre"><!-- injecté --></p>
+          <div id="cp-prestataires"><!-- injecté --></div>
         </div>
 
       </main>
