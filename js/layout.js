@@ -49,7 +49,7 @@ const Layout = (function () {
     { id:'avis',         label:'Avis',            title:'Avis',              href:'avis.html', badge:'avis' },
     { id:'police',       label:'Fiches de police', title:'Fiches de police', href:'police.html', badge:'police' },
     { id:'site',         label:'Site web',        title:'Site web & réservations directes', href:'site.html' },
-    { id:'services',     label:'Services additionnels', title:'Services additionnels', href:'services.html' },
+    { id:'services',     label:'Services additionnels', title:'Services additionnels', href:'services.html', badge:'extras' },
     { id:'messagerie',   label:'Messagerie',      title:'Messagerie',        href:'messagerie.html', badge:'unread' },
     { id:'automatisations', label:'Automatisations', title:'Automatisations', href:'automatisations.html' },
     { id:'sejour',       label:'Fiche séjour',    title:'Fiche séjour',      href:'sejour.html' },
@@ -145,6 +145,20 @@ const Layout = (function () {
       const r = getReservation(f.reservationId);
       return r && r.depart >= AUJOURDHUI;
     }).length,
+
+    /* Extras demandés par les voyageurs et pas encore tranchés. Même
+       principe que les fiches de police : on ne compte que ce qui appelle
+       une décision AUJOURD'HUI. Une demande dont le séjour est terminé
+       n'est plus arbitrable — la laisser dans le compte ferait un badge
+       que plus rien ne peut faire redescendre. */
+    extras: () => {
+      if (typeof COMMANDES_SERVICE === 'undefined') return 0;
+      return COMMANDES_SERVICE.filter(c => {
+        if (c.statut !== 'demande') return false;
+        const r = getReservation(c.reservationId);
+        return r && r.statut !== 'annule' && r.depart >= AUJOURDHUI;
+      }).length;
+    },
   };
   function badgeCount(id) {
     const f = BADGES[id];
