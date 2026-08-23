@@ -97,6 +97,7 @@ Layout.init('menage');
         <b>${TACHE_LABEL[t.type]} · ${l.nom} ${continuationTag}${origineTag(t)}</b>
         <small>${l.ville}${t.note ? ' · ' + t.note : ''}</small>
         ${spanBadge}
+        ${preuvesHTML(t)}
       </div>
       <div class="mn-task__prest"><select class="select" data-assign="${t.id}">${options}</select></div>
       <div class="mn-task__status"><span class="badge ${STATUT_BADGE[t.statut]} mn-statusbtn" data-status="${t.id}" title="Cliquer pour changer">${STATUT_TXT[t.statut]}</span></div>
@@ -104,6 +105,83 @@ Layout.init('menage');
         ${icon('<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6"/><path d="M10 11v6M14 11v6"/>')}
       </button>
     </div>`;
+  }
+
+  /* ---------- Preuves d'intervention ----------
+
+     Le prestataire photographie ce qu'il a fait depuis son espace ; ces
+     photos n'apparaissaient nulle part côté gestion. Une preuve que
+     personne ne regarde ne prouve rien — et c'est précisément ce qu'on
+     demande à un prestataire de fournir quand un voyageur conteste
+     l'état du logement à son arrivée.
+
+     Elles ne s'affichent que sur une tâche TERMINÉE : avant, il n'y a
+     rien à constater, et une vignette sur une tâche à faire laisserait
+     croire qu'elle est déjà passée. */
+  function preuvesHTML(t) {
+    const photos = t.photos || [];
+    if (t.statut !== 'termine' || !photos.length) return '';
+    // Quatre au plus dans la ligne : au-delà, la tâche devient une
+    // galerie et le planning cesse de se lire. Le reste se compte.
+    const visibles = photos.slice(0, 4);
+    const reste = photos.length - visibles.length;
+    return `<div class="mn-preuves">
+      ${visibles.map((src, i) => `
+        <button type="button" class="mn-preuve" data-preuve="${t.id}::${i}"
+          title="Photo ${i + 1} de l'intervention — agrandir" aria-label="Agrandir la photo ${i + 1}">
+          <img src="${src}" alt="" loading="lazy" />
+        </button>`).join('')}
+      ${reste > 0 ? `<button type="button" class="mn-preuve mn-preuve--plus" data-preuve="${t.id}::${visibles.length}">+${reste}</button>` : ''}
+      <span class="mn-preuves__l">${photos.length} photo${photos.length > 1 ? 's' : ''} du prestataire</span>
+    </div>`;
+  }
+
+  /* Agrandissement : une vignette de 40 px ne permet pas de vérifier
+     qu'un lit est fait. On ouvre donc en grand, avec les flèches pour
+     passer d'une photo à l'autre sans refermer. */
+  let visionneuse = { photos: [], index: 0 };
+  function ouvrirPreuve(taskId, index) {
+    const t = TACHES.find(x => x.id === taskId);
+    if (!t || !(t.photos || []).length) return;
+    visionneuse = { photos: t.photos, index: Math.min(index, t.photos.length - 1), tache: t };
+    let el = document.getElementById('mn-visionneuse');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'mn-visionneuse';
+      el.className = 'modal modal--lg mn-visionneuse';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-modal', 'true');
+      document.body.appendChild(el);
+      el.addEventListener('click', e => {
+        const nav = e.target.closest('[data-vis]');
+        if (!nav) return;
+        const n = visionneuse.photos.length;
+        visionneuse.index = (visionneuse.index + Number(nav.dataset.vis) + n) % n;
+        rendreVisionneuse();
+      });
+    }
+    rendreVisionneuse();
+    UI.openPanel('mn-visionneuse');
+  }
+  function rendreVisionneuse() {
+    const { photos, index, tache } = visionneuse;
+    const l = getLogement(tache.logementId);
+    const p = getPrestataire(tache.prestataireId);
+    document.getElementById('mn-visionneuse').innerHTML = `
+      <div class="modal__head">
+        <div>
+          <h3 class="modal__title">${TACHE_LABEL[tache.type] || tache.type} · ${l ? l.nom : ''}</h3>
+          <p class="text-soft text-sm">${p ? p.nom : 'Prestataire'} · ${formatDate(tache.date)} · photo ${index + 1} sur ${photos.length}</p>
+        </div>
+        <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer">
+          ${icon('<path d="M18 6 6 18M6 6l12 12"/>')}
+        </button>
+      </div>
+      <div class="modal__body mn-visionneuse__corps">
+        ${photos.length > 1 ? `<button class="mn-visionneuse__nav" data-vis="-1" aria-label="Photo précédente">${icon('<path d="m15 18-6-6 6-6"/>')}</button>` : ''}
+        <img src="${photos[index]}" alt="Photo ${index + 1} de l'intervention" />
+        ${photos.length > 1 ? `<button class="mn-visionneuse__nav mn-visionneuse__nav--d" data-vis="1" aria-label="Photo suivante">${icon('<path d="m9 18 6-6-6-6"/>')}</button>` : ''}
+      </div>`;
   }
 
   /* ---------- Interactions ---------- */
@@ -115,6 +193,12 @@ Layout.init('menage');
     }
   });
   planning.addEventListener('click', e => {
+    const pv = e.target.closest('[data-preuve]');
+    if (pv) {
+      const [taskId, idx] = pv.dataset.preuve.split('::');
+      ouvrirPreuve(taskId, parseInt(idx, 10));
+      return;
+    }
     const b = e.target.closest('[data-status]'); if (b) {
       const t = TACHES.find(x => x.id === b.dataset.status);
       t.statut = NEXT[t.statut]; render();

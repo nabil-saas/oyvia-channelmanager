@@ -255,7 +255,7 @@ Layout.init('messagerie');
         </div>
       </div>
       ${enEdition
-        ? `<textarea class="textarea msg-vivi__edit" id="msg-vivi-txt">${r.reponse.replace(/</g, '&lt;')}</textarea>`
+        ? `<textarea class="textarea msg-vivi__edit" id="msg-vivi-txt" data-ia="message">${r.reponse.replace(/</g, '&lt;')}</textarea>`
         : `<p class="msg-vivi__texte">${r.reponse}</p>`}
       <div class="msg-vivi__actions">
         ${enEdition

@@ -175,7 +175,7 @@ Layout.init('avis');
     form.className = 'av-form';
     form.innerHTML = `
       <label class="field__label" for="av-txt-${id}">Votre réponse publique sur ${avisCanal(a.canal).label}</label>
-      <textarea class="textarea" id="av-txt-${id}" rows="3"
+      <textarea class="textarea" id="av-txt-${id}" rows="3" data-ia="avis"
         placeholder="Remerciez, corrigez un point factuel, expliquez ce qui a été fait…">${esc(valeur || '')}</textarea>
       <p class="field__hint">Elle sera visible de tous les voyageurs sur ${avisCanal(a.canal).label}.</p>
       <div class="av-form__actions">
@@ -314,7 +314,7 @@ Layout.init('avis');
       </div>
       <div class="field">
         <label class="field__label" for="av-eval-txt">Commentaire</label>
-        <textarea class="textarea" id="av-eval-txt" rows="4"
+        <textarea class="textarea" id="av-eval-txt" rows="4" data-ia="evaluation"
           placeholder="Ce voyageur a-t-il respecté le logement, communiqué clairement, rendu les lieux en ordre ?">${ex ? esc(ex.texte) : ''}</textarea>
         <span class="field__hint">Visible par les autres hôtes de ${avisCanal(r.canal).label}.</span>
       </div>`;
