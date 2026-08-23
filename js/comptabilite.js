@@ -19,15 +19,67 @@ Layout.init('comptabilite');
 (function () {
   const icon = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 
-  /* ---------- Onglets ---------- */
+  /* ---------- Onglets, sur deux niveaux ----------
+
+     Le premier niveau dit de quel côté de l'exploitation on se place :
+     ce qui revient aux propriétaires, ou ce qui est dû aux prestataires.
+     Les deux ne se mélangent jamais dans un total — un reversement et
+     une facture d'intervention vont dans des sens opposés.
+
+     Le second niveau, propre au versant propriétaire, garde les trois
+     vues existantes. On ne les a pas touchées : elles descendent d'un
+     cran, c'est tout.
+
+     Le nom de la vue reste l'identifiant unique (l'ancre d'URL comprise,
+     `#facturation` et `#depenses` étant des entrées du menu). Le versant
+     s'en déduit — sans quoi il faudrait écrire `#proprietaires/depenses`
+     et casser les liens existants. */
   const tabs = document.getElementById('cp-tabs');
+  const subtabs = document.getElementById('cp-subtabs');
   const panes = [...document.querySelectorAll('.tabpane')];
+  const VUES_PROPRIETAIRE = ['synthese', 'facturation', 'depenses'];
+  let derniereVueProprio = 'synthese';
+
   function activateTab(name, parAction = false) {
-    const b = tabs.querySelector(`[data-tab="${name}"]`); if (!b) return;
-    tabs.querySelectorAll('button').forEach(x => x.classList.remove('is-active'));
-    b.classList.add('is-active');
+    // « proprietaires » n'est pas une vue : c'est un versant. On rouvre
+    // celle qu'on regardait, plutôt que de renvoyer à la synthèse.
+    if (name === 'proprietaires') name = derniereVueProprio;
+    const versant = name === 'prestataires' ? 'prestataires' : 'proprietaires';
+    if (versant === 'proprietaires') {
+      if (!VUES_PROPRIETAIRE.includes(name)) name = 'synthese';
+      derniereVueProprio = name;
+    }
+
+    tabs.querySelectorAll('button').forEach(x => x.classList.toggle('is-active', x.dataset.tab === versant));
+    subtabs.hidden = versant !== 'proprietaires';
+    subtabs.querySelectorAll('button').forEach(x => x.classList.toggle('is-active', x.dataset.tab === name));
     panes.forEach(p => p.classList.toggle('is-active', p.dataset.pane === name));
-    if (parAction) recadrer();
+
+    if (name === 'prestataires') renderPrestataires();
+
+    /* L'URL suit le versant, et le menu suit l'URL.
+
+       Les deux entrées de menu (Propriétaire, Prestataire) se
+       distinguent par l'ancre. Sans cette mise à jour, on pouvait
+       cliquer sur l'onglet Propriétaires en gardant `#prestataires`
+       dans l'adresse : le menu continuait de surligner Prestataire
+       alors qu'on lisait les comptes propriétaire.
+
+       `replaceState` et non `location.hash` : ce dernier déclencherait
+       `hashchange`, qui rappellerait `activateTab` — et l'on redessinerait
+       tout une seconde fois pour rien. Le passage d'une VUE propriétaire
+       à l'autre ne touche pas à l'URL : les trois ne sont qu'une seule
+       entrée de menu. */
+    if (parAction) {
+      const cible = versant === 'prestataires'
+        ? '#prestataires'
+        : location.pathname + location.search;
+      if (location.href !== new URL(cible, location.href).href) {
+        history.replaceState(null, '', cible);
+        if (typeof Layout !== 'undefined' && Layout.refreshNav) Layout.refreshNav();
+      }
+      recadrer();
+    }
   }
 
   /* Les trois onglets n'ont pas la même hauteur : la synthèse fait deux
@@ -48,12 +100,16 @@ Layout.init('comptabilite');
     window.scrollTo({ top: Math.max(0, cible), behavior: 'auto' });
   }
 
-  tabs.addEventListener('click', e => {
+  [tabs, subtabs].forEach(barre => barre.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     activateTab(b.dataset.tab, true);
-  });
-  // Permet d'arriver directement sur un onglet via l'URL (ex : comptabilite.html#facturation)
-  if (location.hash) activateTab(location.hash.slice(1));
+  }));
+  /* L'ouverture sur l'onglet demandé par l'URL a lieu tout en bas du
+     module, pas ici : `activateTab` dessine le versant prestataire, qui
+     s'appuie sur des constantes déclarées plus loin. Appelée trop tôt,
+     elle levait une erreur de zone morte temporelle qui interrompait le
+     reste du fichier — et emportait avec elle les trois vues
+     propriétaire, pourtant intactes. */
   /* Le menu propose Facturation et Dépenses comme entrées à part entière.
      Depuis cette page, elles ne changent que le fragment : sans écoute du
      hashchange, l'URL bougerait et l'onglet resterait figé. */
@@ -656,6 +712,274 @@ Layout.init('comptabilite');
   });
 
   /* ============================================================
+     PRESTATAIRES
+
+     Le miroir de la facturation propriétaire, dans l'autre sens : ici on
+     doit de l'argent. Même vocabulaire (des cartes qu'on déplie, un
+     bouton par mois), pour que le geste soit le même des deux côtés.
+
+     La différence tient au calcul. Une facture propriétaire se déduit
+     d'un contrat ; une facture prestataire se déduit d'un TRAVAIL FAIT,
+     ligne par ligne. On montre donc les interventions du mois, avec pour
+     chacune d'où sort son tarif — barème par défaut, barème par type de
+     bien, ou exception du logement.
+     ============================================================ */
+  const TYPES_BAREME = ['menage', 'checkin', 'linge', 'maintenance'];
+  const prestaOuverts = new Set();
+
+  /* ---------- Barème ---------- */
+  function renderBareme() {
+    const types = Object.keys(BAREME_INTERVENTIONS.parType);
+    document.getElementById('cp-bareme-head').innerHTML =
+      '<th>Type de bien</th>' + TYPES_BAREME.map(t => `<th class="num">${TACHE_LABEL[t]}</th>`).join('');
+
+    const ligneDefaut = `<tr class="cp-bareme__defaut">
+      <td><b>Par défaut</b><div class="text-xs text-muted">S'applique à tout bien sans tarif propre</div></td>
+      ${TYPES_BAREME.map(t => `<td class="num">
+        <input class="input input--sm cp-bareme__champ" type="number" min="0" step="1"
+          data-bareme-defaut="${t}" value="${BAREME_INTERVENTIONS.defaut[t]}" aria-label="Tarif ${TACHE_LABEL[t]} par défaut" />
+      </td>`).join('')}
+    </tr>`;
+
+    const lignes = types.map(ty => {
+      const nb = LOGEMENTS.filter(l => l.type === ty).length;
+      return `<tr class="${nb ? '' : 'cp-bareme__vide'}">
+        <td>${labelTypeLogement(ty)}
+          <div class="text-xs text-muted">${nb ? `${nb} bien${nb > 1 ? 's' : ''}` : 'aucun bien de ce type'}</div></td>
+        ${TYPES_BAREME.map(t => {
+          const v = BAREME_INTERVENTIONS.parType[ty][t];
+          return `<td class="num">
+            <input class="input input--sm cp-bareme__champ" type="number" min="0" step="1"
+              data-bareme-type="${ty}" data-bareme-tache="${t}"
+              placeholder="${BAREME_INTERVENTIONS.defaut[t]}" value="${v == null ? '' : v}"
+              aria-label="Tarif ${TACHE_LABEL[t]} pour ${labelTypeLogement(ty)}" />
+          </td>`;
+        }).join('')}
+      </tr>`;
+    }).join('');
+
+    document.getElementById('cp-bareme-body').innerHTML = ligneDefaut + lignes;
+
+    // Les exceptions ne se saisissent pas ici, mais elles doivent se VOIR
+    // ici : un tarif posé sur un logement il y a six mois explique un
+    // écart de facture qu'on chercherait sinon dans le barème.
+    const exceptions = LOGEMENTS.filter(l => l.bareme && Object.keys(l.bareme).length);
+    document.getElementById('cp-bareme-exceptions').innerHTML = exceptions.length
+      ? `<p class="eyebrow" style="margin-top:var(--sp-5)">Exceptions par logement (${exceptions.length})</p>
+         <div class="cp-except">${exceptions.map(l => `
+           <a class="cp-except__l" href="logements.html?logement=${l.id}">
+             <b>${l.nom}</b>
+             <span>${Object.entries(l.bareme).map(([t, v]) => `${TACHE_LABEL[t] || t} ${formatMontant(v)}`).join(' · ')}</span>
+           </a>`).join('')}</div>`
+      : '';
+
+    const nbExc = exceptions.length;
+    document.getElementById('cp-bareme-resume').textContent =
+      `Ménage ${formatMontant(BAREME_INTERVENTIONS.defaut.menage)} par défaut · ${types.filter(t => Object.keys(BAREME_INTERVENTIONS.parType[t]).length).length} type${'s'} de bien affinés`
+      + (nbExc ? ` · ${nbExc} exception${nbExc > 1 ? 's' : ''} par logement` : '');
+  }
+
+  document.getElementById('cp-bareme').addEventListener('change', e => {
+    const parDefaut = e.target.closest('[data-bareme-defaut]');
+    if (parDefaut) {
+      const t = parDefaut.dataset.baremeDefaut;
+      BAREME_INTERVENTIONS.defaut[t] = Math.max(0, Math.round(parseFloat(parDefaut.value) || 0));
+      majBareme(`Tarif ${TACHE_LABEL[t]} par défaut : ${formatMontant(BAREME_INTERVENTIONS.defaut[t])}`);
+      return;
+    }
+    const parType = e.target.closest('[data-bareme-type]');
+    if (parType) {
+      const ty = parType.dataset.baremeType, t = parType.dataset.baremeTache;
+      const brut = parType.value.trim();
+      // Champ vidé = retour au défaut. On SUPPRIME la clé au lieu d'y
+      // écrire la valeur par défaut : sinon le tarif se fige et ne suit
+      // plus les changements du barème général.
+      if (brut === '') delete BAREME_INTERVENTIONS.parType[ty][t];
+      else BAREME_INTERVENTIONS.parType[ty][t] = Math.max(0, Math.round(parseFloat(brut) || 0));
+      majBareme(`${labelTypeLogement(ty)} · ${TACHE_LABEL[t]} : ${brut === '' ? 'retour au tarif par défaut' : formatMontant(BAREME_INTERVENTIONS.parType[ty][t])}`);
+    }
+  });
+
+  function majBareme(message) {
+    saveOyviaState();
+    renderBareme();
+    renderPrestataires();
+    UI.toast(message);
+  }
+
+  /* ---------- Cartes prestataires ---------- */
+  function renderPrestataires() {
+    renderBareme();
+    const moisCourant = MOIS_COMPTABLES[MOIS_COMPTABLES.length - 1];
+    document.getElementById('cp-presta-titre').textContent =
+      `${PRESTATAIRES.length} prestataire${PRESTATAIRES.length > 1 ? 's' : ''}`;
+
+    document.getElementById('cp-prestataires').innerHTML = PRESTATAIRES.map(p => {
+      const factures = getFacturesByPrestataire(p.id);
+      const enAttente = factures.filter(f => f.statut === 'attente').length;
+      const mois = factures.map(f => {
+        const done = f.statut === 'generee';
+        const c = calculFacturePrestataire(p.id, f.mois);
+        const ic = done
+          ? icon('<path d="M20 6 9 17l-5-5"/>').replace('<svg ', '<svg class="cp-month__ic" ')
+          : icon('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>').replace('<svg ', '<svg class="cp-month__ic" ');
+        return `<button type="button" class="cp-month ${done ? 'cp-month--generee' : 'cp-month--attente'}"
+          data-fp="${f.id}" title="${done ? 'Facture générée — cliquer pour télécharger' : 'En attente — cliquer pour générer'}">
+          ${ic}
+          <span><b>${f.mois.split(' ')[0]}</b><small>${c.nb ? `${c.nb} · ${formatMontant(c.total)}` : 'aucune'}</small></span>
+        </button>`;
+      }).join('');
+
+      const c = calculFacturePrestataire(p.id, moisCourant);
+      const detail = c.nb ? `
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Date</th><th>Logement</th><th>Intervention</th><th>Tarif issu de</th><th class="num">Montant</th></tr></thead>
+            <tbody>
+              ${c.lignes.map(l => `<tr>
+                <td class="text-sm">${formatDate(l.tache.date)}</td>
+                <td>${l.logement ? `<b>${l.logement.nom}</b><div class="text-xs text-muted">${labelTypeLogement(l.logement.type)}</div>` : 'Logement retiré'}</td>
+                <td>${TACHE_LABEL[l.tache.type] || l.tache.type}</td>
+                <td><span class="cp-origine cp-origine--${l.origine}">${ORIGINE_COUT[l.origine].court}</span></td>
+                <td class="num">${formatMontant(l.montant)}</td>
+              </tr>`).join('')}
+            </tbody>
+            <tfoot><tr>
+              <td colspan="4"><b>Total ${moisCourant.toLowerCase()}</b></td>
+              <td class="num"><b>${formatMontant(c.total)}</b></td>
+            </tr></tfoot>
+          </table>
+        </div>`
+        : `<p class="text-sm text-muted">Aucune intervention terminée en ${moisCourant.toLowerCase()}. Les tâches planifiées ou en cours n'entrent dans la facture qu'une fois faites.</p>`;
+
+      return `<details class="cp-ownercard" ${prestaOuverts.has(p.id) ? 'open' : ''} data-presta="${p.id}">
+        <summary class="cp-ownercard__head">
+          <span class="cp-ownercard__chevron" aria-hidden="true">${icon('<path d="m9 18 6-6-6-6"/>')}</span>
+          <div class="cp-ownercard__id">
+            <b>${p.nom}</b>
+            <small>${p.role} · ${p.zone} · ${p.tel}</small>
+          </div>
+          <div class="cp-ownercard__resume">
+            ${enAttente ? `<span class="badge badge--warning">${enAttente} facture${enAttente > 1 ? 's' : ''} en attente</span>` : ''}
+            <span class="badge badge--neutral">${c.nb} intervention${c.nb > 1 ? 's' : ''}</span>
+            <span class="cp-ownercard__montant">${formatMontant(c.total)} <small>ce mois</small></span>
+          </div>
+        </summary>
+
+        <p class="eyebrow mb-3">Interventions facturables · ${moisCourant}</p>
+        ${detail}
+
+        <p class="eyebrow" style="margin:var(--sp-5) 0 var(--sp-3)">Factures mensuelles</p>
+        <div class="cp-months">${mois}</div>
+      </details>`;
+    }).join('');
+  }
+
+  document.getElementById('cp-prestataires').addEventListener('toggle', e => {
+    const d = e.target.closest('details[data-presta]'); if (!d) return;
+    d.open ? prestaOuverts.add(d.dataset.presta) : prestaOuverts.delete(d.dataset.presta);
+  }, true);
+
+  document.getElementById('cp-prestataires').addEventListener('click', e => {
+    const btn = e.target.closest('[data-fp]'); if (!btn) return;
+    const f = FACTURES_PRESTATAIRE.find(x => x.id === btn.dataset.fp);
+    const p = getPrestataire(f.prestataireId);
+    const c = calculFacturePrestataire(p.id, f.mois);
+
+    if (!c.nb) { UI.toast(`Aucune intervention terminée en ${f.mois.toLowerCase()} pour ${p.nom}`, false); return; }
+
+    if (f.statut === 'attente') {
+      UI.confirm({
+        title: `Générer la facture de ${f.mois.toLowerCase()} ?`,
+        message: `${p.nom} · ${c.nb} intervention${c.nb > 1 ? 's' : ''} terminée${c.nb > 1 ? 's' : ''} · ${formatMontant(c.total)}.\n\n`
+          + Object.entries(c.parType).map(([t, e2]) => `${e2.nb} × ${TACHE_LABEL[t] || t} — ${formatMontant(e2.total)}`).join('\n'),
+        confirmText: 'Générer la facture',
+        onConfirm() {
+          f.statut = 'generee';
+          saveOyviaState();
+          UI.closeAll();
+          renderPrestataires();
+          telechargerFacturePrestataire(f);
+          UI.toast('Facture générée et téléchargée (PDF)');
+        },
+      });
+      return;
+    }
+    telechargerFacturePrestataire(f);
+    UI.toast('PDF téléchargé');
+  });
+
+  /* Le PDF reprend le détail ligne à ligne. Un total sans ses lignes
+     n'est pas vérifiable par le prestataire, qui est justement celui qui
+     sait ce qu'il a fait. */
+  function telechargerFacturePrestataire(f) {
+    const p = getPrestataire(f.prestataireId);
+    const c = calculFacturePrestataire(p.id, f.mois);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let y = 20;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(20, 20, 20);
+    doc.text('Oyvia', 14, y);
+    doc.setFontSize(11); doc.setTextColor(90, 90, 90); doc.setFont('helvetica', 'normal');
+    doc.text('Conciergerie & gestion locative', 14, y + 6);
+
+    doc.setFontSize(16); doc.setTextColor(20, 20, 20); doc.setFont('helvetica', 'bold');
+    doc.text('Relevé de prestations', 196, y, { align: 'right' });
+    doc.setFontSize(10); doc.setTextColor(110, 110, 110); doc.setFont('helvetica', 'normal');
+    doc.text(`N° ${f.id}`, 196, y + 6, { align: 'right' });
+    doc.text(`Émis le ${formatDate(AUJOURDHUI)}`, 196, y + 11, { align: 'right' });
+
+    y += 22;
+    doc.setDrawColor(225, 225, 225); doc.line(14, y, 196, y);
+    y += 10;
+    doc.setFontSize(10); doc.setTextColor(110, 110, 110);
+    doc.text('Prestataire', 14, y);
+    doc.text('Période', 196, y, { align: 'right' });
+    y += 6;
+    doc.setFontSize(12); doc.setTextColor(20, 20, 20); doc.setFont('helvetica', 'bold');
+    doc.text(p.nom, 14, y);
+    doc.text(f.mois, 196, y, { align: 'right' });
+    y += 6;
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(110, 110, 110);
+    doc.text(`${p.role} · ${p.zone}`, 14, y);
+
+    y += 14;
+    doc.setFontSize(9); doc.setTextColor(120, 120, 120);
+    doc.text('Date', 14, y); doc.text('Logement', 40, y);
+    doc.text('Intervention', 130, y); doc.text('Montant', 196, y, { align: 'right' });
+    y += 3;
+    doc.setDrawColor(232, 232, 232); doc.line(14, y, 196, y);
+    y += 6;
+
+    doc.setTextColor(30, 30, 30); doc.setFontSize(9);
+    c.lignes.forEach(l => {
+      if (y > 262) { doc.addPage(); y = 20; }
+      doc.text(formatDate(l.tache.date), 14, y);
+      doc.text(String(l.logement ? l.logement.nom : '—').slice(0, 38), 40, y);
+      doc.text(TACHE_LABEL[l.tache.type] || l.tache.type, 130, y);
+      doc.text(formatMontant(l.montant), 196, y, { align: 'right' });
+      y += 6;
+    });
+
+    y += 6;
+    doc.setFillColor(246, 246, 246);
+    doc.roundedRect(14, y - 8, 182, 16, 2, 2, 'F');
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 20);
+    doc.text(`Total dû à ${p.nom}`, 20, y + 1.5);
+    doc.text(formatMontant(c.total), 190, y + 1.5, { align: 'right' });
+
+    y += 22;
+    doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.setFont('helvetica', 'normal');
+    doc.text(`${c.nb} intervention${c.nb > 1 ? 's' : ''} terminée${c.nb > 1 ? 's' : ''} sur la période. Les tâches planifiées ou en cours ne sont pas facturées.`, 14, y);
+
+    doc.setFontSize(8); doc.setTextColor(170, 170, 170);
+    doc.text('Document généré automatiquement par Oyvia — mockup de démonstration.', 14, 285);
+
+    doc.save(`releve-prestations-${slugify(p.nom)}-${slugify(f.mois)}.pdf`);
+  }
+
+  /* ============================================================
      DÉPENSES
      ============================================================ */
   const depFilter = document.getElementById('cp-dep-filter');
@@ -796,4 +1120,8 @@ Layout.init('comptabilite');
   renderSynthese();
   renderOwners();
   renderDepenses();
+
+  // Ouverture directe sur un onglet via l'URL (ex : comptabilite.html#depenses,
+  // #prestataires) — en dernier, tout étant alors défini.
+  if (location.hash) activateTab(location.hash.slice(1));
 })();

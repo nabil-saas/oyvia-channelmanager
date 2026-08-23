@@ -881,6 +881,18 @@ Layout.init('logements');
             <tbody id="rec-tbody"></tbody>
           </table>
         </div>
+
+        <!-- Le coût des interventions se règle ici, et pas ailleurs.
+
+             C'est l'écran où l'on déclare ce que ce bien demande comme
+             travail ; le prix de ce travail appartient à la même
+             conversation. Le barème général, lui, vit dans Comptabilité
+             › Prestataires, à côté des factures qu'il produit. Ce que
+             l'on pose ici n'est qu'une exception : le cas où ce logement
+             sort de la règle. -->
+        <p class="eyebrow" style="margin:var(--sp-6) 0 var(--sp-3)">Coût des interventions sur ce bien</p>
+        <p class="text-soft text-sm mb-4" id="lg-cout-intro"></p>
+        <div class="lg-couts" id="lg-couts"></div>
       </div>`;
 
     // Basculer sur la fiche AVANT de brancher quoi que ce soit : le HTML est
@@ -901,6 +913,7 @@ Layout.init('logements');
     bindAcces(l);
     bindCanaux(l);
     renderRec();
+    renderCouts(l);
     content.querySelector('#rec-add').addEventListener('click', () => openRecModal(null));
     content.querySelector('#rec-tbody').addEventListener('click', e => {
       const ed = e.target.closest('[data-rec-edit]'); const del = e.target.closest('[data-rec-del]');
@@ -1122,6 +1135,61 @@ Layout.init('logements');
   });
 
   /* ---------- Rendu du tableau des tâches récurrentes ---------- */
+  /* ---------- Coût des interventions sur ce bien ----------
+
+     Chaque champ est vide par défaut et porte en filigrane le tarif dont
+     il hérite. Le vider, c'est revenir à l'héritage — pas écrire zéro :
+     figer la valeur héritée la couperait des évolutions du barème
+     général, ce qui est exactement le piège qu'on veut éviter en
+     laissant une exception se poser. */
+  function renderCouts(l) {
+    const zone = content.querySelector('#lg-couts');
+    if (!zone) return;
+    const types = ['menage', 'checkin', 'linge', 'maintenance'];
+
+    content.querySelector('#lg-cout-intro').innerHTML =
+      `Ce que vous payez au prestataire, à ne pas confondre avec le forfait ménage facturé au voyageur. `
+      + `Par défaut, ce bien suit le barème de son type (<b>${labelTypeLogement(l.type)}</b>), réglable dans `
+      + `<a href="comptabilite.html#prestataires">Comptabilité › Prestataires</a>. Ne remplissez ci-dessous que ce qui sort de la règle.`;
+
+    zone.innerHTML = types.map(t => {
+      const perso = l.bareme && l.bareme[t];
+      // Le tarif hérité, calculé SANS l'exception : c'est lui qu'on
+      // affiche en filigrane, et c'est vers lui qu'on revient.
+      const sans = { ...l, bareme: null };
+      const herite = (BAREME_INTERVENTIONS.parType[l.type] || {})[t] != null
+        ? { montant: BAREME_INTERVENTIONS.parType[l.type][t], origine: 'type' }
+        : { montant: BAREME_INTERVENTIONS.defaut[t], origine: 'defaut' };
+      return `<label class="lg-cout ${perso != null ? 'is-perso' : ''}">
+        <span class="lg-cout__t">${TACHE_LABEL[t]}</span>
+        <input class="input input--sm" type="number" min="0" step="1" data-cout="${t}"
+          value="${perso == null ? '' : perso}" placeholder="${herite.montant}"
+          aria-label="Coût ${TACHE_LABEL[t]} pour ce logement" />
+        <span class="lg-cout__h">${perso == null
+          ? `${ORIGINE_COUT[herite.origine].label} · ${formatMontant(herite.montant)}`
+          : `Remplace ${formatMontant(herite.montant)}`}</span>
+      </label>`;
+    }).join('');
+
+    zone.onchange = e => {
+      const champ = e.target.closest('[data-cout]'); if (!champ) return;
+      const t = champ.dataset.cout;
+      const brut = champ.value.trim();
+      l.bareme = l.bareme || {};
+      if (brut === '') {
+        delete l.bareme[t];
+        if (!Object.keys(l.bareme).length) delete l.bareme;
+      } else {
+        l.bareme[t] = Math.max(0, Math.round(parseFloat(brut) || 0));
+      }
+      saveOyviaState();
+      renderCouts(l);
+      UI.toast(brut === ''
+        ? `${TACHE_LABEL[t]} : retour au barème`
+        : `${TACHE_LABEL[t]} sur ce bien : ${formatMontant(l.bareme[t])}`);
+    };
+  }
+
   function renderRec() {
     const tb = document.getElementById('rec-tbody'); if (!tb) return;
     const rows = getRecurrentesByLogement(currentLgId);

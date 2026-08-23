@@ -1502,6 +1502,7 @@ PROPRIETAIRES.forEach(o => {
 });
 function getFacturesByProprietaire(id) { return FACTURES.filter(f => f.proprietaireId === id); }
 
+
 /* ============================================================
    VOYAGEURS (CRM) — quelques habitués (nbSejours > 1)
    ============================================================ */
@@ -2528,9 +2529,9 @@ function getRolePrestataire(nom) { return ROLES_PRESTATAIRE.find(r => r.nom === 
 function effectifRole(nom) { return PRESTATAIRES.filter(p => p.role === nom).length; }
 
 const PRESTATAIRES = [
-  // Aucun tarif, ni ici ni sur les tâches : la rémunération d'une intervention
-  // dépend du bien (un chalet de 5 pièces n'est pas un studio), pas de la
-  // personne — et son modèle reste à définir.
+  // Aucun tarif ici : la rémunération d'une intervention dépend du bien
+  // (un chalet de 5 pièces n'est pas un studio), pas de la personne.
+  // Elle est portée par BAREME_INTERVENTIONS, plus bas.
   { id:'P1', nom:'Sylvie Ménard',  role:'Ménage',      zone:'Lyon',         tel:'+33 6 22 44 11 09' },
   { id:'P2', nom:'Karim Bouaziz',  role:'Polyvalent',  zone:'Paris',        tel:'+33 6 55 77 22 88' },
   { id:'P3', nom:'Nadia Lopez',    role:'Ménage',      zone:'Sud-Ouest',    tel:'+33 6 88 33 55 12' },
@@ -2631,6 +2632,122 @@ const TACHES = [
   { id:'H49', type:'menage',      logementId:'L006', date:'2026-07-19', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:null },
   { id:'H50', type:'menage',      logementId:'L007', date:'2026-07-21', heure:'11:00', prestataireId:'P5', statut:'termine', reservationId:null },
 ];
+
+/* ============================================================
+   BARÈME DES INTERVENTIONS
+
+   Ce que la conciergerie PAIE à un prestataire pour une tâche. À ne pas
+   confondre avec `menageTarif`, qui est le forfait ménage facturé au
+   VOYAGEUR : deux nombres différents, dans deux sens opposés.
+
+   Trois niveaux, du plus général au plus précis, et le plus précis
+   gagne :
+
+     1. `defaut`   — par type de tâche. Suffit à démarrer.
+     2. `parType`  — affiné par type de logement. Un ménage de villa
+                     n'est pas un ménage de studio.
+     3. le logement — `l.bareme`, l'exception.
+
+   Pourquoi les trois et non un seul : par type de logement uniquement,
+   le tarif serait faux dès que deux T2 diffèrent (quatrième sans
+   ascenseur contre rez-de-chaussée) ; par logement uniquement, une
+   conciergerie de quarante biens devrait remplir cent soixante cases
+   avant d'émettre sa première facture — et n'émettrait jamais la
+   première. Le défaut rend l'outil utilisable tout de suite, l'exception
+   le rend juste là où ça compte.
+
+   `origine` est renvoyé avec le montant, et ce n'est pas cosmétique :
+   une facture dont on ne sait pas d'où sort le chiffre ne se conteste
+   pas, elle se subit.
+   ============================================================ */
+const BAREME_INTERVENTIONS = {
+  defaut: { menage: 45, checkin: 25, linge: 18, maintenance: 60 },
+  parType: {
+    studio:      { menage: 32, checkin: 20, linge: 14 },
+    appartement: {},
+    duplex:      { menage: 58, linge: 22 },
+    loft:        { menage: 52, linge: 22 },
+    maison:      { menage: 70, linge: 26 },
+    villa:       { menage: 95, checkin: 35, linge: 34, maintenance: 80 },
+    chalet:      { menage: 85, checkin: 30, linge: 30, maintenance: 75 },
+  },
+  // Filet pour les catégories créées à la main depuis le formulaire de
+  // tâche : mieux vaut un tarif discutable qu'une ligne à zéro euro qui
+  // disparaît silencieusement du total.
+  inconnu: 40,
+};
+
+function coutIntervention(type, logementId) {
+  const l = getLogement(logementId);
+  const perso = l && l.bareme && l.bareme[type];
+  if (perso != null) return { montant: perso, origine: 'logement' };
+
+  const parType = l && BAREME_INTERVENTIONS.parType[l.type];
+  if (parType && parType[type] != null) return { montant: parType[type], origine: 'type' };
+
+  const d = BAREME_INTERVENTIONS.defaut[type];
+  if (d != null) return { montant: d, origine: 'defaut' };
+  return { montant: BAREME_INTERVENTIONS.inconnu, origine: 'inconnu' };
+}
+const ORIGINE_COUT = {
+  logement: { label: 'Tarif du logement', court: 'logement' },
+  type:     { label: 'Barème par type de bien', court: 'type de bien' },
+  defaut:   { label: 'Barème par défaut', court: 'défaut' },
+  inconnu:  { label: 'Catégorie sans tarif', court: 'à définir' },
+};
+
+/* ------------------------------------------------------------
+   Facturation des prestataires
+
+   On ne facture que les interventions TERMINÉES. Une tâche planifiée
+   n'est pas due : la payer d'avance ferait porter à la facture du mois
+   des heures qui n'ont pas été faites, et obligerait à des avoirs le
+   mois suivant.
+   ------------------------------------------------------------ */
+const FACTURES_PRESTATAIRE = [];
+PRESTATAIRES.forEach(p => {
+  MOIS_COMPTABLES.forEach((mois, i) => {
+    FACTURES_PRESTATAIRE.push({
+      id: `FP-${p.id}-${i}`, prestataireId: p.id, mois,
+      statut: i < MOIS_COMPTABLES.length - 1 ? 'generee' : 'attente',
+    });
+  });
+});
+function getFacturesByPrestataire(id) { return FACTURES_PRESTATAIRE.filter(f => f.prestataireId === id); }
+
+// « Juillet 2026 » → { debut:'2026-07-01', fin:'2026-07-31' }
+const _MOIS_INDEX = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+function bornesMoisComptable(mois) {
+  const [nom, an] = String(mois).split(' ');
+  const m = _MOIS_INDEX.indexOf(nom.toLowerCase());
+  if (m < 0) return null;
+  const annee = Number(an);
+  const dernier = new Date(annee, m + 1, 0).getDate();
+  const p2 = n => String(n).padStart(2, '0');
+  return { debut: `${annee}-${p2(m + 1)}-01`, fin: `${annee}-${p2(m + 1)}-${p2(dernier)}` };
+}
+
+function interventionsFacturables(prestataireId, mois) {
+  const b = bornesMoisComptable(mois);
+  if (!b) return [];
+  return TACHES
+    .filter(t => t.prestataireId === prestataireId && t.statut === 'termine'
+      && t.date >= b.debut && t.date <= b.fin)
+    .sort((a, x) => a.date.localeCompare(x.date) || a.heure.localeCompare(x.heure));
+}
+
+function calculFacturePrestataire(prestataireId, mois) {
+  const lignes = interventionsFacturables(prestataireId, mois).map(t => {
+    const c = coutIntervention(t.type, t.logementId);
+    return { tache: t, logement: getLogement(t.logementId), ...c };
+  });
+  const parType = {};
+  lignes.forEach(l => {
+    const e = parType[l.tache.type] = parType[l.tache.type] || { nb: 0, total: 0 };
+    e.nb++; e.total += l.montant;
+  });
+  return { lignes, parType, total: lignes.reduce((t, l) => t + l.montant, 0), nb: lignes.length };
+}
 
 /* ============================================================
    AUTOMATISATIONS (8)

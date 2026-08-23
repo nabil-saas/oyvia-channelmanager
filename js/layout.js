@@ -19,6 +19,7 @@ const Layout = (function () {
     voyageurs: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
     proprietaires:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M5.5 17c.6-2.2 2.2-3.5 3.5-3.5s2.9 1.3 3.5 3.5"/><path d="M14 9h5M14 13h5"/>',
     comptabilite:'<path d="M4 2h13l3 3v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M17 2v4h4"/><path d="M8 11h8M8 15h8M8 19h5"/>',
+    prestafact:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 11v6M22 14h-6"/>',
     abonnement:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
     parametres:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
     vivi:      '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 17h4"/><path d="M2 13h2M20 13h2"/>',
@@ -33,8 +34,6 @@ const Layout = (function () {
     services:  '<path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
     epingle:   '<path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
     sejour:    '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
-    facturation:'<path d="M4 2h13l3 3v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M17 2v4h4"/><path d="M9 13h6M9 17h4"/>',
-    depenses:  '<path d="M12 2v20"/><path d="M17 7H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"/>',
     chevrons:  '<path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/>',
   };
 
@@ -58,9 +57,16 @@ const Layout = (function () {
     { id:'menage',       label:'Gestion des tâches', title:'Gestion des tâches', href:'menage.html' },
     { id:'equipe',       label:'Équipe',          title:'Équipe',            href:'equipe.html' },
     { id:'tarification', label:'Tarification dynamique', title:'Tarification dynamique', href:'tarification.html' },
-    { id:'comptabilite', label:'Synthèse',        title:'Comptabilité',      href:'comptabilite.html' },
-    { id:'facturation',  label:'Facturation',     title:'Comptabilité',      href:'comptabilite.html#facturation' },
-    { id:'depenses',     label:'Dépenses',        title:'Comptabilité',      href:'comptabilite.html#depenses' },
+    /* Deux entrées, une par versant — et non une par vue.
+
+       Synthèse, Facturation et Dépenses sont trois manières de regarder
+       les mêmes comptes propriétaire : les lister séparément dans le
+       menu donnait trois portes vers la même pièce, et laissait croire à
+       trois sections indépendantes. Elles restent atteignables par leur
+       ancre (`#facturation` est encore lié depuis l'écran
+       Propriétaires), simplement le menu ne les énumère plus. */
+    { id:'comptabilite', label:'Propriétaire',    title:'Comptabilité',      href:'comptabilite.html' },
+    { id:'prestafact',   label:'Prestataire',     title:'Comptabilité',      href:'comptabilite.html#prestataires' },
     { id:'abonnement',   label:'Abonnement',      title:'Abonnement & Facturation', href:'abonnement.html' },
     { id:'parametres',   label:'Paramètres',      title:'Paramètres',       href:'parametres.html' },
   ];
@@ -74,7 +80,7 @@ const Layout = (function () {
     { label:'Équipe',        items:['menage', 'equipe'] },
     // Accueille les outils branchés sur Oyvia — tiers comme maison.
     { label:'Intégrations',  items:['tarification', 'vivi'] },
-    { label:'Comptabilité',  items:['comptabilite', 'facturation', 'depenses'] },
+    { label:'Comptabilité',  items:['comptabilite', 'prestafact'] },
     { label:'Compte',        items:['abonnement', 'parametres'] },
   ];
 
@@ -161,10 +167,20 @@ const Layout = (function () {
        inattendu, mieux vaut allumer l'entrée déclarée que rien du tout. */
     const fichierCourant = location.pathname.split('/').pop() || 'dashboard.html';
     const fragment = location.hash.slice(1);
+    /* Quelle entrée surligner.
+
+       Une entrée SANS ancre représente la page par défaut. Elle reste
+       donc active tant qu'aucune autre entrée du même fichier ne
+       revendique l'ancre courante — sinon, arriver sur
+       `comptabilite.html#facturation` (lien posé depuis l'écran
+       Propriétaires) n'allumait rien du tout : ni « Propriétaire », qui
+       n'a pas d'ancre, ni « Prestataire », qui en a une autre. On se
+       retrouvait dans une section sans savoir laquelle. */
     const estActive = n => {
       const [fichier, frag = ''] = n.href.split('#');
-      if (fichier === fichierCourant) return frag === fragment;
-      return n.id === active && !n.href.includes('#');
+      if (fichier !== fichierCourant) return n.id === active && !n.href.includes('#');
+      if (frag) return frag === fragment;
+      return !NAV.some(x => x !== n && x.href.split('#')[0] === fichier && x.href.split('#')[1] === fragment);
     };
 
     const itemHTML = (n, epingle) => {
