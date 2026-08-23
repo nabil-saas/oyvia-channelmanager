@@ -1549,16 +1549,24 @@ const VOYAGEURS = [
      évaluer un séjour de mai serait un mensonge de l'interface.
    ============================================================ */
 
+/* `evaluationVoyageur` : la plateforme permet-elle à l'hôte d'évaluer son
+   voyageur ? Toutes ne le font pas. Booking.com, Expedia et Agoda
+   recueillent l'avis du voyageur sur le logement, mais rien dans l'autre
+   sens : y afficher un bouton « Évaluer » promettrait une action que la
+   plateforme refusera. `delaiEvaluation` n'a donc de sens que là où
+   l'évaluation existe. */
 const AVIS_CANAUX = {
-  airbnb:  { label:'Airbnb',      max:5,  pas:1,   delaiEvaluation:14 },
-  booking: { label:'Booking.com', max:10, pas:0.5, delaiEvaluation:28 },
-  expedia: { label:'Expedia',     max:5,  pas:1,   delaiEvaluation:14 },
-  vrbo:    { label:'Vrbo',        max:5,  pas:1,   delaiEvaluation:14 },
-  agoda:   { label:'Agoda',       max:10, pas:0.5, delaiEvaluation:28 },
-  // Le direct n'a pas de plateforme tierce : l'avis est recueilli par
-  // Oyvia lui-même, sans date limite imposée de l'extérieur.
-  direct:  { label:'Direct',      max:5,  pas:1,   delaiEvaluation:null },
+  airbnb:  { label:'Airbnb',      max:5,  pas:1,   evaluationVoyageur:true,  delaiEvaluation:14 },
+  booking: { label:'Booking.com', max:10, pas:0.5, evaluationVoyageur:false, delaiEvaluation:null },
+  expedia: { label:'Expedia',     max:5,  pas:1,   evaluationVoyageur:false, delaiEvaluation:null },
+  vrbo:    { label:'Vrbo',        max:5,  pas:1,   evaluationVoyageur:true,  delaiEvaluation:14 },
+  agoda:   { label:'Agoda',       max:10, pas:0.5, evaluationVoyageur:false, delaiEvaluation:null },
+  // Le direct n'a pas de plateforme tierce : l'évaluation est recueillie
+  // par Oyvia lui-même, sans date limite imposée de l'extérieur.
+  direct:  { label:'Direct',      max:5,  pas:1,   evaluationVoyageur:true,  delaiEvaluation:null },
 };
+// Peut-on évaluer le voyageur d'une réservation passée par ce canal ?
+function evaluationPossible(canal) { return !!avisCanal(canal).evaluationVoyageur; }
 function avisCanal(canal) { return AVIS_CANAUX[canal] || AVIS_CANAUX.direct; }
 
 // Note ramenée sur 5, UNIQUEMENT pour trier et moyenner. Jamais affichée
@@ -1656,10 +1664,12 @@ function avisParLogement(logementId) { return AVIS.filter(a => a.logementId === 
 function evaluationDe(reservationId) {
   return EVALUATIONS.find(e => e.reservationId === reservationId) || null;
 }
-// Dernier jour où la plateforme accepte encore l'évaluation.
+// Dernier jour où la plateforme accepte encore l'évaluation. `null` =
+// pas d'échéance : soit le canal n'en impose aucune (direct), soit il
+// n'autorise pas l'évaluation du tout (cf. evaluationPossible).
 function dateLimiteEvaluation(r) {
   const c = avisCanal(r.canal);
-  return c.delaiEvaluation ? addDays(r.depart, c.delaiEvaluation) : null;
+  return c.evaluationVoyageur && c.delaiEvaluation ? addDays(r.depart, c.delaiEvaluation) : null;
 }
 function evaluationExpiree(r, aujourdhui = AUJOURDHUI) {
   const limite = dateLimiteEvaluation(r);
@@ -1672,7 +1682,10 @@ function evaluationExpiree(r, aujourdhui = AUJOURDHUI) {
    ce qui est justement l'information utile. */
 function sejoursAEvaluer() {
   return RESERVATIONS
-    .filter(r => r.statut === 'termine')
+    // Un séjour Booking n'a pas sa place dans cette file : la plateforme
+    // n'accepte aucune évaluation de voyageur. L'y laisser créerait une
+    // tâche éternellement « à faire », impossible à conclure.
+    .filter(r => r.statut === 'termine' && evaluationPossible(r.canal))
     .map(r => {
       const ev = evaluationDe(r.id);
       const limite = dateLimiteEvaluation(r);
@@ -1695,7 +1708,7 @@ function sejoursAEvaluer() {
 
 function evaluerVoyageur(reservationId, note, texte) {
   const r = getReservation(reservationId);
-  if (!r || evaluationExpiree(r)) return null;
+  if (!r || !evaluationPossible(r.canal) || evaluationExpiree(r)) return null;
   const ex = evaluationDe(reservationId);
   if (ex) { ex.note = note; ex.texte = texte.trim(); ex.date = AUJOURDHUI; return ex; }
   const e = { id: 'EV' + Date.now(), reservationId, note, texte: texte.trim(), date: AUJOURDHUI };

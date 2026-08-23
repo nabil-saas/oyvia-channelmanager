@@ -20,7 +20,6 @@
 Layout.init('avis');
 
 (function () {
-  const elKpis = document.getElementById('av-kpis');
   const elTabs = document.getElementById('av-tabs');
   const elListe = document.getElementById('av-liste');
   const elVoy = document.getElementById('av-voyageurs');
@@ -52,45 +51,6 @@ Layout.init('avis');
     const c = avisCanal(canal);
     const cls = ['airbnb', 'booking', 'direct'].includes(canal) ? canal : 'direct';
     return `<span class="chip-canal chip-canal--${cls}">${c.label}</span>`;
-  }
-
-  /* ============================================================
-     Compteurs
-     ============================================================ */
-  function renderKpis() {
-    const attente = avisEnAttente().filter(avisRepondable);
-    const aEvaluer = sejoursAEvaluer().filter(s => s.statut === 'a_faire');
-    // Le plus urgent parmi ceux qui ont réellement une échéance.
-    const urgent = aEvaluer.find(s => s.limite !== null);
-    const moy = avisMoyenne(AVIS);
-    const negatifs = AVIS.filter(a => avisNoteSur5(a.note, a.canal) < 4);
-
-    const kpi = (label, valeur, pied, icone, alerte) => `
-      <div class="kpi ${alerte ? 'kpi--alerte' : ''}">
-        <div class="kpi__label">${label}</div>
-        <div class="kpi__value">${valeur}</div>
-        <div class="kpi__foot">${pied}</div>
-        <div class="kpi__icon">${ic(icone)}</div>
-      </div>`;
-
-    elKpis.innerHTML = [
-      kpi('Avis reçus', AVIS.length, `sur ${new Set(AVIS.map(a => a.logementId)).size} logements`,
-        '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/>'),
-      kpi('Note moyenne', moy.toFixed(1).replace('.', ',') + '<span class="kpi__sur">/5</span>',
-        'toutes plateformes, ramenées sur 5',
-        '<path d="M3 16.5 8 10l4 3.5L21 4"/><path d="M16 4h5v5"/>'),
-      kpi('En attente de réponse', attente.length,
-        attente.length ? 'à traiter' : 'tout est répondu',
-        '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', attente.length > 0),
-      kpi('Voyageurs à évaluer', aEvaluer.length,
-        !aEvaluer.length ? 'aucun séjour en attente'
-          : !urgent ? 'aucune échéance imposée'
-          : urgent.joursRestants <= 0 ? "dernier jour pour le plus urgent"
-          : `le plus urgent dans ${urgent.joursRestants} j`,
-        '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>', aEvaluer.length > 0),
-      kpi('Avis sous 4/5', negatifs.length, 'à surveiller de près',
-        '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>'),
-    ].join('');
   }
 
   /* ============================================================
@@ -291,6 +251,9 @@ Layout.init('avis');
   }
 
   function renderVoyageurs() {
+    // Nommées en bas de tableau : une absence inexpliquée passe pour un
+    // bug (« où sont mes séjours Booking ? »).
+    const sansEvaluation = Object.values(AVIS_CANAUX).filter(c => !c.evaluationVoyageur);
     const f = gStatut.value;
     const liste = sejoursAEvaluer().filter(s => f === 'all' || s.statut === f);
     const aFaire = sejoursAEvaluer().filter(s => s.statut === 'a_faire').length;
@@ -315,10 +278,9 @@ Layout.init('avis');
         </table>
       </div>
       <p class="text-xs text-muted mt-3">
-        Le délai d'évaluation court à partir du départ et dépend de la plateforme
-        (${Object.values(AVIS_CANAUX).filter(c => c.delaiEvaluation)
-            .map(c => `${c.label} : ${c.delaiEvaluation} j`).join(' · ')}).
-        Passé ce délai, la plateforme n'accepte plus l'évaluation.
+        Le délai court à partir du départ&nbsp;: ${Object.values(AVIS_CANAUX).filter(c => c.delaiEvaluation)
+            .map(c => `${c.label} ${c.delaiEvaluation} j`).join(' · ')}. Passé ce délai, la plateforme n'accepte plus l'évaluation.
+        ${sansEvaluation.length ? `Les séjours ${sansEvaluation.map(c => c.label).join(', ')} n'y figurent pas&nbsp;: ${sansEvaluation.length > 1 ? 'ces plateformes ne permettent pas' : 'cette plateforme ne permet pas'} d'évaluer un voyageur.` : ''}
       </p>`;
 
     elVoy.querySelectorAll('[data-evaluer]').forEach(b =>
@@ -401,7 +363,6 @@ Layout.init('avis');
   gStatut.addEventListener('change', renderVoyageurs);
 
   function renderTout() {
-    renderKpis();
     renderListe();
     renderVoyageurs();
     // La pastille du menu compte les avis sans réponse et les évaluations

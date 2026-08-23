@@ -40,27 +40,6 @@ Layout.init('police');
   const F = id => document.getElementById(id);
   const vide = '<span class="text-muted">Non renseigné</span>';
 
-  /* ---------- Compteurs ---------- */
-  function renderKpis() {
-    const par = st => FICHES_POLICE.filter(f => f.statut === st).length;
-    const urgentes = fichesPoliceUrgentes(SEUIL_ALERTE);
-    const enRetard = urgentes.filter(f => (heuresAvantArrivee(f) || 0) < 0).length;
-    const kpi = (label, valeur, pied, icone, alerte) => `
-      <div class="kpi"><div class="kpi__label">${label}</div>
-      <div class="kpi__value ${alerte ? 'text-danger' : ''}">${valeur}</div>
-      <div class="kpi__foot">${pied}</div><div class="kpi__icon">${ic(icone)}</div></div>`;
-    F('fp-kpis').innerHTML = [
-      kpi('Échéance sous 24 h', urgentes.length,
-        enRetard ? `dont ${enRetard} déjà arrivé${enRetard > 1 ? 's' : ''}` : 'à relancer avant l\'arrivée',
-        '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', urgentes.length > 0),
-      kpi('En attente', par('en_attente'), 'Il manque des mentions obligatoires',
-        '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'),
-      kpi('Complètes', par('complete'), 'À conserver six mois', '<path d="M20 6 9 17l-5-5"/>'),
-      kpi('Total', FICHES_POLICE.length, 'Sur la période couverte',
-        '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>'),
-    ].join('');
-  }
-
   /* ---------- Bandeau d'échéance ----------
      Rappel de ce qui doit partir aujourd'hui. Les fiches dont l'arrivée est
      passée sont nommées à part : ce n'est plus une relance, c'est un manquement. */
@@ -116,7 +95,7 @@ Layout.init('police');
     }).join('');
   }
 
-  function render() { renderKpis(); renderUrgences(); renderTable(); }
+  function render() { renderUrgences(); renderTable(); }
 
   /* ============================================================
      Vue LECTURE — ce que le voyageur a déclaré

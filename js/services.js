@@ -36,26 +36,6 @@ Layout.init('services');
     }
   }
 
-  /* ---------- Compteurs ---------- */
-  function renderKpis() {
-    const actifs = servicesActifs();
-    const panier = actifs.reduce((s, x) => s + totalExemple(x.prix, x.unite), 0);
-    const marge = actifs.reduce((s, x) => s + totalExemple(x.prix, x.unite) * (x.marge || 0) / 100, 0);
-    const kpi = (label, valeur, pied, icone) => `
-      <div class="kpi"><div class="kpi__label">${label}</div><div class="kpi__value">${valeur}</div>
-      <div class="kpi__foot">${pied}</div><div class="kpi__icon">${ic(icone)}</div></div>`;
-    F('sv-kpis').innerHTML = [
-      kpi('Services proposés', `${actifs.length}<span class="kpi__sur">/${SERVICES.length}</span>`,
-        `${SERVICES.length - actifs.length} désactivés`, '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'),
-      kpi('Panier maximum', formatMontant(panier), `si tout est pris sur ${EX_NUITS} nuits, ${EX_PERS} voyageurs`,
-        '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
-      kpi('Marge sur ce panier', formatMontant(marge), 'hors commission de plateforme',
-        '<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'),
-      kpi('Catégories', servicesParCategorie().length, 'Arrivée, confort, restauration…',
-        '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'),
-    ].join('');
-  }
-
   /* ---------- Liste, groupée par catégorie ---------- */
   function renderListe() {
     F('sv-liste').innerHTML = servicesParCategorie().map(g => `
@@ -88,7 +68,7 @@ Layout.init('services');
       </div>`).join('');
   }
 
-  function render() { renderKpis(); renderListe(); }
+  function render() { renderListe(); }
 
   /* ---------- Formulaire ---------- */
   F('sv-f-cat').innerHTML = Object.entries(SERVICES_CATEGORIES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
