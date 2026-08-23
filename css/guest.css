@@ -169,6 +169,25 @@
 .g-panier__l b { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--g-accent); }
 .g-panier p { font-size: var(--fs-xs); color: var(--c-text-muted); line-height: var(--lh-snug); margin-top: var(--sp-2); }
 
+/* ---------- Document d'identité ----------
+   Facultatif et présenté comme tel : encadré discret, pas un champ
+   obligatoire de plus dans un formulaire déjà long. La vignette montre
+   ce qui a été envoyé — sans elle, on ne sait pas si l'on a saisi le
+   bon côté du document. */
+.fp-pj { border: 1px dashed var(--c-border-strong); border-radius: var(--r-lg); padding: var(--sp-4); margin-top: var(--sp-4); }
+.fp-pj__tete { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.fp-pj__tete b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.fp-pj__tete small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); line-height: var(--lh-snug); margin-top: 2px; }
+.fp-pj__tete label { flex-shrink: 0; cursor: pointer; }
+.fp-pj__liste { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.fp-pj__liste:empty { display: none; }
+.fp-pj__item { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2);
+  border: 1px solid var(--c-border); border-radius: var(--r-md); background: var(--c-surface); max-width: 100%; }
+.fp-pj__item img { width: 44px; height: 32px; object-fit: cover; border-radius: var(--r-sm); flex-shrink: 0; }
+.fp-pj__pdf { width: 44px; height: 32px; display: grid; place-items: center; border-radius: var(--r-sm);
+  background: var(--bg-subtle); font-size: 10px; font-weight: var(--fw-bold); color: var(--c-text-muted); flex-shrink: 0; }
+.fp-pj__nom { font-size: var(--fs-xs); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 @media (max-width: 520px) {
   .g-service { flex-wrap: wrap; }
   .g-service__action { width: 100%; justify-content: flex-end; }

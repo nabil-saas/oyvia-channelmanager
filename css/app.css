@@ -1054,6 +1054,20 @@
 .fiche-doc__f small { font-size: var(--fs-xs); color: var(--c-text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
 .fiche-doc__f b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); margin-top: 2px; }
 .fiche-doc__f--full { grid-column: 1 / -1; }
+
+/* Pièce d'identité envoyée par le voyageur, dans la fiche que l'hôte
+   consulte. Cliquable : un numéro contesté se vérifie en regardant le
+   document en grand, pas une vignette de 90 px. */
+.fiche-doc__pieces { margin-top: var(--sp-5); }
+.fiche-doc__pjs { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.fiche-doc__pj { display: block; border: 1px solid var(--c-border); border-radius: var(--r-lg);
+  overflow: hidden; transition: border-color var(--t-fast); }
+.fiche-doc__pj:hover { border-color: var(--c-accent); }
+.fiche-doc__pj img { display: block; width: 160px; height: 110px; object-fit: cover; }
+.fiche-doc__pj--pdf { width: 160px; height: 110px; display: grid; place-items: center; align-content: center;
+  gap: 4px; background: var(--bg-subtle); text-align: center; padding: var(--sp-2); }
+.fiche-doc__pj--pdf span { font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--c-text-muted); }
+.fiche-doc__pj--pdf small { font-size: 10px; color: var(--c-text-muted); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 480px) { .fiche-doc__grid { grid-template-columns: 1fr; } }
 
 /* ------------------------------------------------------------
