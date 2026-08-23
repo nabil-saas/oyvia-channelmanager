@@ -280,7 +280,7 @@ Layout.init('tarification');
       const erreur = tdBornesInvalides(l);
       return `<div class="td-row">
         <div class="td-row__nom">
-          <span class="td-row__pastille" style="background:${l.couleur}"></span>
+          ${UI.vignetteLogement(l, 'td-row__pastille')}
           <div class="grow">
             <b>${l.nom}</b>
             <span>${erreur
@@ -442,7 +442,7 @@ Layout.init('tarification');
       return `<tr>
         <td>
           <div class="row gap-3">
-            <span class="td-row__pastille" style="background:${l.couleur}"></span>
+            ${UI.vignetteLogement(l, 'td-row__pastille')}
             <div><b>${l.nom}</b><div class="text-xs text-soft">${l.ville} · minimum ${l.sejour.nuitsMin} nuits</div></div>
           </div>
         </td>

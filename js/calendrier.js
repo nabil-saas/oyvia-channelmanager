@@ -19,7 +19,6 @@ Layout.init('calendrier');
     weekStart: lundiDeLaSemaine(parseDate(AUJOURDHUI)),
   };
   let logementFiltre = 'all';
-  let mode = 'reservations';   // 'reservations' | 'taches'
 
   function lundiDeLaSemaine(d) {
     const x = new Date(d); const j = (x.getDay() + 6) % 7; x.setDate(x.getDate() - j); return x;
@@ -58,6 +57,73 @@ Layout.init('calendrier');
     const enAttente = r.statut === 'demande' ? ' cal-bar--demande' : '';
     const suffixe = r.statut === 'demande' ? ' (à valider)' : '';
     return `<div class="cal-bar cal-bar--${r.canal}${enAttente}" style="grid-column:${visStart + 1}/${visEnd + 1}" data-res="${r.id}" tabindex="0" role="button" aria-label="${labelTxt}, ${formatPlage(r.arrivee, r.depart)}${suffixe}">${labelTxt}${suffixe}</div>`;
+  }
+
+  /* ---------- Interventions d'une ligne ----------
+
+     Les tâches vivent SOUS les réservations du même logement, dans la
+     même ligne. C'est ce qui a motivé la refonte : séparer les deux en
+     deux onglets obligeait à basculer pour répondre à la seule question
+     qu'on se pose devant un planning — « qui arrive, et qui doit passer
+     avant ? ». Le ménage du 14 et le départ du 14 sont le même
+     événement vu deux fois ; les afficher sur deux écrans revenait à
+     demander à l'utilisateur de faire la jointure de tête.
+
+     Une tâche sur plusieurs jours devient UNE barre continue, et non
+     une pastille répétée chaque jour : c'est une seule intervention.
+
+     Les voies évitent que deux tâches d'un même jour se recouvrent —
+     chacune descend d'un cran jusqu'à trouver une place libre. La ligne
+     grandit d'autant : mieux vaut une ligne haute qu'une tâche cachée
+     derrière une autre. */
+  function voiesTaches(logementId, rangeStart, N) {
+    const items = TACHES.filter(t => t.logementId === logementId).map(t => {
+      const finIso = (t.dateFin && parseDate(t.dateFin) > parseDate(t.date)) ? t.dateFin : t.date;
+      const s = Math.round((parseDate(t.date) - rangeStart) / MS_JOUR);
+      const e = Math.round((parseDate(finIso) - rangeStart) / MS_JOUR) + 1;  // dernier jour inclus
+      return { t, s, e, debut: Math.max(s, 0), fin: Math.min(e, N), multi: finIso !== t.date };
+    }).filter(x => x.e > 0 && x.s < N && x.fin > x.debut)
+      .sort((a, b) => a.debut - b.debut || b.fin - a.fin);
+
+    const finDeVoie = [];   // colonne de fin de la dernière tâche posée sur chaque voie
+    items.forEach(it => {
+      let v = finDeVoie.findIndex(fin => fin <= it.debut);
+      if (v < 0) { v = finDeVoie.length; }
+      finDeVoie[v] = it.fin;
+      it.voie = v;
+    });
+    return { items, nbVoies: finDeVoie.length };
+  }
+
+  function barreTache({ t, debut, fin, voie, multi, s, e }, N) {
+    const p = getPrestataire(t.prestataireId);
+    const nom = p ? p.nom : (TACHE_LABEL[t.type] || t.type);
+    const type = TACHE_LABEL[t.type] ? t.type : 'autre';
+
+    /* Le libellé s'adapte à la place réellement disponible.
+
+       Une nuit fait 42 px en vue mois : « 11:00 Sylvie Ménard » y devient
+       « 1… », ce qui n'apprend rien et fait du bruit. Sur une seule
+       journée et en vue mois, on ne garde donc que l'heure — la couleur
+       dit le type, l'infobulle dit qui. En semaine, les colonnes sont
+       larges : le nom tient et il est utile.
+
+       Une tâche sur plusieurs jours a de la place quelle que soit la
+       vue ; et l'heure n'y a pas de sens — « 10:00 » sur une barre de
+       cinq jours laisse croire à un rendez-vous unique. */
+    const large = multi || state.view === 'week';
+    const quand = multi ? '' : `<b>${t.heure}</b>`;
+    // Sur une journée, prénom seul : « 09:00 Sylvie Ménard » ne tient pas
+    // dans une colonne de semaine et se fait couper au milieu du nom.
+    // L'heure est ce qu'on vient lire, le nom complet est dans l'infobulle.
+    const libelle = multi ? nom
+      : (large ? `${quand} ${nom.split(' ')[0]}` : quand);
+    const tronquee = (s < 0 ? ' cal-tbar--gauche' : '') + (e > N ? ' cal-tbar--droite' : '');
+    return `<div class="cal-tbar cal-tbar--${type} cal-tbar--${t.statut}${tronquee}${large ? '' : ' cal-tbar--compacte'}"
+      style="grid-column:${debut + 1}/${fin + 1};grid-row:${2 + voie}"
+      data-task="${t.id}" tabindex="0" role="button"
+      aria-label="${TACHE_LABEL[t.type] || t.type}, ${nom}, ${multi ? formatPlage(t.date, t.dateFin) : formatDate(t.date) + ' ' + t.heure}"><span
+      class="cal-tbar__txt">${libelle}</span></div>`;
   }
 
   /* Prix affiché sous chaque nuit.
@@ -123,62 +189,46 @@ Layout.init('calendrier');
 
     const logements = logementFiltre === 'all' ? LOGEMENTS : LOGEMENTS.filter(l => l.id === logementFiltre);
     logements.forEach(l => {
-      let cells, extra = '';
-      if (mode === 'taches') {
-        // Une tâche multi-jours (dateFin renseignée, ex. blocage de dates) apparaît
-        // sur chacun des jours qu'elle couvre, pas seulement son jour de début.
-        const tByDate = {};
-        TACHES.filter(t => t.logementId === l.id).forEach(t => {
-          const fin = (t.dateFin && parseDate(t.dateFin) > parseDate(t.date)) ? t.dateFin : t.date;
-          let d = t.date;
-          while (parseDate(d) <= parseDate(fin)) {
-            (tByDate[d] = tByDate[d] || []).push({ task: t, isStart: d === t.date });
-            d = addDays(d, 1);
-          }
-        });
-        cells = days.map((d, i) => {
-          const chips = (tByDate[ymd(d)] || []).sort((a, b) => a.task.heure.localeCompare(b.task.heure)).map(({ task: t, isStart }) => {
-            const p = getPrestataire(t.prestataireId);
-            const nom = p ? p.nom : (TACHE_LABEL[t.type] || t.type);
-            const head = isStart ? `<b>${t.heure}</b>` : '<b>↳</b>';
-            return `<div class="cal-tchip cal-tchip--${t.type} ${isStart ? '' : 'cal-tchip--suite'}" data-task="${t.id}">${head} ${nom}</div>`;
-          }).join('');
-          return `<div class="cal-daycell ${isToday(d) ? 'cal-daycell--today' : ''} ${isWE(d) ? 'cal-daycell--we' : ''}" style="grid-column:${i + 1}">${chips ? `<div class="cal-tchips">${chips}</div>` : ''}</div>`;
-        }).join('');
-      } else {
-        // Une seule construction de la carte des nuits occupées par
-        // logement : la refaire à chaque jour relirait tout le tableau
-        // des réservations 31 fois par ligne.
-        const occ = nuitsOccupees(l.id);
-        /* Colonne explicite sur chaque cellule : les barres occupent la
-           même rangée, et un placement automatique ferait « couler » les
-           cellules après elles au lieu de les laisser se superposer. Le
-           décalage se voyait immédiatement — le prix d'une nuit vendue
-           s'affichait trois colonnes plus loin. */
-        cells = days.map((d, i) => {
-          const p = prixNuit(l, ymd(d), occ);
-          return `<div class="cal-daycell ${isToday(d) ? 'cal-daycell--today' : ''} ${isWE(d) ? 'cal-daycell--we' : ''}" style="grid-column:${i + 1}">
-            <span class="cal-prix" title="${p.titre}">${p.texte}</span>
-          </div>`;
-        }).join('');
-        extra = RESERVATIONS.filter(r => r.logementId === l.id && r.statut !== 'annule')
-          .map(r => barFor(r, rangeStart, N)).join('');
-      }
+      // Une seule construction de la carte des nuits occupées par
+      // logement : la refaire à chaque jour relirait tout le tableau
+      // des réservations 31 fois par ligne.
+      const occ = nuitsOccupees(l.id);
+      /* Colonne explicite sur chaque cellule : les barres occupent la
+         même rangée, et un placement automatique ferait « couler » les
+         cellules après elles au lieu de les laisser se superposer. Le
+         décalage se voyait immédiatement — le prix d'une nuit vendue
+         s'affichait trois colonnes plus loin. */
+      const cells = days.map((d, i) => {
+        const p = prixNuit(l, ymd(d), occ);
+        return `<div class="cal-daycell ${isToday(d) ? 'cal-daycell--today' : ''} ${isWE(d) ? 'cal-daycell--we' : ''}" style="grid-column:${i + 1}">
+          <span class="cal-prix" title="${p.titre}">${p.texte}</span>
+        </div>`;
+      }).join('');
+
+      const barres = RESERVATIONS.filter(r => r.logementId === l.id && r.statut !== 'annule')
+        .map(r => barFor(r, rangeStart, N)).join('');
+
+      const { items, nbVoies } = voiesTaches(l.id, rangeStart, N);
+      const taches = items.map(it => barreTache(it, N)).join('');
+
       html += `<div class="cal-row cal-row--body">
         <div class="cal-namecell">
-          <span class="cal-namecell__thumb" style="background:${l.couleur}">${l.ville.slice(0, 2).toUpperCase()}</span>
-          <div class="cal-namecell__meta"><b title="${l.nom}">${l.nom}</b><small>${l.ville}</small></div>
+          ${UI.vignetteLogement(l, 'cal-namecell__thumb')}
+          <div class="cal-namecell__meta">
+            <b title="${l.nom}">${l.nom}</b>
+            <small>${l.ville}</small>
+            ${nbVoies ? `<span class="cal-namecell__taches">${items.length} intervention${items.length > 1 ? 's' : ''}</span>` : ''}
+          </div>
         </div>
-        <div class="cal-track" style="grid-template-columns:${cols}">${cells}${extra}</div>
+        <div class="cal-track" style="grid-template-columns:${cols}">${cells}${barres}${taches}</div>
       </div>`;
     });
-    grid.classList.toggle('cal-grid--taches', mode === 'taches');
     grid.innerHTML = html;
   }
 
   /* ---------- Tooltip ---------- */
   grid.addEventListener('mouseover', e => {
-    const taskEl = e.target.closest('.cal-tchip');
+    const taskEl = e.target.closest('.cal-tbar');
     if (taskEl) {
       const t = TACHES.find(x => x.id === taskEl.dataset.task); if (!t) return;
       const p = getPrestataire(t.prestataireId);
@@ -214,7 +264,7 @@ Layout.init('calendrier');
     if (y + h > window.innerHeight - 8) y = e.clientY - h - pad;
     tt.style.left = x + 'px'; tt.style.top = y + 'px';
   });
-  grid.addEventListener('mouseout', e => { if (e.target.closest('.cal-bar') || e.target.closest('.cal-tchip')) tt.classList.remove('is-open'); });
+  grid.addEventListener('mouseout', e => { if (e.target.closest('.cal-bar') || e.target.closest('.cal-tbar')) tt.classList.remove('is-open'); });
 
   /* ---------- Ouverture du détail (panneau partagé) ---------- */
   grid.addEventListener('click', e => { const bar = e.target.closest('.cal-bar'); if (bar) UI.openResa(bar.dataset.res); });
@@ -254,38 +304,33 @@ Layout.init('calendrier');
     ],
   }));
 
-  /* Bloquer ou réserver : on demande avant d'ouvrir le bon formulaire.
-     Les deux produisent une barre dans la grille, mais un séjour porte un
-     voyageur, un canal et un montant — l'enregistrer comme « blocage »
-     ferait disparaître la recette de la comptabilité. */
-  document.getElementById('cal-block').addEventListener('click', () => UI.openPanel('cal-choix'));
+  /* Trois entrées directes, plus de question intermédiaire.
 
-  /* Ajout d'une tâche depuis le calendrier : le logement filtré à l'écran
-     est repris, et la grille se redessine dès la création — sans quoi il
-     faudrait changer de mois pour voir apparaître ce qu'on vient de
-     planifier. */
-  document.getElementById('cal-tache').addEventListener('click', () => {
-    TacheForm.ouvrir({
-      logementId: logementFiltre !== 'all' ? logementFiltre : null,
-      onCree: () => render(),
-    });
+     L'ancien bouton unique « Bloquer des dates » ouvrait une modale qui
+     demandait « qu'est-ce qui occupe le logement ? ». Cette question ne
+     se pose pas : on sait ce qu'on vient créer avant de cliquer. Elle
+     coûtait un aller-retour à chaque réservation saisie à la main.
+
+     Le logement filtré à l'écran est presque toujours celui qu'on vise :
+     on le pré-remplit. */
+  const logementVise = () => (logementFiltre !== 'all' ? logementFiltre : null);
+
+  document.getElementById('cal-resa').addEventListener('click', () => {
+    ResaForm.ouvrir({ logementId: logementVise(), onCree: () => render() });
   });
 
-  document.getElementById('cal-choix').addEventListener('click', e => {
-    const btn = e.target.closest('[data-choix]');
-    if (!btn) return;
-    UI.closeAll();
-    // Le logement filtré à l'écran est presque toujours celui qu'on vise.
-    const logementVise = logementFiltre !== 'all' ? logementFiltre : null;
+  /* La grille se redessine dès la création — sans quoi il faudrait
+     changer de mois pour voir apparaître ce qu'on vient de planifier. */
+  document.getElementById('cal-tache').addEventListener('click', () => {
+    TacheForm.ouvrir({ logementId: logementVise(), onCree: () => render() });
+  });
 
-    if (btn.dataset.choix === 'reservation') {
-      ResaForm.ouvrir({ logementId: logementVise, onCree: () => render() });
-      return;
-    }
+  document.getElementById('cal-block').addEventListener('click', () => {
     document.getElementById('blk-motif').value = '';
     document.getElementById('blk-from').value = '';
     document.getElementById('blk-to').value = '';
-    if (logementVise) blkLog.value = logementVise;
+    const vise = logementVise();
+    if (vise) blkLog.value = vise;
     document.querySelectorAll('#blk-prest-list input:checked').forEach(c => { c.checked = false; });
     UI.openPanel('cal-modal');
   });
@@ -373,19 +418,6 @@ Layout.init('calendrier');
     }
     render();
   }
-
-  // Bascule Réservations / Tâches prestataires
-  document.getElementById('cal-mode').addEventListener('click', e => {
-    const btn = e.target.closest('button'); if (!btn) return;
-    document.querySelectorAll('#cal-mode button').forEach(b => b.classList.remove('is-active'));
-    btn.classList.add('is-active');
-    mode = btn.dataset.mode;
-    document.getElementById('cal-legend-resa').classList.toggle('hidden', mode !== 'reservations');
-    document.getElementById('cal-legend-taches').classList.toggle('hidden', mode !== 'taches');
-    document.getElementById('cal-block').style.display = mode === 'taches' ? 'none' : '';
-    document.getElementById('cal-tache').classList.toggle('hidden', mode !== 'taches');
-    render();
-  });
 
   // Filtres & synchronisation
   document.addEventListener('resaChanged', render);

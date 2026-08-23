@@ -120,7 +120,7 @@ Layout.init('avis');
     return `
       <article class="card av-carte ${enAttente ? 'is-attente' : ''}" data-avis="${a.id}">
         <div class="av-carte__tete">
-          <span class="thumb av-carte__vignette" style="background:${l ? l.couleur : 'var(--ink-300)'}">${l ? esc(l.nom.charAt(0)) : '?'}</span>
+          ${UI.vignetteLogement(l, 'av-carte__vignette')}
           <div class="grow">
             <b class="av-carte__logement">${l ? esc(l.nom) : 'Logement supprimé'}</b>
             <div class="av-carte__meta">

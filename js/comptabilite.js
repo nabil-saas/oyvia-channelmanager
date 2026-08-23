@@ -22,15 +22,35 @@ Layout.init('comptabilite');
   /* ---------- Onglets ---------- */
   const tabs = document.getElementById('cp-tabs');
   const panes = [...document.querySelectorAll('.tabpane')];
-  function activateTab(name) {
+  function activateTab(name, parAction = false) {
     const b = tabs.querySelector(`[data-tab="${name}"]`); if (!b) return;
     tabs.querySelectorAll('button').forEach(x => x.classList.remove('is-active'));
     b.classList.add('is-active');
     panes.forEach(p => p.classList.toggle('is-active', p.dataset.pane === name));
+    if (parAction) recadrer();
   }
+
+  /* Les trois onglets n'ont pas la même hauteur : la synthèse fait deux
+     écrans, la facturation un demi. En passant de l'un à l'autre, le
+     document RÉTRÉCIT et le navigateur remonte la page de lui-même pour
+     rester dans les limites — d'où l'impression d'un saut incontrôlé.
+
+     On reprend donc la main : si la barre d'onglets est déjà visible, on
+     ne bouge pas ; si elle est sortie par le haut, on la ramène juste
+     sous l'en-tête. Le nouvel onglet commence alors là où on regarde,
+     au lieu de nous renvoyer en haut de page. */
+  function recadrer() {
+    const barre = tabs.getBoundingClientRect();
+    const entete = document.querySelector('.app-topbar');
+    const hauteurEntete = entete ? entete.getBoundingClientRect().height : 0;
+    if (barre.top >= hauteurEntete) return;   // déjà à l'écran : rien à faire
+    const cible = window.scrollY + barre.top - hauteurEntete - 12;
+    window.scrollTo({ top: Math.max(0, cible), behavior: 'auto' });
+  }
+
   tabs.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    activateTab(b.dataset.tab);
+    activateTab(b.dataset.tab, true);
   });
   // Permet d'arriver directement sur un onglet via l'URL (ex : comptabilite.html#facturation)
   if (location.hash) activateTab(location.hash.slice(1));
@@ -38,7 +58,7 @@ Layout.init('comptabilite');
      Depuis cette page, elles ne changent que le fragment : sans écoute du
      hashchange, l'URL bougerait et l'onglet resterait figé. */
   window.addEventListener('hashchange', () => {
-    activateTab(location.hash.slice(1) || 'synthese');
+    activateTab(location.hash.slice(1) || 'synthese', true);
     if (typeof Layout !== 'undefined' && Layout.refreshNav) Layout.refreshNav();
   });
 

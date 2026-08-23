@@ -325,6 +325,29 @@ const Layout = (function () {
         restaurerDefilement();
         UI.toast(ajoute ? `${entree.label} épinglé dans les raccourcis` : `${entree.label} retiré des raccourcis`);
       });
+
+      /* Navigation interne à la page courante (Comptabilité : Synthèse,
+         Facturation, Dépenses).
+
+         Ces entrées ne changent que le fragment. Laissé au navigateur, un
+         clic sur « Dépenses » cherche un élément d'identifiant `depenses` ;
+         il n'en existe pas — les panneaux s'appellent `cp-pane-depenses` —
+         et faute de cible, la page remonte tout en haut. On change donc le
+         fragment sans navigation, et on prévient nous-mêmes les écouteurs
+         de hashchange. La position de lecture ne bouge plus. */
+      sidebar.addEventListener('click', e => {
+        const lien = e.target.closest('.app-navitem');
+        if (!lien || e.target.closest('[data-pin]')) return;
+
+        const [fichier, frag = ''] = (lien.getAttribute('href') || '').split('#');
+        const courant = location.pathname.split('/').pop() || 'dashboard.html';
+        if (fichier && fichier !== courant) return;   // vraie navigation, on laisse faire
+
+        e.preventDefault();
+        if ((location.hash.slice(1) || '') === frag) return;   // déjà sur cet onglet
+        history.pushState(null, '', frag ? `#${frag}` : location.pathname + location.search);
+        window.dispatchEvent(new Event('hashchange'));
+      });
     }
 
     // Scrim mobile
@@ -477,10 +500,10 @@ const UI = {
       el.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
     }
     el.classList.add('is-open');
-    el.querySelectorAll('[data-notif-resa]').forEach(row => row.addEventListener('click', () => {
+    el.querySelectorAll('.notif-item').forEach(row => row.addEventListener('click', () => {
       UI.closeNotifDropdown();
       if (row.dataset.notifHref) window.location.href = row.dataset.notifHref;
-      else UI.openResa(row.dataset.notifResa);
+      else if (row.dataset.notifResa) UI.openResa(row.dataset.notifResa);
     }));
     setTimeout(() => document.addEventListener('click', UI._notifOutsideClick, true), 0);
   },
@@ -503,16 +526,19 @@ const UI = {
       paiement: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
       // Même pictogramme que l'entrée de menu « Assistant IA »
       vivi: '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 17h4"/><path d="M2 13h2M20 13h2"/>',
+      // Réponse du propriétaire à une demande de gestion
+      mandat: '<path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M14 4v6h6"/><path d="m8 15 2 2 4-4"/>',
     };
     if (!notifs.length) {
       return `<div class="notif-dropdown__head"><b>Notifications</b></div>
         <div class="notif-empty">${UI._ic('<path d="M20 6 9 17l-5-5"/>')}<p>Aucune alerte pour le moment</p></div>`;
     }
     // Une alerte peut se traiter ailleurs que dans la fiche réservation
-    // (les réponses de Vivi s'approuvent dans la conversation) : dans ce cas
-    // la notification porte un href et on y navigue au lieu d'ouvrir le panneau.
+    // (les réponses de Vivi s'approuvent dans la conversation, une réponse
+    // de la marketplace se lit dans « Mes prospects ») : dans ce cas la
+    // notification porte un href et on y navigue au lieu d'ouvrir le panneau.
     const rows = notifs.map(n => `
-      <button type="button" class="notif-item" data-notif-resa="${n.resaId}"${n.href ? ` data-notif-href="${n.href}"` : ''}>
+      <button type="button" class="notif-item"${n.resaId ? ` data-notif-resa="${n.resaId}"` : ''}${n.href ? ` data-notif-href="${n.href}"` : ''}>
         <span class="notif-item__ic notif-item__ic--${n.urgence}">${UI._ic(ICONS[n.type] || ICONS.police)}</span>
         <span class="notif-item__body"><b>${n.titre}</b><p>${n.message}</p></span>
       </button>`).join('');
@@ -646,6 +672,29 @@ const UI = {
   // Petite icône SVG inline (style Lucide, cohérent avec le reste de l'app)
   _ic(paths, w = 2) {
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+  },
+
+  /* ---------- Vignette d'un logement ----------
+     Un logement se reconnaît à sa photo bien avant qu'on ait fini de
+     lire son nom. Trois écrans l'affichent (calendrier, avis,
+     tarification) : une seule fonction, sinon trois cadrages et trois
+     arrondis finiraient par diverger.
+
+     La couleur du logement reste le fond de la vignette. Ce n'est pas
+     décoratif : c'est ce qu'on voit pendant le chargement de l'image, et
+     ce qui reste si le fichier manque — avec les initiales de la ville,
+     qui valent mieux qu'un carré vide. L'image se pose par-dessus. */
+  vignetteLogement(l, classe = '') {
+    if (!l) return `<span class="thumb lg-vign ${classe}" aria-hidden="true" style="background:var(--ink-300)"></span>`;
+    const src = typeof photoLogement === 'function' ? photoLogement(l) : null;
+    const repli = (l.ville || l.nom || '?').slice(0, 2).toUpperCase();
+    // aria-hidden : la vignette aide l'œil, jamais la lecture. Le nom du
+    // logement suit immédiatement ; faire annoncer « LY » avant lui
+    // n'ajouterait rien et gênerait.
+    return `<span class="thumb lg-vign ${classe}" aria-hidden="true" style="background:${l.couleur}">${repli}${src
+      ? `<img src="${src}" alt="" loading="lazy" decoding="async"
+             onerror="this.remove()">`
+      : ''}</span>`;
   },
 
   /* ---------- Fiches de police : visualisation + export PDF ---------- */

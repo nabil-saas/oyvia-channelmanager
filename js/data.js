@@ -390,6 +390,14 @@ const DEFAUTS_LOGEMENT = {
   /* --- Photos : ordre + légende ; la première est la couverture --- */
   photos: [],
 
+  /* Fichier de couverture, dans assets/logements/. Sert d'abord à
+     RECONNAÎTRE le logement : le nom seul se lit, la photo se repère.
+     Sur un calendrier de dix lignes ou une grille de tarifs, l'œil
+     retrouve « le chalet » avant d'avoir fini de lire « Chalet vue lac
+     d'Annecy ». La couleur reste : elle sert de fond tant que l'image
+     n'est pas chargée, et de repli si le fichier manque. */
+  couverture: null,
+
   /* --- Connexions aux plateformes ---
      Deux états distincts, qu'il ne faut pas confondre :
      - `connecte` : le canal est rattaché à ce logement (identifiant d'annonce
@@ -428,6 +436,7 @@ function _logement(o) {
 const LOGEMENTS = [
   _logement({
     id:'L001', nom:'T2 Vieux-Lyon avec balcon', couleur:'#B5654A',
+    couverture:'L001.jpg',
     ville:'Lyon', quartier:'Vieux-Lyon', pays:'France',
     adresse:'12 rue du Bœuf, 69005 Lyon',
     type:'appartement', typologie:'T2', typeChambre:'entier',
@@ -475,6 +484,7 @@ const LOGEMENTS = [
 
   _logement({
     id:'L002', nom:'Studio Montmartre lumineux', couleur:'#3D5A80',
+    couverture:'L002.jpg',
     ville:'Paris', quartier:'Montmartre', pays:'France',
     adresse:'8 rue Lepic, 75018 Paris',
     type:'studio', typologie:'T1', typeChambre:'entier',
@@ -516,6 +526,7 @@ const LOGEMENTS = [
 
   _logement({
     id:'L003', nom:'Appartement Chartrons design', couleur:'#5B7A6B',
+    couverture:'L003.jpg',
     ville:'Bordeaux', quartier:'Chartrons', pays:'France',
     adresse:'24 cours de la Martinique, 33000 Bordeaux',
     type:'appartement', typologie:'T3', typeChambre:'entier',
@@ -560,6 +571,7 @@ const LOGEMENTS = [
 
   _logement({
     id:'L004', nom:"Chalet vue lac d'Annecy", couleur:'#4A6A58',
+    couverture:'L004.jpg',
     ville:'Annecy', quartier:'Veyrier-du-Lac', pays:'France',
     adresse:'5 chemin des Cyprès, 74290 Veyrier-du-Lac',
     type:'chalet', typeChambre:'entier',
@@ -607,6 +619,7 @@ const LOGEMENTS = [
 
   _logement({
     id:'L005', nom:'Villa front de mer', couleur:'#C99A3C',
+    couverture:'L005.jpg',
     ville:'Biarritz', quartier:'Côte des Basques', pays:'France',
     adresse:'18 avenue de la Plage, 64200 Biarritz',
     type:'villa', typeChambre:'entier',
@@ -659,6 +672,7 @@ const LOGEMENTS = [
 
   _logement({
     id:'L006', nom:'Loft Vieux-Port', couleur:'#8A5A3C',
+    couverture:'L006.jpg',
     ville:'Marseille', quartier:'Le Panier', pays:'France',
     adresse:'3 rue du Panier, 13002 Marseille',
     type:'loft', typeChambre:'entier',
@@ -700,6 +714,7 @@ const LOGEMENTS = [
 
   _logement({
     id:'L007', nom:'Studio Promenade des Anglais', couleur:'#3D6E80',
+    couverture:'L007.jpg',
     ville:'Nice', quartier:'Promenade', pays:'France',
     adresse:'45 promenade des Anglais, 06000 Nice',
     type:'studio', typologie:'T1', typeChambre:'entier',
@@ -739,6 +754,7 @@ const LOGEMENTS = [
 
   _logement({
     id:'L008', nom:'Maison de pêcheur', couleur:'#6E7A5B',
+    couverture:'L008.jpg',
     ville:'La Rochelle', quartier:'Vieux-Port', pays:'France',
     adresse:'9 rue des Voiliers, 17000 La Rochelle',
     type:'maison', typeChambre:'entier',
@@ -782,6 +798,7 @@ const LOGEMENTS = [
 
   _logement({
     id:'L009', nom:'Duplex Capitole', couleur:'#9A5A6E',
+    couverture:'L009.jpg',
     ville:'Toulouse', quartier:'Capitole', pays:'France',
     adresse:'2 place du Capitole, 31000 Toulouse',
     type:'duplex', typologie:'T3', typeChambre:'entier',
@@ -824,6 +841,7 @@ const LOGEMENTS = [
 
   _logement({
     id:'L010', nom:"T3 Presqu'île rénové", couleur:'#4A6A80',
+    couverture:'L010.jpg',
     ville:'Lyon', quartier:"Presqu'île", pays:'France',
     adresse:'30 rue de la République, 69002 Lyon',
     type:'appartement', typologie:'T3', typeChambre:'entier',
@@ -4496,6 +4514,19 @@ const PARAMETRES_GENERAUX = {
    Petites fonctions d'accès (lecture seule)
    ============================================================ */
 function getLogement(id)   { return LOGEMENTS.find(l => l.id === id); }
+
+/* Chemin de la photo de couverture depuis la page courante.
+
+   Les écrans vivent à deux profondeurs — la racine (site public, page
+   voyageur) et app/ ou admin/ — et un chemin écrit en dur dans les
+   données casserait de l'autre côté. On le résout donc à l'affichage,
+   une fois, plutôt que de recopier « ../ » à chaque appel. */
+const OYVIA_RACINE = /\/(app|admin)\//.test(location.pathname) ? '../' : '';
+function photoLogement(l) {
+  const log = typeof l === 'string' ? getLogement(l) : l;
+  return log && log.couverture ? `${OYVIA_RACINE}assets/logements/${log.couverture}` : null;
+}
+
 function getVoyageur(id)    { return VOYAGEURS.find(v => v.id === id); }
 function getReservation(id) { return RESERVATIONS.find(r => r.id === id); }
 function getPrestataire(id) { return PRESTATAIRES.find(p => p.id === id); }
@@ -4971,10 +5002,38 @@ function getNotifications() {
     });
   }
 
-  // Urgentes d'abord, puis par proximité d'arrivée
+  /* --- Réponse du propriétaire à une demande de gestion ---
+     La conciergerie a candidaté sur la marketplace ; le propriétaire a
+     tranché. Sans cette alerte, elle ne l'apprendrait qu'en repassant
+     d'elle-même sur « Mes prospects » — c'est-à-dire trop tard pour
+     redéposer une candidature ailleurs, ou trop tard pour se préparer à
+     prendre le bien. */
+  if (typeof mpDecisionsNonLues === 'function') {
+    mpDecisionsNonLues().forEach(d => {
+      const b = mpBien(d.bienId);
+      const retenue = d.statut === 'acceptee';
+      notifs.push({
+        id: `mandat-${d.id}`,
+        type: 'mandat',
+        urgence: retenue ? 'high' : 'medium',
+        titre: retenue ? 'Mandat obtenu' : 'Le propriétaire a choisi une autre conciergerie',
+        message: b ? `${b.type} · ${b.ville} — ${b.quartier}` : 'Bien retiré de la marketplace',
+        href: `prospects.html?demande=${d.id}`,
+      });
+    });
+  }
+
+  /* Urgentes d'abord, puis par proximité d'arrivée. Toutes les alertes
+     ne portent pas sur un séjour : celles qui n'ont pas de réservation
+     (une réponse de la marketplace) passent après, sans quoi le tri
+     irait chercher une date qui n'existe pas. */
+  const echeance = n => {
+    const r = n.resaId ? getReservation(n.resaId) : null;
+    return r ? joursAvantArrivee(r.arrivee) : Infinity;
+  };
   return notifs.sort((a, b) => {
     if (a.urgence !== b.urgence) return a.urgence === 'high' ? -1 : 1;
-    return joursAvantArrivee(getReservation(a.resaId).arrivee) - joursAvantArrivee(getReservation(b.resaId).arrivee);
+    return echeance(a) - echeance(b);
   });
 }
 const TACHE_LABEL = { menage:'Ménage', checkin:'Check-in', maintenance:'Maintenance', linge:'Linge' };

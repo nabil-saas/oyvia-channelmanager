@@ -41,6 +41,8 @@ const PERMISSIONS_ADMIN = [
   { id:'demandes',    label:'Demandes clients',          groupe:'Support' },
   { id:'plateforme',  label:'Santé de la plateforme',    groupe:'Technique' },
   { id:'incidents',   label:'Déclarer et clore un incident', groupe:'Technique' },
+  { id:'marketplace', label:'Marketplace des mandats',   groupe:'Marketplace',
+    aide:"Les biens déposés par les propriétaires et les demandes de gestion envoyées par les conciergeries." },
   { id:'blog',        label:'Blog et contenus',          groupe:'Contenu',
     aide:"Écrire, publier, programmer et retirer les articles du site public." },
   { id:'equipe',      label:'Équipe Oyvia et rôles',     groupe:'Administration' },
@@ -52,9 +54,13 @@ const ROLES_ADMIN = [
   { id:'direction', nom:'Direction', systeme:true,
     desc:"Accès complet, y compris l'équipe interne et le journal d'audit.",
     permissions:[...TOUTES_PERMISSIONS_ADMIN] },
+  // Le support voit la marketplace : un bien déposé qui ne reçoit aucune
+  // candidature est un propriétaire qu'on va perdre, et c'est le support
+  // qui décroche le téléphone. Lui cacher l'écran reviendrait à lui
+  // confier la relance sans lui montrer qui relancer.
   { id:'support', nom:'Support', systeme:false,
-    desc:"Répond aux demandes et consulte les comptes, sans toucher à la facturation.",
-    permissions:['vue','comptes','demandes','connexion','plateforme'] },
+    desc:"Répond aux demandes, consulte les comptes et suit la marketplace, sans toucher à la facturation.",
+    permissions:['vue','comptes','demandes','connexion','plateforme','marketplace'] },
   { id:'finance', nom:'Finance', systeme:false,
     desc:"Facturation, encaissements et relances.",
     permissions:['vue','comptes','revenus','revenus_agir','journal'] },

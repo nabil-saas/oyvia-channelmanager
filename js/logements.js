@@ -70,9 +70,20 @@ Layout.init('logements');
       // qui n'est pas en ligne, et un plafond de nuitées près d'être atteint.
       const alerte = conf.niveau === 'alerte' || conf.niveau === 'depasse'
         ? `<div class="lg-card__flag" title="${conf.texte}">⚠ ${conf.texte}</div>` : '';
+      /* La couverture se pose PAR-DESSUS la couleur, jamais à sa place :
+         la couleur tient l'affichage pendant le chargement, et si le
+         fichier manque la carte garde son identité au lieu de virer au
+         blanc.
+
+         On écrit `background-color` et NON `background` : la propriété
+         raccourcie, en style en ligne, réinitialise `background-size` à
+         `auto` et l'emporte sur la feuille de styles. Le `cover` était
+         donc ignoré et la photo s'affichait à sa taille réelle — on ne
+         voyait qu'un plafond ou une cime d'arbre en gros plan. */
+      const couverture = photoLogement(l);
       return `
       <article class="lg-card" data-id="${l.id}">
-        <div class="lg-card__cover" style="background:${l.couleur}">
+        <div class="lg-card__cover" style="background-color:${l.couleur}${couverture ? `;background-image:url('${couverture}')` : ''}">
           <span class="lg-card__note">${star} ${l.note.toFixed(1)}</span>
           ${l.statut !== 'publie' ? `<span class="badge ${st.badge} lg-card__statut">${st.label}</span>` : ''}
         </div>
@@ -698,11 +709,7 @@ Layout.init('logements');
       ${c.message ? `<p class="lg-canal__alerte" style="border-radius:var(--r-md);margin-bottom:var(--sp-4)">⚠ ${c.message}</p>` : ''}
 
       <div class="lg-photos mb-4">
-        ${l.photos.length ? l.photos.map((p, i) => `
-          <div class="lg-photo" style="background:linear-gradient(${135 + i * 30}deg, ${l.couleur}, ${i % 2 ? 'var(--ink-300)' : 'var(--blue-400)'})">
-            ${i === 0 ? '<span class="lg-photo__flag">Couverture</span>' : ''}
-            <span class="lg-photo__legende">${p.legende}</span>
-          </div>`).join('') : `<p class="text-sm text-muted">Aucune photo transmise à ce canal.</p>`}
+        ${l.photos.length || l.couverture ? tuilesPhotos(l) : `<p class="text-sm text-muted">Aucune photo transmise à ce canal.</p>`}
       </div>
 
       ${pleines.map(sectionCanalHTML).join('')}
@@ -710,6 +717,28 @@ Layout.init('logements');
       <div class="app-grid app-grid--2 mt-4">
         ${colonnes.map(s => `<div>${sectionCanalHTML(s)}</div>`).join('')}
       </div>`;
+  }
+
+  /* ---------- Tuiles de la galerie ----------
+
+     Une seule photo existe réellement dans ce prototype : la couverture.
+     Elle sort donc de la liste et passe en tête, avec sa propre légende.
+
+     Les autres tuiles gardent leur dégradé et leur légende — ce sont des
+     emplacements annoncés, pas des photos. Poser la couverture sous la
+     légende « Coin cuisine » aurait été plus joli et parfaitement faux :
+     la couverture du studio Montmartre est une vue sur les toits. Une
+     image qui contredit sa légende use la confiance dans tout l'écran. */
+  function tuilesPhotos(l) {
+    const couverture = photoLogement(l);
+    const tete = couverture ? `
+      <div class="lg-photo lg-photo--reelle" style="background-color:${l.couleur};background-image:url('${couverture}')">
+        <span class="lg-photo__flag">Couverture</span>
+      </div>` : '';
+    return tete + l.photos.map((p, i) => `
+      <div class="lg-photo" style="background:linear-gradient(${135 + i * 30}deg, ${l.couleur}, ${i % 2 ? 'var(--ink-300)' : 'var(--blue-400)'})">
+        <span class="lg-photo__legende">${p.legende}</span>
+      </div>`).join('');
   }
 
   function paneCanaux(l) {
@@ -768,14 +797,8 @@ Layout.init('logements');
 
   function panePhotos(l) {
     return `
-      <div class="lg-photos">
-        ${l.photos.map((p, i) => `
-          <div class="lg-photo" style="background:linear-gradient(${135 + i * 30}deg, ${l.couleur}, ${i % 2 ? 'var(--ink-300)' : 'var(--blue-400)'})">
-            ${i === 0 ? '<span class="lg-photo__flag">Couverture</span>' : ''}
-            <span class="lg-photo__legende">${p.legende}</span>
-          </div>`).join('')}
-      </div>
-      <p class="text-xs text-muted" style="margin-top:var(--sp-4)">${l.photos.length} photo${l.photos.length > 1 ? 's' : ''} · la première sert de couverture sur tous les canaux. Airbnb en exige au moins 5 pour publier une annonce.</p>`;
+      <div class="lg-photos">${tuilesPhotos(l)}</div>
+      <p class="text-xs text-muted" style="margin-top:var(--sp-4)">${l.photos.length + (l.couverture ? 1 : 0)} photo${l.photos.length ? 's' : ''} · la couverture part sur tous les canaux. Airbnb en exige au moins 5 pour publier une annonce.</p>`;
   }
 
   /* Une fiche ne doit jamais devenir inaccessible à cause d'un seul onglet.
@@ -818,7 +841,7 @@ Layout.init('logements');
 
     content.innerHTML = `
       <div class="lg-detail__head">
-        <div class="lg-detail__thumb" style="background:${l.couleur}">${l.ville.slice(0, 2).toUpperCase()}</div>
+        ${UI.vignetteLogement(l, 'lg-detail__thumb')}
         <div class="lg-detail__meta grow">
           <h1>${l.nom}</h1>
           <p>${l.adresse}</p>

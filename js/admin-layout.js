@@ -21,6 +21,8 @@ const AdminLayout = (function () {
     plateforme: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
     equipe:     '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><circle cx="8" cy="15" r="1.6"/><path d="M13 14h5M13 17h3"/>',
     blog:       '<path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M14 4v6h6"/><path d="M7 13h8M7 17h5"/>',
+    mpbiens:    '<path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
+    mpdemandes: '<path d="M4 6h10M4 12h7M4 18h4"/><path d="m15 15 3 3 4-5"/>',
     retour:     '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
     menu:       '<path d="M4 6h16M4 12h16M4 18h16"/>',
   };
@@ -31,6 +33,10 @@ const AdminLayout = (function () {
     { id:'demandes',   label:'Demandes',        title:'Demandes clients',     href:'demandes.html',   perm:'demandes', badge:'demandes' },
     { id:'revenus',    label:'Revenus',         title:'Revenus & facturation',href:'revenus.html',    perm:'revenus' },
     { id:'plateforme', label:'Plateforme',      title:'Santé de la plateforme',href:'plateforme.html',perm:'plateforme', badge:'incidents' },
+    { id:'mpbiens',    label:'Logements propriétaires', title:'Logements déposés par les propriétaires',
+      href:'logements-proprietaires.html', perm:'marketplace', badge:'sansdemande' },
+    { id:'mpdemandes', label:'Demande de gestion',      title:'Demandes de gestion',
+      href:'demandes-gestion.html',        perm:'marketplace', badge:'gestionattente' },
     { id:'blog',       label:'Blog',            title:'Blog — articles',      href:'blog.html',       perm:'blog', badge:'brouillons' },
     { id:'equipe',     label:'Équipe Oyvia',    title:'Équipe Oyvia & journal',href:'equipe.html',    perm:'equipe' },
   ];
@@ -38,6 +44,7 @@ const AdminLayout = (function () {
   const NAV_GROUPS = [
     { label:'Pilotage',  items:['vue'] },
     { label:'Clients',   items:['comptes', 'demandes'] },
+    { label:'Marketplace', items:['mpbiens', 'mpdemandes'] },
     { label:'Finance',   items:['revenus'] },
     { label:'Technique', items:['plateforme'] },
     { label:'Contenu',   items:['blog'] },
@@ -51,6 +58,17 @@ const AdminLayout = (function () {
     // articles programmés. Les articles en ligne, eux, ne demandent rien.
     brouillons: () => (typeof ARTICLES === 'undefined' ? 0
       : ARTICLES.filter(a => statutArticleReel(a) !== 'publie').length),
+
+    /* Marketplace. Une pastille annonce du travail à faire, pas un
+       volume : on ne compte donc ni les biens déposés, ni les demandes
+       reçues — ces deux nombres ne baissent jamais et la pastille
+       deviendrait un décor qu'on cesse de lire.
+       Ce qui attend vraiment quelqu'un chez nous, c'est un bien que
+       personne n'a demandé, et une candidature restée sans réponse. */
+    sansdemande: () => (typeof MP_BIENS === 'undefined' ? 0
+      : MP_BIENS.filter(b => b.statut === 'disponible' && !mpDemandesDuBien(b.id).length).length),
+    gestionattente: () => (typeof MP_DEMANDES === 'undefined' ? 0
+      : MP_DEMANDES.filter(d => d.statut === 'envoyee' && mpJoursDepuis(d.envoyeeLe) >= 7).length),
   };
   function badgeCount(id) {
     const f = BADGES[id];
@@ -77,7 +95,10 @@ const AdminLayout = (function () {
       const nb = n.badge ? badgeCount(n.badge) : 0;
       const badge = nb > 0 ? `<span class="app-navitem__badge">${nb}</span>` : '';
       const estActive = n.href === fichier || n.id === active;
-      return `<a class="app-navitem ${estActive ? 'is-active' : ''}" href="${n.href}">
+      // `title` : la barre est étroite et deux intitulés y sont coupés.
+      // L'ellipse reste lisible, le survol donne le nom entier — plutôt
+      // que d'abréger le nom de la section partout ailleurs pour lui.
+      return `<a class="app-navitem ${estActive ? 'is-active' : ''}" href="${n.href}" title="${n.label}">
         ${svg(I[n.id])}<span>${n.label}</span>${badge}</a>`;
     };
 
