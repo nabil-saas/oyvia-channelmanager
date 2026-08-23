@@ -355,3 +355,37 @@
 /* Pastille de légende « occupé mais sélectionnable » : un trait, comme
    la barre qui traverse le chiffre. */
 .dp__leg i.barre { background: none; height: 2px; border-radius: 0; background-image: linear-gradient(var(--c-danger), var(--c-danger)); }
+
+/* ------------------------------------------------------------
+   Aide à la rédaction (Vivi) — bouton dans les zones de texte
+
+   Posé DANS le champ, en bas à droite : un bouton à l'extérieur se
+   perdrait entre deux libellés, et l'on ne saurait plus quel texte il
+   reformule. Il reste discret tant qu'on n'écrit pas dedans, et se
+   révèle au survol et au focus — l'aide ne doit pas s'imposer à qui
+   sait déjà quoi écrire.
+   ------------------------------------------------------------ */
+.ia-champ { position: relative; display: block; }
+.ia-champ .textarea, .ia-champ textarea { padding-bottom: 40px; }
+
+.ia-btn {
+  position: absolute; right: 8px; bottom: 8px;
+  width: 30px; height: 30px; display: grid; place-items: center;
+  border-radius: var(--r-full); border: 1px solid var(--c-border);
+  background: var(--c-surface); color: var(--c-text-muted);
+  cursor: pointer; opacity: .55;
+  transition: opacity var(--t-fast), color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+}
+.ia-btn svg { width: 15px; height: 15px; }
+.ia-champ:hover .ia-btn, .ia-champ:focus-within .ia-btn { opacity: 1; }
+.ia-btn:hover { color: var(--c-accent-ink); border-color: var(--c-accent); background: var(--c-accent-soft); }
+.ia-btn:disabled { cursor: default; }
+
+/* Pendant le traitement : l'icône tourne. C'est le seul moment où le
+   bouton s'anime, donc le seul où l'animation veut dire quelque chose. */
+.ia-btn.is-occupe { opacity: 1; color: var(--c-accent); }
+.ia-btn.is-occupe svg { animation: ia-tourne 900ms linear infinite; }
+@keyframes ia-tourne { to { transform: rotate(360deg); } }
+
+/* Retour en arrière offert : le bouton change de rôle et le dit. */
+.ia-btn.is-retour { opacity: 1; color: var(--c-warning-ink); border-color: var(--c-warning-soft); background: var(--c-warning-soft); }
