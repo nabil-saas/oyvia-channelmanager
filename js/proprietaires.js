@@ -228,7 +228,7 @@ Layout.init('proprietaires');
       // reparamètre depuis Comptabilité › Facturation.
       encaissement: 'proprietaire', remuneration: 'commission',
       commission: 0.20, forfaitMensuel: 0,
-      depensesPayeesPar: 'proprietaire', refacturerDepenses: false,
+      depensesPayeesPar: 'proprietaire',
     });
     MOIS_COMPTABLES.forEach((mois, i) => {
       FACTURES.push({ id: `F-${id}-${i}`, proprietaireId: id, mois, statut: 'attente' });

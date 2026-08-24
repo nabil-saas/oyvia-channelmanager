@@ -1312,23 +1312,33 @@ RESERVATIONS.forEach(r => { r.nuits = nuitsEntre(r.arrivee, r.depart); });
         'mixte'      : forfait de base + commission sur le CA.
 
    3. depensesPayeesPar — QUI AVANCE LES FRAIS (ménage, plomberie…) ?
-        'gestionnaire' : la conciergerie avance. On demande alors si
-                         elle les refacture (refacturerDepenses). Si
-                         non, elles sortent de sa propre marge.
+        'gestionnaire' : la conciergerie avance. Le sort de chaque frais
+                         se décide ensuite DÉPENSE PAR DÉPENSE, au
+                         moment de la saisie (`d.refacturee`) : on
+                         refacture un matelas, on absorbe des ampoules.
+                         Un réglage unique au contrat obligeait à
+                         trancher pour tout le parc.
         'proprietaire' : le propriétaire règle directement ses
-                         prestataires. La question de la refacturation
-                         ne se pose plus — d'où le fait qu'elle
-                         disparaisse de l'écran dans ce cas.
+                         prestataires. La question ne se pose plus —
+                         d'où le fait qu'elle disparaisse de l'écran.
    ============================================================ */
 
 const ENCAISSEMENT_LABEL = {
   gestionnaire: 'Le gestionnaire encaisse',
   proprietaire: 'Le propriétaire encaisse',
+  cohote:       'Co-hôte Airbnb',
 };
 const ENCAISSEMENT_DESC = {
   gestionnaire: "Vous recevez l'argent des réservations, retenez ce qui vous revient et reversez le solde au propriétaire.",
   proprietaire: "Le propriétaire reçoit directement l'argent des réservations ; vous lui adressez une facture.",
+  cohote:       "Airbnb vous verse directement votre part à chaque réservation. Rien à calculer ni à facturer de ce côté : seuls les frais avancés restent à régler entre vous.",
 };
+/* Le co-hôte n'a pas de mode de rémunération à choisir : Airbnb applique
+   le partage convenu sur la plateforme et vire chacun séparément. Poser
+   la question « comment êtes-vous rémunéré ? » à un co-hôte inviterait à
+   saisir une commission qui ne sert à rien — et qui apparaîtrait ensuite
+   dans des totaux qu'aucun virement ne viendrait justifier. */
+function encaissementCohote(o) { return o && o.encaissement === 'cohote'; }
 const REMUNERATION_LABEL = {
   commission: "Commission sur le chiffre d'affaires",
   forfait:    'Forfait mensuel fixe',
@@ -1348,15 +1358,15 @@ const PROPRIETAIRES = [
   // Cas 1a : le gestionnaire encaisse, avance les frais et les déduit du reversement.
   { id:'O1', societe:'SCI Bernard',            contact:'Paul Bernard',  email:'paul.bernard@sci-bernard.fr', tel:'+33 6 12 34 56 78',
     encaissement:'gestionnaire', remuneration:'commission', commission:0.20, forfaitMensuel:0,
-    depensesPayeesPar:'gestionnaire', refacturerDepenses:true },
+    depensesPayeesPar:'gestionnaire' },
   // Cas 2 : le propriétaire encaisse et règle lui-même ses prestataires.
   { id:'O2', societe:'Investissements Lefort', contact:'Sophie Lefort',  email:'s.lefort@gmail.com',           tel:'+33 6 98 76 54 32',
     encaissement:'proprietaire', remuneration:'commission', commission:0.18, forfaitMensuel:0,
-    depensesPayeesPar:'proprietaire', refacturerDepenses:false },
+    depensesPayeesPar:'proprietaire' },
   // Cas 3a : le propriétaire encaisse, le gestionnaire avance et refacture.
   { id:'O3', societe:'Patrimoine Aziz',        contact:'Karim Aziz',     email:'k.aziz@gmail.com',             tel:'+33 6 45 67 89 01',
     encaissement:'proprietaire', remuneration:'mixte', commission:0.10, forfaitMensuel:99,
-    depensesPayeesPar:'gestionnaire', refacturerDepenses:true },
+    depensesPayeesPar:'gestionnaire' },
 ];
 
 /* Anciens contrats enregistrés avec `modeFacturation` (un seul champ).
@@ -1378,9 +1388,26 @@ function _migrerFacturation() {
       o.remuneration = o.remuneration || l.remuneration;
     }
     if (!o.depensesPayeesPar) o.depensesPayeesPar = 'gestionnaire';
-    if (o.refacturerDepenses === undefined) o.refacturerDepenses = true;
     delete o.modeFacturation;
   });
+
+  /* Dépenses enregistrées avant que le choix ne leur appartienne : on
+     reprend l'ancien réglage du contrat de leur propriétaire, plutôt que
+     de tout basculer d'un côté. Sans ça, un parc entier changerait de
+     décompte au premier chargement suivant la mise à jour.
+
+     L'ancien réglage est lu AVANT d'être effacé — l'inverse aurait
+     ventilé toutes les dépenses sur une valeur déjà disparue. */
+  const ancienReglage = {};
+  PROPRIETAIRES.forEach(o => { ancienReglage[o.id] = o.refacturerDepenses !== false; });
+  if (typeof DEPENSES !== 'undefined') {
+    DEPENSES.forEach(d => {
+      if (d.refacturee !== undefined) return;
+      const l = getLogement(d.logementId);
+      d.refacturee = l ? ancienReglage[l.proprietaireId] !== false : true;
+    });
+  }
+  PROPRIETAIRES.forEach(o => { delete o.refacturerDepenses; });
 }
 
 /* ============================================================
@@ -1400,19 +1427,44 @@ function _migrerFacturation() {
    bien à SA charge : elle sort de sa marge, et c'est ce que traduit
    `resultatGestionnaire`.
    ============================================================ */
+/* Ventile un ensemble de dépenses selon ce qui a été décidé sur chacune.
+   Renvoie toujours les trois nombres, même à zéro : un appelant qui doit
+   tester l'existence de la clé finit par oublier un cas. */
+function ventilerDepenses(liste) {
+  let total = 0, refacturees = 0;
+  (liste || []).forEach(d => {
+    total += d.montant;
+    if (d.refacturee) refacturees += d.montant;
+  });
+  return { total, refacturees, absorbees: total - refacturees };
+}
+
+/* `depenses` accepte un nombre (tout est refacturable, comportement
+   d'origine) ou le résultat de `ventilerDepenses`. La forme objet est
+   celle qu'on veut : elle porte le détail décidé dépense par dépense. */
 function calculFacture(o, ca, depenses, nbJours = 30) {
-  const commission = o.remuneration === 'forfait' ? 0 : ca * (o.commission || 0);
-  const forfait = (o.remuneration === 'forfait' || o.remuneration === 'mixte')
+  const v = typeof depenses === 'number'
+    ? { total: depenses, refacturees: depenses, absorbees: 0 }
+    : (depenses || { total: 0, refacturees: 0, absorbees: 0 });
+  const total = v.total;
+
+  /* Co-hôte Airbnb : la plateforme verse à chacun sa part, il n'y a ni
+     commission à calculer ni reversement à faire. Ne reste entre les
+     deux parties que les frais avancés. */
+  const cohote = encaissementCohote(o);
+  const commission = (cohote || o.remuneration === 'forfait') ? 0 : ca * (o.commission || 0);
+  const forfait = (!cohote && (o.remuneration === 'forfait' || o.remuneration === 'mixte'))
     ? (o.forfaitMensuel || 0) * (nbJours / 30)
     : 0;
   const honoraires = commission + forfait;
 
   const avanceesParGestionnaire = o.depensesPayeesPar === 'gestionnaire';
-  const refacturees = (avanceesParGestionnaire && o.refacturerDepenses) ? depenses : 0;
-  const absorbees   = (avanceesParGestionnaire && !o.refacturerDepenses) ? depenses : 0;
+  const refacturees = avanceesParGestionnaire ? v.refacturees : 0;
+  const absorbees   = avanceesParGestionnaire ? v.absorbees : 0;
+  const depenses_ = total;
   // À la charge du propriétaire : celles qu'il règle lui-même, ou
   // celles qu'on lui refacture. Jamais les deux, par construction.
-  const depensesACharge = avanceesParGestionnaire ? refacturees : depenses;
+  const depensesACharge = avanceesParGestionnaire ? refacturees : total;
 
   const sens = o.encaissement === 'gestionnaire' ? 'reversement' : 'facture';
   // Le montant du document : ce que la conciergerie retient sur
@@ -1420,8 +1472,10 @@ function calculFacture(o, ca, depenses, nbJours = 30) {
   const montant = honoraires + refacturees;
 
   return {
-    sens, ca, depenses,
+    sens, ca, cohote,
+    depenses: depenses_,
     commission, forfait, honoraires,
+    taux: cohote ? 0 : (o.remuneration === 'forfait' ? 0 : (o.commission || 0)),
     depensesRefacturees: refacturees,
     depensesAbsorbees: absorbees,
     depensesACharge,
@@ -1447,12 +1501,41 @@ function libelleContrat(o) {
   return `${ENCAISSEMENT_LABEL[o.encaissement]} · ${remun}`;
 }
 
-// Sort des dépenses, tel qu'on le lit sur un décompte.
+// Sort des dépenses, tel qu'on le lit sur un décompte. Le détail se
+// décide dépense par dépense : on annonce donc le principe, pas un
+// absolu qui serait faux dès la première exception.
 function libelleDepenses(o) {
   if (o.depensesPayeesPar === 'proprietaire') return 'Réglées directement par le propriétaire';
-  return o.refacturerDepenses
-    ? (o.encaissement === 'gestionnaire' ? 'Avancées puis déduites du reversement' : 'Avancées puis refacturées')
-    : 'Avancées par le gestionnaire, non refacturées';
+  return o.encaissement === 'gestionnaire'
+    ? 'Avancées, déduites du reversement au cas par cas'
+    : 'Avancées, refacturées au cas par cas';
+}
+
+/* Le verbe à employer devant l'utilisateur pour dire « cette dépense est
+   à la charge du propriétaire ». Il dépend de qui encaisse : retenir sur
+   un virement n'est pas émettre une facture, et employer le mauvais mot
+   fait chercher un document qui n'existera jamais. */
+function verbeRefacturation(o) {
+  return o && o.encaissement === 'gestionnaire'
+    ? { verbe: 'Déduire du reversement', court: 'déduite', pluriel: 'déduites',
+        aide: 'Le montant sera retenu sur le prochain reversement au propriétaire.' }
+    : { verbe: 'Refacturer au propriétaire', court: 'refacturée', pluriel: 'refacturées',
+        aide: 'Le montant sera ajouté à la prochaine facture du propriétaire.' };
+}
+
+/* Frais internes de la conciergerie sur une période : ce qu'elle doit à
+   ses prestataires pour les interventions terminées. Rien à voir avec
+   les dépenses d'un logement — celles-ci sont engagées POUR un bien et
+   peuvent revenir au propriétaire ; les frais internes sortent de la
+   poche de la conciergerie, toujours. */
+function fraisInternesPeriode(from, to, logementIds = null) {
+  if (typeof TACHES === 'undefined' || typeof coutIntervention !== 'function') return { total: 0, nb: 0 };
+  const dans = TACHES.filter(t => t.statut === 'termine' && t.date >= from && t.date <= to
+    && (!logementIds || logementIds.includes(t.logementId)));
+  return {
+    nb: dans.length,
+    total: dans.reduce((s, t) => s + coutIntervention(t.type, t.logementId).montant, 0),
+  };
 }
 // Répartition des 10 biens entre les 3 propriétaires
 const _PROP_MAP = { L001:'O1', L002:'O1', L003:'O1', L010:'O1', L004:'O2', L005:'O2', L006:'O2', L007:'O3', L008:'O3', L009:'O3' };
@@ -1465,19 +1548,33 @@ LOGEMENTS.forEach(l => { l.proprietaireId = _PROP_MAP[l.id] || 'O1'; });
    module Comptabilité pour calculer le résultat net du propriétaire :
    CA − commission − dépenses.
    ============================================================ */
+/* `refacturee` : cette dépense est-elle à la charge du propriétaire ?
+
+   Le réglage était porté par le CONTRAT (`o.refacturerDepenses`), ce qui
+   obligeait à trancher une fois pour toutes : soit on refacture tout,
+   soit rien. La réalité est plus fine — on refacture le remplacement
+   d'un matelas, on absorbe les ampoules. La question se pose donc au
+   moment où l'on saisit la dépense, là où l'on sait ce qu'elle est.
+
+   Le mot change selon qui encaisse, mais l'effet est le même : le
+   propriétaire supporte la dépense. Quand le gestionnaire encaisse, elle
+   se DÉDUIT du reversement ; quand le propriétaire encaisse, elle se
+   REFACTURE. Deux phrases pour un seul champ, parce qu'un gestionnaire
+   qui lit « refacturer » alors qu'il retient sur un virement cherche
+   longtemps la facture qu'il n'émettra jamais. */
 const DEPENSES = [
-  { id:'D01', logementId:'L001', date:'2026-07-05', montant:180, libelle:'Réparation robinet cuisine',        factureNom:'facture-plombier-L001.pdf', factureData:null },
-  { id:'D02', logementId:'L001', date:'2026-06-18', montant:65,  libelle:'Ampoules & consommables',           factureNom:null, factureData:null },
-  { id:'D03', logementId:'L002', date:'2026-07-10', montant:340, libelle:'Remplacement matelas',              factureNom:'facture-literie-L002.pdf', factureData:null },
-  { id:'D04', logementId:'L003', date:'2026-07-02', montant:120, libelle:'Entretien chaudière',                factureNom:'facture-chauffagiste.pdf', factureData:null },
-  { id:'D05', logementId:'L004', date:'2026-06-25', montant:450, libelle:'Vidange spa & produits',            factureNom:null, factureData:null },
-  { id:'D06', logementId:'L004', date:'2026-07-15', montant:90,  libelle:'Remplacement vaisselle cassée',     factureNom:null, factureData:null },
-  { id:'D07', logementId:'L005', date:'2026-07-08', montant:620, libelle:'Réparation pompe piscine',          factureNom:'facture-piscine-L005.pdf', factureData:null },
-  { id:'D08', logementId:'L006', date:'2026-06-30', montant:75,  libelle:'Produits ménagers',                  factureNom:null, factureData:null },
-  { id:'D09', logementId:'L007', date:'2026-07-12', montant:210, libelle:'Peinture volets',                    factureNom:'facture-peintre.pdf', factureData:null },
-  { id:'D10', logementId:'L008', date:'2026-07-04', montant:150, libelle:'Entretien jardin',                   factureNom:null, factureData:null },
-  { id:'D11', logementId:'L009', date:'2026-06-22', montant:95,  libelle:'Remplacement serrure',              factureNom:'facture-serrurier.pdf', factureData:null },
-  { id:'D12', logementId:'L010', date:'2026-07-18', montant:280, libelle:'Réparation lave-linge',             factureNom:'facture-electromenager.pdf', factureData:null },
+  { id:'D01', logementId:'L001', date:'2026-07-05', montant:180, libelle:'Réparation robinet cuisine',        factureNom:'facture-plombier-L001.pdf', factureData:null , refacturee:true },
+  { id:'D02', logementId:'L001', date:'2026-06-18', montant:65,  libelle:'Ampoules & consommables',           factureNom:null, factureData:null , refacturee:false },
+  { id:'D03', logementId:'L002', date:'2026-07-10', montant:340, libelle:'Remplacement matelas',              factureNom:'facture-literie-L002.pdf', factureData:null , refacturee:true },
+  { id:'D04', logementId:'L003', date:'2026-07-02', montant:120, libelle:'Entretien chaudière',                factureNom:'facture-chauffagiste.pdf', factureData:null , refacturee:true },
+  { id:'D05', logementId:'L004', date:'2026-06-25', montant:450, libelle:'Vidange spa & produits',            factureNom:null, factureData:null , refacturee:true },
+  { id:'D06', logementId:'L004', date:'2026-07-15', montant:90,  libelle:'Remplacement vaisselle cassée',     factureNom:null, factureData:null , refacturee:false },
+  { id:'D07', logementId:'L005', date:'2026-07-08', montant:620, libelle:'Réparation pompe piscine',          factureNom:'facture-piscine-L005.pdf', factureData:null , refacturee:true },
+  { id:'D08', logementId:'L006', date:'2026-06-30', montant:75,  libelle:'Produits ménagers',                  factureNom:null, factureData:null , refacturee:false },
+  { id:'D09', logementId:'L007', date:'2026-07-12', montant:210, libelle:'Peinture volets',                    factureNom:'facture-peintre.pdf', factureData:null , refacturee:true },
+  { id:'D10', logementId:'L008', date:'2026-07-04', montant:150, libelle:'Entretien jardin',                   factureNom:null, factureData:null , refacturee:true },
+  { id:'D11', logementId:'L009', date:'2026-06-22', montant:95,  libelle:'Remplacement serrure',              factureNom:'facture-serrurier.pdf', factureData:null , refacturee:false },
+  { id:'D12', logementId:'L010', date:'2026-07-18', montant:280, libelle:'Réparation lave-linge',             factureNom:'facture-electromenager.pdf', factureData:null , refacturee:true },
 ];
 function getDepensesByLogement(id) { return DEPENSES.filter(d => d.logementId === id); }
 function getDepensesByProprietaire(id) {

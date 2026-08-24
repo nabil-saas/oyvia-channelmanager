@@ -37,16 +37,16 @@ Layout.init('comptabilite');
   const tabs = document.getElementById('cp-tabs');
   const subtabs = document.getElementById('cp-subtabs');
   const panes = [...document.querySelectorAll('.tabpane')];
-  const VUES_PROPRIETAIRE = ['synthese', 'facturation', 'depenses'];
-  let derniereVueProprio = 'synthese';
+  const VUES_PROPRIETAIRE = ['facturation', 'depenses'];
+  let derniereVueProprio = 'facturation';
 
   function activateTab(name, parAction = false) {
     // « proprietaires » n'est pas une vue : c'est un versant. On rouvre
     // celle qu'on regardait, plutôt que de renvoyer à la synthèse.
     if (name === 'proprietaires') name = derniereVueProprio;
-    const versant = name === 'prestataires' ? 'prestataires' : 'proprietaires';
+    const versant = ['prestataires', 'synthese'].includes(name) ? name : 'proprietaires';
     if (versant === 'proprietaires') {
-      if (!VUES_PROPRIETAIRE.includes(name)) name = 'synthese';
+      if (!VUES_PROPRIETAIRE.includes(name)) name = 'facturation';
       derniereVueProprio = name;
     }
 
@@ -71,9 +71,13 @@ Layout.init('comptabilite');
        à l'autre ne touche pas à l'URL : les trois ne sont qu'une seule
        entrée de menu. */
     if (parAction) {
-      const cible = versant === 'prestataires'
-        ? '#prestataires'
-        : location.pathname + location.search;
+      /* L'ancre nomme le VERSANT, pas la vue : le menu compte une entrée
+         par versant, et changer de sous-onglet ne doit pas déplacer le
+         surlignage. Les liens venus d'ailleurs (`#facturation`) restent
+         compris — l'entrée Propriétaires les revendique. */
+      const cible = versant === 'synthese'
+        ? location.pathname + location.search
+        : `#${versant}`;
       if (location.href !== new URL(cible, location.href).href) {
         history.replaceState(null, '', cible);
         if (typeof Layout !== 'undefined' && Layout.refreshNav) Layout.refreshNav();
@@ -162,7 +166,7 @@ Layout.init('comptabilite');
     const nbJours = nbJoursPeriode(from, to);
 
     const perLogement = {};
-    biens.forEach(l => { perLogement[l.id] = { logement: l, ca: 0, depenses: 0, commission: 0 }; });
+    biens.forEach(l => { perLogement[l.id] = { logement: l, ca: 0, depenses: 0, depensesRefacturees: 0, commission: 0 }; });
 
     RESERVATIONS
       .filter(r => r.canal !== 'bloque' && bienIds.includes(r.logementId) && parseDate(r.arrivee) >= parseDate(from) && parseDate(r.arrivee) <= parseDate(to))
@@ -170,15 +174,22 @@ Layout.init('comptabilite');
 
     DEPENSES
       .filter(d => bienIds.includes(d.logementId) && parseDate(d.date) >= parseDate(from) && parseDate(d.date) <= parseDate(to))
-      .forEach(d => { if (perLogement[d.logementId]) perLogement[d.logementId].depenses += d.montant; });
+      .forEach(d => {
+        const row = perLogement[d.logementId];
+        if (!row) return;
+        row.depenses += d.montant;
+        if (d.refacturee) row.depensesRefacturees += d.montant;
+      });
 
     // Regroupement par propriétaire : chacun applique son propre modèle.
     const byOwner = {};
     Object.values(perLogement).forEach(row => {
       const oid = row.logement.proprietaireId;
-      byOwner[oid] = byOwner[oid] || { ca: 0, depenses: 0 };
+      byOwner[oid] = byOwner[oid] || { ca: 0, depenses: { total: 0, refacturees: 0, absorbees: 0 } };
       byOwner[oid].ca += row.ca;
-      byOwner[oid].depenses += row.depenses;
+      byOwner[oid].depenses.total += row.depenses;
+      byOwner[oid].depenses.refacturees += row.depensesRefacturees;
+      byOwner[oid].depenses.absorbees += row.depenses - row.depensesRefacturees;
     });
 
     let ca = 0, depenses = 0, commission = 0, forfait = 0, depensesFacturees = 0;
@@ -188,7 +199,7 @@ Layout.init('comptabilite');
       const o = getProprietaire(oid);
       const g = byOwner[oid];
       const f = calculFacture(o, g.ca, g.depenses, nbJours);
-      ca += g.ca; depenses += g.depenses;
+      ca += g.ca; depenses += g.depenses.total;
       commission += f.commission; forfait += f.forfait;
       depensesFacturees += f.depensesRefacturees; depensesAbsorbees += f.depensesAbsorbees;
       factureMontant += f.montant; net += f.netProprietaire;
@@ -201,9 +212,15 @@ Layout.init('comptabilite');
       });
     });
 
+    /* Frais internes : ce que la conciergerie doit à ses prestataires
+       pour les interventions terminées sur la période. C'est sa charge à
+       elle, jamais celle du propriétaire — d'où un compteur séparé et
+       non une ligne de plus dans les dépenses du bien. */
+    const fraisInternes = fraisInternesPeriode(from, to, bienIds);
+
     return { rows: Object.values(perLogement), ca, depenses, commission, forfait,
       depensesFacturees, depensesAbsorbees, factureMontant, net,
-      aVerser, aRecevoir, resultatGestionnaire, facturesParProprio };
+      aVerser, aRecevoir, resultatGestionnaire, facturesParProprio, fraisInternes };
   }
 
   function renderInvoiceAlert(ownerId) {
@@ -265,17 +282,15 @@ Layout.init('comptabilite');
     else if (data.depensesFacturees >= data.depenses) depFoot = 'intégralement à la charge du propriétaire';
     else depFoot = `dont ${formatMontant(data.depensesFacturees)} refacturées`;
 
-    /* Le troisième compteur change de NATURE selon le contrat : reverser
-       de l'argent et en recevoir ne sont pas la même opération, et un
-       parc mixte produit les deux en même temps. On l'annonce plutôt que
-       de tout empiler sous un « Facturé au propriétaire » qui serait faux
-       la moitié du temps. */
-    const mixte = data.aVerser > 0 && data.aRecevoir > 0;
-    const fluxLabel = mixte ? 'Mouvements' : (data.aRecevoir > 0 ? 'À recevoir des propriétaires' : 'À verser aux propriétaires');
-    const fluxValue = mixte
-      ? `${formatMontant(data.aVerser)} <span class="kpi__sur">versés</span>`
-      : formatMontant(data.aRecevoir > 0 ? data.aRecevoir : data.aVerser);
-    const fluxFoot = mixte ? `et ${formatMontant(data.aRecevoir)} à recevoir` : honoFoot;
+    /* Frais internes à la place des mouvements.
+
+       « Mouvements » additionnait deux sens opposés — de l'argent versé
+       et de l'argent reçu — pour produire un nombre qu'on ne pouvait
+       comparer à rien. Ce qui manquait vraiment à cet écran, c'est le
+       coût des prestataires : sans lui, les honoraires passent pour de
+       la marge alors qu'ils financent d'abord les interventions. */
+    const fi = data.fraisInternes || { total: 0, nb: 0 };
+    const marge = data.commission + data.forfait - fi.total - data.depensesAbsorbees;
 
     const netFoot = o
       ? (o.encaissement === 'gestionnaire' ? 'après retenue, versé par vos soins' : 'conservé par le propriétaire, après facture')
@@ -286,8 +301,9 @@ Layout.init('comptabilite');
         ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
       { label: 'Vos honoraires', value: formatMontant(data.commission + data.forfait), foot: honoFoot,
         ic: icon('<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>') },
-      { label: fluxLabel, value: fluxValue, foot: fluxFoot,
-        ic: icon('<path d="M7 17 17 7M17 7h-6M17 7v6"/>') },
+      { label: 'Frais internes', value: formatMontant(fi.total),
+        foot: fi.nb ? `${fi.nb} intervention${fi.nb > 1 ? 's' : ''} · marge nette ${formatMontant(marge)}` : 'aucune intervention terminée',
+        ic: icon('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
       { label: 'Dépenses', value: formatMontant(data.depenses), foot: depFoot,
         ic: icon('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-2.4z"/>') },
       { label: 'Net propriétaire', value: formatMontant(data.net), foot: netFoot,
@@ -367,14 +383,17 @@ Layout.init('comptabilite');
     const { from, to } = monthRangeFromLabel(f.mois);
     const nbJours = nbJoursPeriode(from, to);
     const bienIds = getLogementsByProprietaire(o.id).map(l => l.id);
-    let ca = 0, depenses = 0;
+    let ca = 0;
     RESERVATIONS
       .filter(r => r.canal !== 'bloque' && bienIds.includes(r.logementId) && parseDate(r.arrivee) >= parseDate(from) && parseDate(r.arrivee) <= parseDate(to))
       .forEach(r => { ca += r.montant; });
-    DEPENSES
-      .filter(d => bienIds.includes(d.logementId) && parseDate(d.date) >= parseDate(from) && parseDate(d.date) <= parseDate(to))
-      .forEach(d => { depenses += d.montant; });
-    return { o, mois: f.mois, from, to, ...calculFacture(o, ca, depenses, nbJours) };
+    const lignesDepenses = DEPENSES.filter(d => bienIds.includes(d.logementId)
+      && parseDate(d.date) >= parseDate(from) && parseDate(d.date) <= parseDate(to));
+    const v = ventilerDepenses(lignesDepenses);
+    // Le détail part avec la facture : un propriétaire à qui l'on
+    // refacture 620 € veut savoir de quelles réparations il s'agit.
+    return { o, mois: f.mois, from, to, lignesDepenses: lignesDepenses.filter(d => d.refacturee),
+      ...calculFacture(o, ca, v, nbJours) };
   }
 
   // Génère un vrai PDF (jsPDF) reprenant le détail de la facture/relevé
@@ -425,8 +444,13 @@ Layout.init('comptabilite');
     // ils s'ADDITIONNENT. Même chiffre, lecture opposée.
     const signe = isReversement ? '- ' : '';
     const rows = [];
-    rows.push([isReversement ? "Chiffre d'affaires encaissé sur la période"
-                             : "Chiffre d'affaires déclaré sur la période", formatMontant(d.ca)]);
+    /* Un co-hôte n'a pas à faire figurer le chiffre d'affaires : Airbnb
+       lui a déjà versé sa part, et le document ne porte que les frais
+       avancés. L'y mettre laisserait croire à une retenue. */
+    if (!d.cohote) {
+      rows.push([isReversement ? "Chiffre d'affaires encaissé sur la période"
+                               : "Chiffre d'affaires déclaré sur la période", formatMontant(d.ca)]);
+    }
     if (d.commission) rows.push([`${signe}Commission (${Math.round(d.o.commission * 100)} %)`, signe + formatMontant(d.commission)]);
     if (d.forfait) rows.push([signe + 'Forfait de gestion', signe + formatMontant(d.forfait)]);
     if (d.depensesRefacturees) rows.push([
@@ -442,6 +466,27 @@ Layout.init('comptabilite');
       doc.text(val, 196, y, { align: 'right' });
     });
 
+    /* Le détail des frais refacturés, ligne à ligne. Un propriétaire à
+       qui l'on demande 620 € veut savoir de quelles réparations il
+       s'agit ; un total sans son détail se conteste par retour de
+       courriel, et il faut alors le reconstituer à la main. */
+    const lignes = d.lignesDepenses || [];
+    if (lignes.length) {
+      y += 12;
+      doc.setFontSize(9); doc.setTextColor(120, 120, 120); doc.setFont('helvetica', 'normal');
+      doc.text('Détail des frais avancés', 14, y);
+      y += 2;
+      doc.setDrawColor(232, 232, 232); doc.line(14, y, 196, y);
+      doc.setFontSize(9); doc.setTextColor(70, 70, 70);
+      lignes.forEach(dep => {
+        if (y > 258) { doc.addPage(); y = 20; }
+        y += 6;
+        const l = getLogement(dep.logementId);
+        doc.text(`${formatDate(dep.date)} · ${String(dep.libelle).slice(0, 46)}${l ? ' — ' + String(l.nom).slice(0, 26) : ''}`, 14, y);
+        doc.text(formatMontant(dep.montant), 196, y, { align: 'right' });
+      });
+    }
+
     y += 8;
     doc.setDrawColor(225, 225, 225); doc.line(14, y, 196, y);
     y += 12;
@@ -449,7 +494,8 @@ Layout.init('comptabilite');
     doc.setFillColor(246, 246, 246);
     doc.roundedRect(14, y - 8, 182, 16, 2, 2, 'F');
     doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 20);
-    doc.text(isReversement ? 'Net reversé au propriétaire' : 'Total à régler par le propriétaire', 20, y + 1.5);
+    doc.text(isReversement ? 'Net reversé au propriétaire'
+      : (d.cohote ? 'Frais à rembourser par le propriétaire' : 'Total à facturer au propriétaire'), 20, y + 1.5);
     doc.text(formatMontant(isReversement ? d.aVerser : d.aRecevoir), 190, y + 1.5, { align: 'right' });
 
     y += 24;
@@ -493,28 +539,47 @@ Layout.init('comptabilite');
         .filter(r => r.canal !== 'bloque' && bienIds.includes(r.logementId)
           && parseDate(r.arrivee) >= parseDate(from) && parseDate(r.arrivee) <= parseDate(to))
         .reduce((t, r) => t + r.montant, 0);
-      const depPeriode = DEPENSES
-        .filter(d => bienIds.includes(d.logementId)
-          && parseDate(d.date) >= parseDate(from) && parseDate(d.date) <= parseDate(to))
-        .reduce((t, d) => t + d.montant, 0);
+      const depPeriode = ventilerDepenses(DEPENSES.filter(d => bienIds.includes(d.logementId)
+        && parseDate(d.date) >= parseDate(from) && parseDate(d.date) <= parseDate(to)));
       const d = calculFacture(o, caPeriode, depPeriode, nbJoursPeriode(from, to));
       const avance = o.depensesPayeesPar === 'gestionnaire';
+      const cohote = encaissementCohote(o);
+
+      /* Un co-hôte dont le propriétaire règle lui-même ses prestataires
+         n'a RIEN à établir : Airbnb verse à chacun sa part, aucun frais
+         ne transite. Afficher un décompte à zéro et un bouton « générer
+         la facture » inviterait à produire un document vide. */
+      const decompteVisible = !cohote || avance;
 
       const ligne = (lab, val, cls) => `<div class="cp-decompte__l ${cls || ''}"><span>${lab}</span><b>${val}</b></div>`;
+      /* Le décompte se lit TOUJOURS du côté de celui qui doit agir.
+
+         Quand la conciergerie encaisse, elle part du chiffre d'affaires
+         qu'elle détient et retranche : le résultat est ce qu'elle verse.
+         Quand le propriétaire encaisse, elle ne détient rien — partir du
+         chiffre d'affaires laisserait croire qu'elle le retient. On part
+         donc de ses honoraires et l'on additionne : le résultat est ce
+         qu'elle refacture.
+
+         La commission porte son calcul (CA × taux). Un pourcentage seul
+         oblige à ressortir une calculette pour vérifier une facture ;
+         écrit en toutes lettres, il se contrôle d'un coup d'œil. */
+      const calculCommission = d.taux
+        ? ` <em>${formatMontantNu(d.ca)} × ${Math.round(d.taux * 100)} %</em>`
+        : '';
       const decompte = d.sens === 'reversement'
         ? [
             ligne("Chiffre d'affaires encaissé", formatMontant(d.ca)),
             d.forfait ? ligne('− Forfait de gestion', '− ' + formatMontant(d.forfait)) : '',
-            d.commission ? ligne('− Commission', '− ' + formatMontant(d.commission)) : '',
-            d.depensesRefacturees ? ligne('− Dépenses avancées', '− ' + formatMontant(d.depensesRefacturees)) : '',
+            d.commission ? ligne('− Commission' + calculCommission, '− ' + formatMontant(d.commission)) : '',
+            d.depensesRefacturees ? ligne('− Dépenses déduites', '− ' + formatMontant(d.depensesRefacturees)) : '',
             ligne('= Net à verser au propriétaire', formatMontant(d.aVerser), 'cp-decompte__l--total'),
           ].join('')
         : [
-            ligne("Chiffre d'affaires déclaré", formatMontant(d.ca), 'cp-decompte__l--info'),
+            d.commission ? ligne('Commission' + calculCommission, formatMontant(d.commission)) : '',
             d.forfait ? ligne('Forfait de gestion', formatMontant(d.forfait)) : '',
-            d.commission ? ligne('Commission', formatMontant(d.commission)) : '',
-            d.depensesRefacturees ? ligne('+ Dépenses à refacturer', '+ ' + formatMontant(d.depensesRefacturees)) : '',
-            ligne('= À régler au gestionnaire', formatMontant(d.aRecevoir), 'cp-decompte__l--total'),
+            d.depensesRefacturees ? ligne('Dépenses à refacturer', formatMontant(d.depensesRefacturees)) : '',
+            ligne('= À refacturer au propriétaire', formatMontant(d.aRecevoir), 'cp-decompte__l--total'),
           ].join('');
 
       // Le sort des dépenses non refacturées ne se devine pas : il faut
@@ -551,7 +616,7 @@ Layout.init('comptabilite');
                 <em>Encaisse</em>
                 <b>${o.encaissement === 'gestionnaire' ? 'Gestionnaire' : 'Propriétaire'}</b>
               </span>
-              <span class="cp-contrat__f">
+              <span class="cp-contrat__f" ${cohote ? 'hidden' : ''}>
                 <em>Rémunération</em>
                 <b>${o.remuneration === 'commission' ? `Commission ${Math.round((o.commission || 0) * 100)} %`
                    : o.remuneration === 'forfait' ? `Forfait ${formatMontant(o.forfaitMensuel || 0)}/mois`
@@ -560,7 +625,7 @@ Layout.init('comptabilite');
               <span class="cp-contrat__f">
                 <em>Dépenses</em>
                 <b>${o.depensesPayeesPar === 'proprietaire' ? 'Payées par le propriétaire'
-                   : (o.refacturerDepenses ? 'Avancées, refacturées' : 'Avancées, non refacturées')}</b>
+                   : (o.encaissement === 'gestionnaire' ? 'Avancées, déduites au cas par cas' : 'Avancées, refacturées au cas par cas')}</b>
               </span>
             </div>
           </div>
@@ -579,7 +644,7 @@ Layout.init('comptabilite');
             </select>
             <span class="field__hint">${ENCAISSEMENT_DESC[o.encaissement]}</span>
           </div>
-          <div class="field">
+          <div class="field" ${cohote ? 'hidden' : ''}>
             <label class="field__label">Comment êtes-vous rémunéré ?</label>
             <select class="select" data-remuneration="${o.id}">
               ${Object.entries(REMUNERATION_LABEL).map(([k, v]) => `<option value="${k}" ${o.remuneration === k ? 'selected' : ''}>${v}</option>`).join('')}
@@ -588,6 +653,7 @@ Layout.init('comptabilite');
           </div>
         </div>
 
+        ${cohote ? '' : `
         <div class="app-grid app-grid--2" style="margin-bottom:var(--sp-4)">
           <div class="field" ${o.remuneration === 'forfait' ? 'hidden' : ''}>
             <label class="field__label">Commission (%)</label>
@@ -597,7 +663,7 @@ Layout.init('comptabilite');
             <label class="field__label">Forfait mensuel (${symboleDevise()})</label>
             <input class="input" type="number" min="0" step="1" value="${montantSaisie(o.forfaitMensuel || 0)}" data-forfait="${o.id}" aria-label="Forfait mensuel (${symboleDevise()})">
           </div>
-        </div>
+        </div>`}
 
         <div class="app-grid app-grid--2" style="margin-bottom:var(--sp-4)">
           <div class="field">
@@ -605,26 +671,22 @@ Layout.init('comptabilite');
             <select class="select" data-payeur="${o.id}">
               ${Object.entries(PAYEUR_LABEL).map(([k, v]) => `<option value="${k}" ${o.depensesPayeesPar === k ? 'selected' : ''}>${v}</option>`).join('')}
             </select>
-          </div>
-          <div class="field" ${avance ? '' : 'hidden'}>
-            <label class="field__label">Refacturer les dépenses au propriétaire ?</label>
-            <label class="row gap-2" style="min-height:44px;font-size:var(--fs-sm)">
-              <span class="switch"><input type="checkbox" data-refacturer="${o.id}" ${o.refacturerDepenses ? 'checked' : ''}><span class="switch__track"></span></span>
-              <span>${o.refacturerDepenses
-                ? (o.encaissement === 'gestionnaire' ? 'Déduites du reversement' : 'Ajoutées à la facture')
-                : 'Non — elles restent à votre charge'}</span>
-            </label>
+            <span class="field__hint">${avance
+              ? `Le sort de chaque frais se décide à la saisie de la dépense : ${verbeRefacturation(o).verbe.toLowerCase()}, ou le garder à votre charge.`
+              : 'Le propriétaire règle ses prestataires : rien à refacturer.'}</span>
           </div>
         </div>
 
+        ${decompteVisible ? `
         <div class="cp-decompte">
           <p class="cp-decompte__titre">Décompte sur la période affichée</p>
           ${decompte}
           ${noteAbsorbees}
           ${noteProprio}
-        </div>
+        </div>` : `
+        <p class="cp-decompte__vide">Rien à établir : Airbnb vous verse votre part et le propriétaire règle lui-même ses prestataires. Aucun document ne circule entre vous.</p>`}
 
-        <div class="cp-months">${months}</div>
+        ${decompteVisible ? `<div class="cp-months">${months}</div>` : ''}
       </details>`;
     }).join('');
 
@@ -682,14 +744,6 @@ Layout.init('comptabilite');
       o.forfaitMensuel = Math.max(0, lireMontantSaisi(v, o.forfaitMensuel));
       saveOyviaState(); renderOwners(); renderSynthese();
       UI.toast(`Forfait mensuel de ${o.societe} mis à jour`);
-      return;
-    }
-    const refact = e.target.closest('[data-refacturer]');
-    if (refact) {
-      const o = getProprietaire(refact.dataset.refacturer);
-      o.refacturerDepenses = refact.checked;
-      saveOyviaState(); renderOwners(); renderSynthese();
-      UI.toast(`Refacturation des dépenses ${o.refacturerDepenses ? 'activée' : 'désactivée'} pour ${o.societe}`);
       return;
     }
   });
@@ -1034,7 +1088,7 @@ Layout.init('comptabilite');
       const idx = DEPENSES.findIndex(d => d.id === del.dataset.depDel);
       if (idx > -1) {
         DEPENSES.splice(idx, 1);
-        renderDepenses(); renderSynthese();
+        renderDepenses(); renderSynthese(); renderOwners();
         UI.toast('Dépense supprimée');
       }
       return;
@@ -1082,7 +1136,49 @@ Layout.init('comptabilite');
     document.getElementById('cp-f-facture').value = '';
     document.getElementById('cp-f-facture-name').textContent = '';
     pendingFactureData = null; pendingFactureNom = null;
+    renderSortDepense();
   }
+
+  /* ---------- Sort de la dépense ----------
+
+     La question posée dépend du contrat du propriétaire du logement
+     choisi, et le logement est déjà sélectionné juste au-dessus : on n'a
+     donc rien à demander de plus qu'un oui ou un non.
+
+     Trois cas :
+     · le propriétaire règle lui-même ses prestataires → la question ne
+       se pose pas, on l'explique plutôt que de laisser une case morte ;
+     · le gestionnaire encaisse → « Déduire du reversement » ;
+     · le propriétaire encaisse → « Refacturer au propriétaire ».
+
+     Coché par défaut : une dépense engagée POUR un bien revient
+     normalement à son propriétaire. L'exception, c'est de l'absorber. */
+  function renderSortDepense() {
+    const zone = document.getElementById('cp-f-sort');
+    if (!zone) return;
+    const l = getLogement(document.getElementById('cp-f-logement').value);
+    const o = l && getProprietaire(l.proprietaireId);
+    if (!o) { zone.innerHTML = ''; return; }
+
+    if (o.depensesPayeesPar !== 'gestionnaire') {
+      zone.innerHTML = `<p class="cp-sort__non">
+        ${o.societe} règle directement ses prestataires : cette dépense lui est déjà imputée,
+        il n'y a rien à déduire ni à refacturer.</p>`;
+      return;
+    }
+
+    const v = verbeRefacturation(o);
+    zone.innerHTML = `
+      <label class="cp-sort__l">
+        <span class="switch"><input type="checkbox" id="cp-f-refacturee" checked><span class="switch__track"></span></span>
+        <span class="cp-sort__t">
+          <b>${v.verbe}</b>
+          <small>${v.aide} Décochez pour la garder à votre charge.</small>
+        </span>
+      </label>`;
+  }
+
+  document.getElementById('cp-f-logement').addEventListener('change', renderSortDepense);
   document.getElementById('cp-dep-add').addEventListener('click', () => { fillDepModal(); UI.openPanel('cp-dep-modal'); });
 
   document.getElementById('cp-f-facture').addEventListener('change', e => {
@@ -1107,12 +1203,16 @@ Layout.init('comptabilite');
     if (!date) { UI.toast('Choisissez une date', false); return; }
     if (!montantAffiche || montantAffiche <= 0) { UI.toast('Indiquez un montant valide', false); return; }
     if (!libelle) { UI.toast('Indiquez un libellé', false); return; }
+    const caseSort = document.getElementById('cp-f-refacturee');
     DEPENSES.push({
       id: 'D' + Date.now(), logementId, date, montant, libelle,
       factureNom: pendingFactureNom, factureData: pendingFactureData,
+      // Pas de case affichée = le propriétaire paie déjà : la dépense est
+      // à sa charge par nature, sans passer par nous.
+      refacturee: caseSort ? caseSort.checked : true,
     });
     UI.closeAll();
-    renderDepenses(); renderSynthese();
+    renderDepenses(); renderSynthese(); renderOwners();
     UI.toast('Dépense ajoutée');
   });
 
@@ -1123,5 +1223,5 @@ Layout.init('comptabilite');
 
   // Ouverture directe sur un onglet via l'URL (ex : comptabilite.html#depenses,
   // #prestataires) — en dernier, tout étant alors défini.
-  if (location.hash) activateTab(location.hash.slice(1));
+  activateTab(location.hash ? location.hash.slice(1) : 'synthese');
 })();
