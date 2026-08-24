@@ -2081,3 +2081,21 @@
   .sj-apercu { position: static; }
   .sj-phone { max-width: 400px; margin-inline: auto; }
 }
+
+/* ---------- Sort d'une dépense, à la saisie ----------
+   La question ne se pose que si le gestionnaire avance les frais ; sinon
+   on l'explique au lieu de laisser une case morte. */
+.cp-sort { margin-top: var(--sp-4); }
+.cp-sort__l { display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-4);
+  border: 1px solid var(--c-border); border-radius: var(--r-lg); cursor: pointer; }
+.cp-sort__l:hover { border-color: var(--c-border-strong); }
+.cp-sort__t b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.cp-sort__t small { display: block; font-size: var(--fs-xs); color: var(--c-text-muted); line-height: var(--lh-snug); margin-top: 2px; }
+.cp-sort__non { font-size: var(--fs-sm); color: var(--c-text-muted); background: var(--bg-subtle);
+  border-radius: var(--r-lg); padding: var(--sp-4); line-height: var(--lh-snug); }
+
+/* Le calcul écrit à côté de la commission : il se contrôle d'un coup
+   d'œil, sans calculette. */
+.cp-decompte__l em { font-style: normal; font-size: var(--fs-xs); color: var(--c-text-muted); margin-left: var(--sp-2); }
+.cp-decompte__vide { font-size: var(--fs-sm); color: var(--c-text-muted); background: var(--bg-subtle);
+  border-radius: var(--r-lg); padding: var(--sp-4); line-height: var(--lh-snug); }

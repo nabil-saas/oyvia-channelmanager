@@ -31,13 +31,18 @@
         <!-- Premier niveau : de quel côté de l'exploitation on se place.
              Les trois vues propriétaire ne changent pas ; elles passent
              simplement d'un cran en dessous, sous leur versant. -->
+        <!-- La synthèse est SORTIE du versant propriétaire : elle regarde
+             les deux côtés de l'exploitation — ce qui rentre et ce qui
+             revient aux propriétaires d'un côté, ce que coûtent les
+             prestataires de l'autre. La ranger sous « Propriétaires »
+             revenait à en amputer la moitié. -->
         <div class="tabs" id="cp-tabs">
-          <button type="button" class="is-active" data-tab="proprietaires">Propriétaires</button>
+          <button type="button" class="is-active" data-tab="synthese">Synthèse</button>
+          <button type="button" data-tab="proprietaires">Propriétaires</button>
           <button type="button" data-tab="prestataires">Prestataires</button>
         </div>
-        <div class="tabs tabs--sous" id="cp-subtabs">
-          <button type="button" class="is-active" data-tab="synthese">Synthèse comptable</button>
-          <button type="button" data-tab="facturation">Facturation</button>
+        <div class="tabs tabs--sous" id="cp-subtabs" hidden>
+          <button type="button" class="is-active" data-tab="facturation">Facturation</button>
           <button type="button" data-tab="depenses">Dépenses</button>
         </div>
 
@@ -178,6 +183,11 @@
         <div class="field"><label class="field__label" for="cp-f-montant">Montant TTC (<span data-devise></span>)</label><input class="input" type="number" min="0" step="0.01" id="cp-f-montant" placeholder="0" /></div>
       </div>
       <div class="field mt-4"><label class="field__label" for="cp-f-libelle">Libellé</label><input class="input" id="cp-f-libelle" placeholder="Réparation, entretien, achat…" /></div>
+
+      <!-- Le sort de la dépense se décide ici, pas dans le contrat.
+           Le logement choisi désigne son propriétaire, donc qui encaisse :
+           le libellé de la question s'écrit tout seul. -->
+      <div class="cp-sort" id="cp-f-sort"><!-- injecté --></div>
       <div class="field mt-4">
         <label class="field__label">Facture / justificatif <span class="text-muted">(optionnel)</span></label>
         <label class="btn btn--secondary" style="cursor:pointer;display:inline-flex">
