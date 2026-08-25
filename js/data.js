@@ -1339,6 +1339,70 @@ const ENCAISSEMENT_DESC = {
    saisir une commission qui ne sert à rien — et qui apparaîtrait ensuite
    dans des totaux qu'aucun virement ne viendrait justifier. */
 function encaissementCohote(o) { return o && o.encaissement === 'cohote'; }
+
+/* ------------------------------------------------------------
+   CO-HÔTE AIRBNB — ce que Channex remonte d'une réservation
+
+   Quatre nombres arrivent de la plateforme, et non de nous :
+     · le montant de l'hébergement,
+     · les frais de ménage facturés au voyageur,
+     · la commission prélevée par Airbnb,
+     · le net final versé au co-hôte.
+
+   Le chiffre d'affaires à retenir est donc :
+       hébergement + ménage − commission Airbnb
+
+   On additionne le ménage parce qu'il est encaissé — c'est du chiffre
+   d'affaires du séjour, pas un extra — et on retranche la commission
+   Airbnb parce qu'elle ne parvient jamais sur un compte : la compter
+   gonflerait un CA que personne n'a touché.
+
+   La part du co-hôte n'est PAS calculée par Oyvia : elle est versée par
+   Airbnb selon le partage configuré sur la plateforme. Tant que la
+   connexion Channex n'existe pas, on la simule — d'où la constante
+   ci-dessous, qui n'est pas un réglage produit et n'apparaît nulle part
+   à l'écran. Le jour où les données arrivent, `r.cohote` les porte et la
+   simulation ne sert plus.
+   ------------------------------------------------------------ */
+const COHOTE_FRAIS_AIRBNB = 0.03;   // commission hôte Airbnb, ordre de grandeur
+const COHOTE_PART_DEMO   = 0.20;    // partage co-hôte simulé, en attendant Channex
+
+function detailCohote(r) {
+  const fourni = r.cohote || {};
+  const l = getLogement(r.logementId);
+  // `montant` porte déjà hébergement + ménage dans notre modèle : on
+  // sépare les deux plutôt que d'inventer un total qui n'existerait pas.
+  const menage = fourni.menage != null ? fourni.menage : (l ? l.menageTarif || 0 : 0);
+  const hebergement = fourni.hebergement != null ? fourni.hebergement : Math.max(0, r.montant - menage);
+  const brut = hebergement + menage;
+  const commissionAirbnb = fourni.commissionAirbnb != null
+    ? fourni.commissionAirbnb : Math.round(brut * COHOTE_FRAIS_AIRBNB);
+  const caRetenu = brut - commissionAirbnb;
+  const net = fourni.net != null ? fourni.net : Math.round(caRetenu * COHOTE_PART_DEMO);
+  return { hebergement, menage, commissionAirbnb, caRetenu, net, simule: !r.cohote };
+}
+
+/* Chiffre d'affaires d'une période et, en co-hôte, la part nette qui
+   revient à la conciergerie. Un seul endroit décide de la formule :
+   la synthèse, la carte du propriétaire et la facture doivent afficher
+   le même nombre, sinon on passe la journée à chercher lequel a raison. */
+function agregatReservations(o, reservations) {
+  if (!encaissementCohote(o)) {
+    return { ca: reservations.reduce((s, r) => s + r.montant, 0), commissionDirecte: 0, cohote: null };
+  }
+  const cumul = { hebergement: 0, menage: 0, commissionAirbnb: 0, net: 0, simule: false };
+  let ca = 0;
+  reservations.forEach(r => {
+    const d = detailCohote(r);
+    ca += d.caRetenu;
+    cumul.hebergement += d.hebergement;
+    cumul.menage += d.menage;
+    cumul.commissionAirbnb += d.commissionAirbnb;
+    cumul.net += d.net;
+    if (d.simule) cumul.simule = true;
+  });
+  return { ca, commissionDirecte: cumul.net, cohote: cumul };
+}
 const REMUNERATION_LABEL = {
   commission: "Commission sur le chiffre d'affaires",
   forfait:    'Forfait mensuel fixe',
@@ -1442,7 +1506,7 @@ function ventilerDepenses(liste) {
 /* `depenses` accepte un nombre (tout est refacturable, comportement
    d'origine) ou le résultat de `ventilerDepenses`. La forme objet est
    celle qu'on veut : elle porte le détail décidé dépense par dépense. */
-function calculFacture(o, ca, depenses, nbJours = 30) {
+function calculFacture(o, ca, depenses, nbJours = 30, extra = {}) {
   const v = typeof depenses === 'number'
     ? { total: depenses, refacturees: depenses, absorbees: 0 }
     : (depenses || { total: 0, refacturees: 0, absorbees: 0 });
@@ -1452,7 +1516,13 @@ function calculFacture(o, ca, depenses, nbJours = 30) {
      commission à calculer ni reversement à faire. Ne reste entre les
      deux parties que les frais avancés. */
   const cohote = encaissementCohote(o);
-  const commission = (cohote || o.remuneration === 'forfait') ? 0 : ca * (o.commission || 0);
+  /* En co-hôte, la commission n'est pas un taux appliqué à un CA : c'est
+     le net que la plateforme a REELLEMENT versé, remonté par Channex.
+     Le recalculer à partir d'un pourcentage produirait un chiffre voisin
+     mais faux — et c'est celui-là qu'on retrouverait en comptabilité. */
+  const commission = cohote
+    ? (extra.commissionDirecte || 0)
+    : (o.remuneration === 'forfait' ? 0 : ca * (o.commission || 0));
   const forfait = (!cohote && (o.remuneration === 'forfait' || o.remuneration === 'mixte'))
     ? (o.forfaitMensuel || 0) * (nbJours / 30)
     : 0;
@@ -1467,9 +1537,12 @@ function calculFacture(o, ca, depenses, nbJours = 30) {
   const depensesACharge = avanceesParGestionnaire ? refacturees : total;
 
   const sens = o.encaissement === 'gestionnaire' ? 'reversement' : 'facture';
-  // Le montant du document : ce que la conciergerie retient sur
-  // l'encaissement, ou ce qu'elle facture. C'est le même calcul.
-  const montant = honoraires + refacturees;
+  /* Le montant du DOCUMENT — à ne pas confondre avec le revenu.
+
+     En co-hôte, Airbnb a déjà versé la part du co-hôte : la facture
+     adressée au propriétaire ne porte que les frais avancés. Y ajouter
+     les honoraires reviendrait à réclamer deux fois la même somme. */
+  const montant = cohote ? refacturees : honoraires + refacturees;
 
   return {
     sens, ca, cohote,

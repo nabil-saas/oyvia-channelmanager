@@ -166,11 +166,20 @@ Layout.init('comptabilite');
     const nbJours = nbJoursPeriode(from, to);
 
     const perLogement = {};
-    biens.forEach(l => { perLogement[l.id] = { logement: l, ca: 0, depenses: 0, depensesRefacturees: 0, commission: 0 }; });
+    biens.forEach(l => { perLogement[l.id] = { logement: l, ca: 0, depenses: 0, depensesRefacturees: 0, commission: 0, netCohote: 0 }; });
 
+    /* Le chiffre d'affaires d'une nuitée dépend du contrat : en co-hôte,
+       c'est hébergement + ménage − commission Airbnb, et non le montant
+       brut de la réservation. On passe donc par le propriétaire du bien
+       plutôt que d'additionner `montant` aveuglément. */
     RESERVATIONS
       .filter(r => r.canal !== 'bloque' && bienIds.includes(r.logementId) && parseDate(r.arrivee) >= parseDate(from) && parseDate(r.arrivee) <= parseDate(to))
-      .forEach(r => { perLogement[r.logementId].ca += r.montant; });
+      .forEach(r => {
+        const l = getLogement(r.logementId);
+        const o = l && getProprietaire(l.proprietaireId);
+        perLogement[r.logementId].ca += encaissementCohote(o) ? detailCohote(r).caRetenu : r.montant;
+        if (encaissementCohote(o)) perLogement[r.logementId].netCohote += detailCohote(r).net;
+      });
 
     DEPENSES
       .filter(d => bienIds.includes(d.logementId) && parseDate(d.date) >= parseDate(from) && parseDate(d.date) <= parseDate(to))
@@ -185,8 +194,9 @@ Layout.init('comptabilite');
     const byOwner = {};
     Object.values(perLogement).forEach(row => {
       const oid = row.logement.proprietaireId;
-      byOwner[oid] = byOwner[oid] || { ca: 0, depenses: { total: 0, refacturees: 0, absorbees: 0 } };
+      byOwner[oid] = byOwner[oid] || { ca: 0, netCohote: 0, depenses: { total: 0, refacturees: 0, absorbees: 0 } };
       byOwner[oid].ca += row.ca;
+      byOwner[oid].netCohote += row.netCohote;
       byOwner[oid].depenses.total += row.depenses;
       byOwner[oid].depenses.refacturees += row.depensesRefacturees;
       byOwner[oid].depenses.absorbees += row.depenses - row.depensesRefacturees;
@@ -198,7 +208,7 @@ Layout.init('comptabilite');
     Object.keys(byOwner).forEach(oid => {
       const o = getProprietaire(oid);
       const g = byOwner[oid];
-      const f = calculFacture(o, g.ca, g.depenses, nbJours);
+      const f = calculFacture(o, g.ca, g.depenses, nbJours, { commissionDirecte: g.netCohote });
       ca += g.ca; depenses += g.depenses.total;
       commission += f.commission; forfait += f.forfait;
       depensesFacturees += f.depensesRefacturees; depensesAbsorbees += f.depensesAbsorbees;
@@ -208,7 +218,8 @@ Layout.init('comptabilite');
       facturesParProprio.push({ proprietaire: o, ...f });
       // Répartit la commission par logement (utile pour le tableau de détail).
       biens.filter(l => l.proprietaireId === oid).forEach(l => {
-        if (o.remuneration !== 'forfait') perLogement[l.id].commission = perLogement[l.id].ca * o.commission;
+        if (encaissementCohote(o)) perLogement[l.id].commission = perLogement[l.id].netCohote;
+        else if (o.remuneration !== 'forfait') perLogement[l.id].commission = perLogement[l.id].ca * o.commission;
       });
     });
 
@@ -296,18 +307,26 @@ Layout.init('comptabilite');
       ? (o.encaissement === 'gestionnaire' ? 'après retenue, versé par vos soins' : 'conservé par le propriétaire, après facture')
       : 'selon le contrat de chaque propriétaire';
 
+    /* L'ordre suit le chemin de l'argent : ce qui entre, ce qu'il a
+       fallu dépenser pour les biens, ce que vous prélevez, ce qui reste
+       au propriétaire — puis, à part, ce que tout cela vous coûte en
+       interne. Les quatre premiers appartiennent au même compte ; le
+       cinquième est le vôtre, et c'est pour cela qu'il vient après. */
     const KPIS = [
       { label: 'CA généré', value: formatMontant(data.ca), foot: `${data.rows.length} logement${data.rows.length > 1 ? 's' : ''}`,
         ic: icon('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>') },
-      { label: 'Vos honoraires', value: formatMontant(data.commission + data.forfait), foot: honoFoot,
+      // « Dépenses logements » et non « Dépenses » : sans le mot, on les
+      // confond avec les frais internes juste à côté, qui sont aussi des
+      // dépenses — mais les vôtres.
+      { label: 'Dépenses logements', value: formatMontant(data.depenses), foot: depFoot,
+        ic: icon('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-2.4z"/>') },
+      { label: 'Commissions', value: formatMontant(data.commission + data.forfait), foot: honoFoot,
         ic: icon('<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>') },
+      { label: 'Net propriétaire', value: formatMontant(data.net), foot: netFoot,
+        ic: icon('<path d="M20 6 9 17l-5-5"/>') },
       { label: 'Frais internes', value: formatMontant(fi.total),
         foot: fi.nb ? `${fi.nb} intervention${fi.nb > 1 ? 's' : ''} · marge nette ${formatMontant(marge)}` : 'aucune intervention terminée',
         ic: icon('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
-      { label: 'Dépenses', value: formatMontant(data.depenses), foot: depFoot,
-        ic: icon('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-2.4z"/>') },
-      { label: 'Net propriétaire', value: formatMontant(data.net), foot: netFoot,
-        ic: icon('<path d="M20 6 9 17l-5-5"/>') },
     ];
     document.getElementById('cp-kpis').innerHTML = KPIS.map(k => `
       <div class="kpi"><span class="kpi__label">${k.label}</span><span class="kpi__value">${k.value}</span>
@@ -383,17 +402,16 @@ Layout.init('comptabilite');
     const { from, to } = monthRangeFromLabel(f.mois);
     const nbJours = nbJoursPeriode(from, to);
     const bienIds = getLogementsByProprietaire(o.id).map(l => l.id);
-    let ca = 0;
-    RESERVATIONS
-      .filter(r => r.canal !== 'bloque' && bienIds.includes(r.logementId) && parseDate(r.arrivee) >= parseDate(from) && parseDate(r.arrivee) <= parseDate(to))
-      .forEach(r => { ca += r.montant; });
+    const resas = RESERVATIONS.filter(r => r.canal !== 'bloque' && bienIds.includes(r.logementId)
+      && parseDate(r.arrivee) >= parseDate(from) && parseDate(r.arrivee) <= parseDate(to));
+    const agr = agregatReservations(o, resas);
     const lignesDepenses = DEPENSES.filter(d => bienIds.includes(d.logementId)
       && parseDate(d.date) >= parseDate(from) && parseDate(d.date) <= parseDate(to));
     const v = ventilerDepenses(lignesDepenses);
     // Le détail part avec la facture : un propriétaire à qui l'on
     // refacture 620 € veut savoir de quelles réparations il s'agit.
     return { o, mois: f.mois, from, to, lignesDepenses: lignesDepenses.filter(d => d.refacturee),
-      ...calculFacture(o, ca, v, nbJours) };
+      ...calculFacture(o, agr.ca, v, nbJours, { commissionDirecte: agr.commissionDirecte }) };
   }
 
   // Génère un vrai PDF (jsPDF) reprenant le détail de la facture/relevé
@@ -535,13 +553,13 @@ Layout.init('comptabilite');
       // pas sur ses libellés mais sur le décompte qu'il produit.
       const bienIds = biens.map(l => l.id);
       const [from, to] = [fromField.value, toField.value];
-      const caPeriode = RESERVATIONS
-        .filter(r => r.canal !== 'bloque' && bienIds.includes(r.logementId)
-          && parseDate(r.arrivee) >= parseDate(from) && parseDate(r.arrivee) <= parseDate(to))
-        .reduce((t, r) => t + r.montant, 0);
+      const resasPeriode = RESERVATIONS.filter(r => r.canal !== 'bloque' && bienIds.includes(r.logementId)
+        && parseDate(r.arrivee) >= parseDate(from) && parseDate(r.arrivee) <= parseDate(to));
+      const agr = agregatReservations(o, resasPeriode);
+      const caPeriode = agr.ca;
       const depPeriode = ventilerDepenses(DEPENSES.filter(d => bienIds.includes(d.logementId)
         && parseDate(d.date) >= parseDate(from) && parseDate(d.date) <= parseDate(to)));
-      const d = calculFacture(o, caPeriode, depPeriode, nbJoursPeriode(from, to));
+      const d = calculFacture(o, caPeriode, depPeriode, nbJoursPeriode(from, to), { commissionDirecte: agr.commissionDirecte });
       const avance = o.depensesPayeesPar === 'gestionnaire';
       const cohote = encaissementCohote(o);
 
@@ -567,6 +585,11 @@ Layout.init('comptabilite');
       const calculCommission = d.taux
         ? ` <em>${formatMontantNu(d.ca)} × ${Math.round(d.taux * 100)} %</em>`
         : '';
+      // En co-hôte, on montre d'où sort le chiffre d'affaires retenu :
+      // hébergement + ménage encaissés, moins la commission Airbnb.
+      const calculNetCohote = agr.cohote
+        ? ` <em>sur ${formatMontant(agr.ca)} de CA retenu</em>`
+        : '';
       const decompte = d.sens === 'reversement'
         ? [
             ligne("Chiffre d'affaires encaissé", formatMontant(d.ca)),
@@ -576,10 +599,18 @@ Layout.init('comptabilite');
             ligne('= Net à verser au propriétaire', formatMontant(d.aVerser), 'cp-decompte__l--total'),
           ].join('')
         : [
-            d.commission ? ligne('Commission' + calculCommission, formatMontant(d.commission)) : '',
+            /* En co-hôte, la part du co-hôte n'entre pas dans le
+               document : Airbnb l'a déjà versée. On la rappelle en
+               information — c'est un revenu réel, et l'omettre ferait
+               croire que ce propriétaire ne rapporte rien — mais elle ne
+               participe pas au total à refacturer. */
+            (d.cohote && d.commission)
+              ? ligne('Part versée par Airbnb' + calculNetCohote, formatMontant(d.commission), 'cp-decompte__l--info')
+              : (d.commission ? ligne('Commission' + calculCommission, formatMontant(d.commission)) : ''),
             d.forfait ? ligne('Forfait de gestion', formatMontant(d.forfait)) : '',
             d.depensesRefacturees ? ligne('Dépenses à refacturer', formatMontant(d.depensesRefacturees)) : '',
-            ligne('= À refacturer au propriétaire', formatMontant(d.aRecevoir), 'cp-decompte__l--total'),
+            ligne(d.cohote ? '= Total à facturer au propriétaire' : '= À refacturer au propriétaire',
+              formatMontant(d.aRecevoir), 'cp-decompte__l--total'),
           ].join('');
 
       // Le sort des dépenses non refacturées ne se devine pas : il faut
@@ -614,7 +645,8 @@ Layout.init('comptabilite');
             <div class="cp-contrat">
               <span class="cp-contrat__f">
                 <em>Encaisse</em>
-                <b>${o.encaissement === 'gestionnaire' ? 'Gestionnaire' : 'Propriétaire'}</b>
+                <b>${o.encaissement === 'gestionnaire' ? 'Gestionnaire'
+                   : o.encaissement === 'cohote' ? 'Co-hôte Airbnb' : 'Propriétaire'}</b>
               </span>
               <span class="cp-contrat__f" ${cohote ? 'hidden' : ''}>
                 <em>Rémunération</em>
@@ -631,7 +663,9 @@ Layout.init('comptabilite');
           </div>
           <div class="cp-ownercard__resume">
             ${enAttente ? `<span class="badge badge--warning">${enAttente} facture${enAttente > 1 ? 's' : ''} en attente</span>` : ''}
-            <span class="badge ${d.sens === 'reversement' ? 'badge--accent' : 'badge--positive'}">${d.sens === 'reversement' ? 'Relevé de reversement' : 'Facture de gestion'}</span>
+            <span class="badge ${d.sens === 'reversement' ? 'badge--accent' : 'badge--positive'}">${
+              d.sens === 'reversement' ? 'Relevé de reversement'
+              : cohote ? 'Note de frais' : 'Facture de gestion'}</span>
             <span class="cp-ownercard__montant">${montantResume}</span>
           </div>
         </summary>
