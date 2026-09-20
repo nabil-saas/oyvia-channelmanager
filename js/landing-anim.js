@@ -1,144 +1,214 @@
 /* ============================================================
-   OYVIA — Animations de la landing (vanilla, sans dépendance)
+   OYVIA — Comportements de la landing (vanilla, sans dépendance)
+
+   Peu d'animations, et chacune sert à quelque chose :
+     · une révélation discrète à l'entrée dans l'écran,
+     · le calendrier du hero qui se remplit pour montrer la
+       synchronisation,
+     · la visite guidée du produit, dont le défilement automatique
+       est cadencé par l'animation CSS du filet de progression —
+       pas par un setInterval qui se désynchroniserait de lui.
    ============================================================ */
 (function () {
-  /* ---------- Hero : le calendrier se synchronise ---------- */
-  (function heroCalendar() {
-    const bars = [...document.querySelectorAll('.lp-window .hcal__bar')];
-    const sync = document.getElementById('hcal-sync');
-    if (!bars.length) return;
-    const setSync = on => { if (!sync) return; sync.classList.toggle('is-syncing', on); sync.lastChild.textContent = on ? ' Synchronisation…' : ' À jour'; };
-    function cycle() {
-      bars.forEach(b => b.classList.remove('is-in'));
-      setSync(true);
-      bars.forEach((b, i) => setTimeout(() => b.classList.add('is-in'), 300 + i * 230));
-      setTimeout(() => setSync(false), 300 + bars.length * 230 + 300);
+  const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Révélation au défilement ----------
+     Le décalage est calculé ici, d'après le rang de l'élément
+     parmi ses frères révélables : aucun délai n'est écrit à la
+     main dans le HTML, donc réordonner une grille ne casse rien.
+
+     Mesure directe plutôt qu'IntersectionObserver : l'observateur
+     ne se déclenche pas tant que le document n'est pas peint, et
+     une page dont tout le texte attend un callback pour devenir
+     visible est une page qui peut rester blanche. Ici, au pire,
+     un écouteur de défilement ne s'exécute pas — mais le premier
+     passage, lui, est synchrone. */
+  (function reveal() {
+    let restants = [...document.querySelectorAll('[data-reveal]')];
+    if (!restants.length) return;
+    if (reduit) { restants.forEach(el => el.classList.add('is-in')); return; }
+
+    restants.forEach(el => {
+      const freres = [...el.parentElement.children].filter(n => n.hasAttribute('data-reveal'));
+      const rang = freres.indexOf(el);
+      if (rang > 0) el.style.setProperty('--rd', (rang * 0.07).toFixed(2) + 's');
+    });
+
+    let planifie = false;
+    function verifier() {
+      planifie = false;
+      const h = window.innerHeight;
+      restants = restants.filter(el => {
+        const r = el.getBoundingClientRect();
+        if (r.top < h - 40 && r.bottom > 0) { el.classList.add('is-in'); return false; }
+        return true;
+      });
+      if (!restants.length) {
+        window.removeEventListener('scroll', planifier);
+        window.removeEventListener('resize', planifier);
+      }
     }
-    cycle();
-    setInterval(cycle, 7000);
+    function planifier() {
+      if (planifie) return;
+      planifie = true;
+      requestAnimationFrame(verifier);
+    }
+    window.addEventListener('scroll', planifier, { passive: true });
+    window.addEventListener('resize', planifier);
+    verifier();
+    // Les polices et les images décalent la mise en page : on repasse.
+    window.addEventListener('load', planifier);
+    setTimeout(planifier, 400);
   })();
 
-  /* ---------- Démo tâches : le statut évolue (synchronisé partout où il apparaît) ---------- */
+  /* ---------- Navbar : se densifie dès qu'on quitte le haut ---------- */
+  (function stickyNav() {
+    const wrap = document.getElementById('lp-navwrap');
+    if (!wrap) return;
+    const maj = () => wrap.classList.toggle('is-stuck', window.scrollY > 12);
+    maj();
+    window.addEventListener('scroll', maj, { passive: true });
+  })();
+
+  /* ---------- Remplissage d'un calendrier de démonstration ----------
+     Les barres apparaissent l'une après l'autre, de la plus à
+     gauche à la plus à droite : on lit la synchronisation au lieu
+     de la deviner. */
+  function remplirCalendrier(racine, retard = 300, pas = 180) {
+    const barres = [...racine.querySelectorAll('.lcal__bar')];
+    if (!barres.length) return 0;
+    barres.forEach(b => b.classList.remove('is-in'));
+    if (reduit) { barres.forEach(b => b.classList.add('is-in')); return 0; }
+    barres.forEach((b, i) => setTimeout(() => b.classList.add('is-in'), retard + i * pas));
+    return retard + barres.length * pas;
+  }
+
+  /* ---------- Hero : le calendrier se synchronise en boucle ---------- */
+  (function heroCalendar() {
+    const stage = document.querySelector('.lp-stage');
+    if (!stage) return;
+    const sync = document.getElementById('lp-hero-sync');
+    const setSync = (enCours) => {
+      if (!sync) return;
+      sync.classList.toggle('is-syncing', enCours);
+      sync.lastChild.textContent = enCours ? ' Synchronisation…' : ' À jour';
+    };
+    function cycle() {
+      setSync(true);
+      const duree = remplirCalendrier(stage, 400, 190);
+      setTimeout(() => setSync(false), duree + 300);
+    }
+    cycle();
+    if (!reduit) setInterval(cycle, 9000);
+  })();
+
+  /* ---------- Visite guidée du produit ---------- */
+  (function tour() {
+    const racine = document.getElementById('lpTour');
+    if (!racine) return;
+    const onglets = [...racine.querySelectorAll('.lp-mod')];
+    const volets = [...racine.querySelectorAll('.lp-pane')];
+    if (!onglets.length || onglets.length !== volets.length) return;
+
+    // Sans JS, l'attribut hidden garde un seul volet visible ; avec JS,
+    // c'est la classe qui décide, pour que le fondu soit possible.
+    volets.forEach(v => v.removeAttribute('hidden'));
+
+    let courant = 0;
+    const comptesFaits = new WeakSet();
+
+    function animerDemo(volet) {
+      const cal = volet.querySelector('.lcal');
+      if (cal) remplirCalendrier(cal, 150, 150);
+
+      // Reflow forcé plutôt que requestAnimationFrame : la classe doit
+      // être reposée dans le même tour, sinon un onglet ouvert alors que
+      // la page n'est pas peinte reste vide.
+      const dpo = volet.querySelector('.dpo');
+      if (dpo) { dpo.classList.remove('is-viz'); void dpo.offsetWidth; dpo.classList.add('is-viz'); }
+
+      const ds = volet.querySelector('.ds');
+      if (ds && !comptesFaits.has(ds)) {
+        comptesFaits.add(ds);
+        ds.classList.add('is-viz');
+        compter(volet.querySelector('#ds-kpi-ca'), 34600, n => n.toLocaleString('fr-FR') + ' €');
+        compter(volet.querySelector('#ds-kpi-occ'), 86, n => n + ' %');
+        compter(volet.querySelector('#ds-kpi-adr'), 128, n => n + ' €');
+      }
+    }
+
+    function compter(el, cible, format) {
+      if (!el) return;
+      if (reduit) { el.textContent = format(cible); return; }
+      const duree = 1100, t0 = performance.now();
+      (function pas(maintenant) {
+        const p = Math.min((maintenant - t0) / duree, 1);
+        el.textContent = format(Math.round(cible * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) requestAnimationFrame(pas);
+      })(t0);
+    }
+
+    function activer(i) {
+      courant = (i + onglets.length) % onglets.length;
+      onglets.forEach((o, k) => {
+        const actif = k === courant;
+        o.classList.toggle('is-active', actif);
+        o.setAttribute('aria-selected', actif ? 'true' : 'false');
+        o.tabIndex = actif ? 0 : -1;
+      });
+      volets.forEach((v, k) => v.classList.toggle('is-active', k === courant));
+
+      // Redémarre le filet de progression : sans ce reflow, réactiver
+      // le même onglet ne relancerait pas l'animation CSS.
+      const filet = onglets[courant].querySelector('.lp-mod__prog i');
+      if (filet) { filet.style.animation = 'none'; void filet.offsetWidth; filet.style.animation = ''; }
+
+      animerDemo(volets[courant]);
+    }
+
+    // La cadence vient de l'animation CSS du filet : mettre le tour en
+    // pause suspend l'animation, donc suspend aussi l'enchaînement.
+    racine.addEventListener('animationend', e => {
+      if (!e.target.matches('.lp-mod__prog i')) return;
+      if (e.target.closest('.lp-mod') !== onglets[courant]) return;
+      activer(courant + 1);
+    });
+
+    const pause = (oui) => racine.classList.toggle('is-paused', oui);
+    racine.addEventListener('mouseenter', () => pause(true));
+    racine.addEventListener('mouseleave', () => pause(false));
+    racine.addEventListener('focusin', () => pause(true));
+    racine.addEventListener('focusout', () => pause(false));
+    racine.addEventListener('touchstart', () => pause(true), { passive: true });
+
+    onglets.forEach((o, i) => {
+      o.addEventListener('click', () => activer(i));
+      o.addEventListener('keydown', e => {
+        const suivant = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+        if (!suivant) return;
+        e.preventDefault();
+        activer(courant + suivant);
+        onglets[courant].focus();
+      });
+    });
+
+    activer(0);
+  })();
+
+  /* ---------- Démo tâches : le statut évolue ---------- */
   (function taskStatus() {
     const els = [...document.querySelectorAll('.dt-status')];
-    if (!els.length) return;
-    const states = [
+    if (!els.length || reduit) return;
+    const etats = [
       { t: 'À faire', c: 'badge--warning' },
       { t: 'En cours', c: 'badge--accent' },
       { t: 'Terminé', c: 'badge--positive' },
     ];
     let i = 0;
     setInterval(() => {
-      i = (i + 1) % states.length;
-      els.forEach(el => { el.className = 'badge dt-status ' + states[i].c; el.textContent = states[i].t; });
-    }, 1900);
-  })();
-
-  /* ---------- Slider : ce qui vous fait perdre du temps ---------- */
-  (function problemsSlider() {
-    const root = document.getElementById('pbSlider');
-    if (!root) return;
-    const viewport = document.getElementById('pbViewport');
-    const track = document.getElementById('pbTrack');
-    const slides = [...track.children];
-    const dotsWrap = document.getElementById('pbDots');
-    const prevBtn = document.getElementById('pbPrev');
-    const nextBtn = document.getElementById('pbNext');
-    let index = 0;
-    let autoplay = null;
-    let snapRestore = null;
-
-    slides.forEach((_, i) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'pb-dot' + (i === 0 ? ' is-active' : '');
-      b.setAttribute('aria-label', "Aller à l'élément " + (i + 1));
-      b.addEventListener('click', () => goTo(i));
-      dotsWrap.appendChild(b);
-    });
-    const dots = [...dotsWrap.children];
-
-    function setActive(i) {
-      index = i;
-      dots.forEach((d, di) => d.classList.toggle('is-active', di === i));
-    }
-    function goTo(i, smooth = true) {
-      const clamped = (i + slides.length) % slides.length;
-      // Chaque slide fait 100% de la largeur du viewport : on cible un multiple exact
-      // plutôt que offsetLeft, qui se calcule par rapport à l'offsetParent et pas au scroller.
-      // Le snap CSS est coupé le temps du scroll animé : sinon, avec scroll-snap-type
-      // mandatory, un saut programmatique de plusieurs slides (dot lointaine, retour au
-      // début) peut être écourté au premier point de snap rencontré au lieu de la cible.
-      if (smooth) {
-        viewport.style.scrollSnapType = 'none';
-        clearTimeout(snapRestore);
-        snapRestore = setTimeout(() => { viewport.style.scrollSnapType = ''; }, 550);
-      }
-      viewport.scrollTo({ left: clamped * viewport.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
-    }
-    prevBtn.addEventListener('click', () => { goTo(index - 1); restart(); });
-    nextBtn.addEventListener('click', () => { goTo(index + 1); restart(); });
-
-    // Suit le scroll (swipe tactile, molette, flèches) pour garder les puces synchronisées
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting && e.intersectionRatio > 0.6) setActive(slides.indexOf(e.target));
-      });
-    }, { root: viewport, threshold: [0.6] });
-    slides.forEach(s => io.observe(s));
-
-    function start() {
-      stop();
-      autoplay = setInterval(() => goTo(index + 1), 5000);
-    }
-    function stop() { if (autoplay) clearInterval(autoplay); }
-    function restart() { stop(); start(); }
-
-    start();
-    root.addEventListener('mouseenter', stop);
-    root.addEventListener('mouseleave', start);
-    root.addEventListener('touchstart', stop, { passive: true });
-    window.addEventListener('resize', () => goTo(index, false));
-  })();
-
-  /* ---------- Démo stats : révélée au scroll + compteurs ---------- */
-  (function statsReveal() {
-    const ds = document.querySelector('.lp-demo--stats .ds');
-    if (!ds) return;
-    function countUp(el, target, fmt) {
-      const dur = 1100, t0 = performance.now();
-      (function step(now) {
-        const p = Math.min((now - t0) / dur, 1);
-        const eased = 1 - Math.pow(1 - p, 3);
-        el.textContent = fmt(Math.round(target * eased));
-        if (p < 1) requestAnimationFrame(step);
-      })(t0);
-    }
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (!e.isIntersecting || ds.classList.contains('is-viz')) return;
-        ds.classList.add('is-viz');
-        const ca = document.getElementById('ds-kpi-ca');
-        const occ = document.getElementById('ds-kpi-occ');
-        if (ca) countUp(ca, 34600, n => n.toLocaleString('fr-FR') + ' €');
-        if (occ) countUp(occ, 86, n => n + ' %');
-      });
-    }, { threshold: 0.4 });
-    io.observe(ds);
-  })();
-
-  /* ---------- Démo fiche de police : barre + fiches révélées au scroll ---------- */
-  (function policeReveal() {
-    const dpo = document.querySelector('.lp-demo--police .dpo');
-    if (!dpo) return;
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        dpo.classList.add('is-viz');
-        io.disconnect();
-      });
-    }, { threshold: 0.35 });
-    io.observe(dpo);
+      i = (i + 1) % etats.length;
+      els.forEach(el => { el.className = 'badge dt-status ' + etats[i].c; el.textContent = etats[i].t; });
+    }, 2100);
   })();
 
   /* ---------- Nav mobile : menu déroulant (burger) ---------- */
@@ -147,20 +217,13 @@
     const menu = document.getElementById('lp-navlinks');
     if (!btn || !menu) return;
 
-    function close() {
-      menu.classList.remove('is-open');
-      btn.setAttribute('aria-expanded', 'false');
-    }
-    function open() {
-      menu.classList.add('is-open');
-      btn.setAttribute('aria-expanded', 'true');
-    }
+    const close = () => { menu.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); };
+    const open = () => { menu.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); };
 
     btn.addEventListener('click', e => {
       e.stopPropagation();
       menu.classList.contains('is-open') ? close() : open();
     });
-    // Referme au clic sur un lien (ancre ou page) et au clic en dehors
     menu.addEventListener('click', e => { if (e.target.closest('a')) close(); });
     document.addEventListener('click', e => {
       if (!menu.classList.contains('is-open')) return;
@@ -168,23 +231,24 @@
       close();
     });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
-    // Si on repasse en desktop (rotation, redimensionnement), on referme proprement
     window.addEventListener('resize', () => { if (window.innerWidth > 900) close(); });
   })();
 
-  /* ---------- Sélecteur de langue (visuel — aucune traduction réelle dans cette maquette) ---------- */
+  /* ---------- Sélecteur de langue ----------
+     Visuel uniquement : aucune traduction réelle dans cette maquette.
+     Un code ISO plutôt qu'un drapeau — Windows ne rend pas les drapeaux
+     émoji, et une langue n'est de toute façon pas un pays. */
   (function langSwitcher() {
     const btn = document.getElementById('lp-lang-btn');
     const menu = document.getElementById('lp-lang-menu');
     const langsMobile = document.getElementById('lp-navlinks-langs');
     if (!btn && !menu && !langsMobile) return;
 
-    const LANG_NAMES = { fr: '🇫🇷 Français', en: '🇬🇧 English', es: '🇪🇸 Español', de: '🇩🇪 Deutsch', ar: '🇲🇦 العربية' };
-    const LANG_FLAGS = { fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', de: '🇩🇪', ar: '🇲🇦' };
-    const flagEl = document.getElementById('lp-lang-flag');
+    const NOMS = { fr: 'Français', en: 'English', es: 'Español', de: 'Deutsch', ar: 'العربية' };
+    const code = document.getElementById('lp-lang-code');
 
-    function close() { if (!menu) return; menu.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
-    function open() { if (!menu) return; menu.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); }
+    const close = () => { if (menu) { menu.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); } };
+    const open = () => { if (menu) { menu.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); } };
 
     function toast(msg) {
       let zone = document.querySelector('.toast-zone');
@@ -196,11 +260,11 @@
       setTimeout(() => t.remove(), 2600);
     }
 
-    // Sélectionner une langue met à jour les DEUX menus (icône desktop + ligne repliée mobile), qu'ils soient visibles ou non
-    function selectLang(lang) {
+    // Les deux menus (icône desktop, ligne repliée mobile) restent d'accord.
+    function choisir(lang) {
       document.querySelectorAll('[data-lang]').forEach(i => i.classList.toggle('is-active', i.dataset.lang === lang));
-      if (flagEl && LANG_FLAGS[lang]) flagEl.textContent = LANG_FLAGS[lang];
-      toast(`Langue changée : ${LANG_NAMES[lang] || lang}`);
+      if (code) code.textContent = lang.toUpperCase();
+      toast(`Langue changée : ${NOMS[lang] || lang}`);
     }
 
     if (btn && menu) {
@@ -211,7 +275,7 @@
       menu.addEventListener('click', e => {
         const item = e.target.closest('[data-lang]'); if (!item) return;
         close();
-        selectLang(item.dataset.lang);
+        choisir(item.dataset.lang);
       });
       document.addEventListener('click', e => {
         if (!menu.classList.contains('is-open')) return;
@@ -224,7 +288,7 @@
     if (langsMobile) {
       langsMobile.addEventListener('click', e => {
         const item = e.target.closest('[data-lang]'); if (!item) return;
-        selectLang(item.dataset.lang);
+        choisir(item.dataset.lang);
       });
     }
   })();

@@ -3,61 +3,79 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oyvia — Toute votre location courte durée, au même endroit</title>
+  <title>Oyvia — Toute votre location courte durée, sur un seul écran</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
-  <meta name="description" content="Oyvia centralise Airbnb et Booking.com, automatise vos messages voyageurs et vous permet de prendre des réservations directes sans commission. Zéro double réservation." />
+  <meta name="description" content="Oyvia réunit Airbnb, Booking.com et vos réservations directes dans un calendrier unique, accueille vos voyageurs à votre place et pilote votre équipe de ménage. Zéro double réservation, zéro commission." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/tokens.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/landing.css" />
-  <link rel="stylesheet" href="css/landing-anim.css" />
+  <!-- Autorise la révélation au défilement. Sans JavaScript, la classe
+       n'est jamais posée et rien n'est masqué. -->
+  <script>document.documentElement.classList.add('js');</script>
 </head>
 <body class="lp">
 
-  <!-- Bandeau d'annonce -->
+  <!-- ============================================================
+       BANDEAU D'ANNONCE
+       ============================================================ -->
   <div class="lp-topbar">
-    <span>✦ <strong>Compte gratuit</strong> — sans carte bancaire.</span>
-    <a href="#tarifs">Voir les offres →</a>
+    <div class="lp-topbar__in">
+      <span class="lp-topbar__badge">Nouveau</span>
+      <p><span class="lp-topbar__long">Moteur de réservation directe inclus — </span><b>0 % de commission</b><span class="lp-topbar__long"> sur ce que vous vendez en direct.</span></p>
+      <a href="#tarifs">Voir les offres
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
   </div>
 
-  <!-- Navbar flottante -->
-  <div class="lp-navwrap">
+  <!-- ============================================================
+       NAVIGATION
+       ============================================================ -->
+  <div class="lp-navwrap" id="lp-navwrap">
     <nav class="lp-nav" aria-label="Navigation principale">
-      <a class="lp-brand" href="index.html"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></a>
+      <a class="lp-brand" href="index.html" aria-label="Oyvia, accueil">
+        <img src="assets/oyvia-logo-tight.svg" alt="Oyvia" class="lp-brand__logo" width="60" height="34">
+      </a>
+
       <div class="lp-navlinks" id="lp-navlinks">
-        <a href="#fonctionnalites">Fonctionnalités</a>
+        <a href="#fonctionnalites">Produit</a>
+        <a href="#vivi">Vivi · IA</a>
+        <a href="#integrations">Intégrations</a>
         <a href="#tarifs">Tarifs</a>
         <a href="blog.html">Blog</a>
         <a href="login.html" class="lp-navlinks__mobile-only">Connexion</a>
         <div class="lp-navlinks__langs" id="lp-navlinks-langs">
           <span class="lp-navlinks__langs-label">Langue</span>
           <div class="lp-navlinks__langs-row">
-            <button type="button" class="is-active" data-lang="fr">🇫🇷 FR</button>
-            <button type="button" data-lang="en">🇬🇧 EN</button>
-            <button type="button" data-lang="es">🇪🇸 ES</button>
-            <button type="button" data-lang="de">🇩🇪 DE</button>
-            <button type="button" data-lang="ar">🇲🇦 AR</button>
+            <button type="button" class="is-active" data-lang="fr">Français</button>
+            <button type="button" data-lang="en">English</button>
+            <button type="button" data-lang="es">Español</button>
+            <button type="button" data-lang="de">Deutsch</button>
+            <button type="button" data-lang="ar">العربية</button>
           </div>
         </div>
       </div>
+
       <div class="lp-nav__cta">
         <div class="lp-lang" id="lp-lang">
-          <button type="button" class="btn btn--secondary btn--icon btn--sm lp-lang__btn" id="lp-lang-btn" aria-haspopup="true" aria-expanded="false" aria-label="Changer de langue">
-            <span id="lp-lang-flag">🇫🇷</span>
+          <button type="button" class="lp-lang__btn" id="lp-lang-btn" aria-haspopup="true" aria-expanded="false" aria-label="Changer de langue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+            <span id="lp-lang-code">FR</span>
           </button>
           <div class="lp-lang__menu" id="lp-lang-menu" role="menu" aria-label="Choisir la langue">
-            <button type="button" class="lp-lang__item is-active" data-lang="fr" role="menuitem"><span>🇫🇷</span> Français</button>
-            <button type="button" class="lp-lang__item" data-lang="en" role="menuitem"><span>🇬🇧</span> English</button>
-            <button type="button" class="lp-lang__item" data-lang="es" role="menuitem"><span>🇪🇸</span> Español</button>
-            <button type="button" class="lp-lang__item" data-lang="de" role="menuitem"><span>🇩🇪</span> Deutsch</button>
-            <button type="button" class="lp-lang__item" data-lang="ar" role="menuitem"><span>🇲🇦</span> العربية</button>
+            <button type="button" class="lp-lang__item is-active" data-lang="fr" role="menuitem"><i>FR</i> Français</button>
+            <button type="button" class="lp-lang__item" data-lang="en" role="menuitem"><i>EN</i> English</button>
+            <button type="button" class="lp-lang__item" data-lang="es" role="menuitem"><i>ES</i> Español</button>
+            <button type="button" class="lp-lang__item" data-lang="de" role="menuitem"><i>DE</i> Deutsch</button>
+            <button type="button" class="lp-lang__item" data-lang="ar" role="menuitem"><i>AR</i> العربية</button>
           </div>
         </div>
         <a class="btn btn--ghost btn--sm" href="login.html">Connexion</a>
-        <a class="btn btn--primary btn--sm" href="app/dashboard.html">Essayer gratuitement</a>
+        <a class="btn btn--primary btn--sm" href="app/dashboard.html"><span>Essayer<span class="lp-nav__long"> gratuitement</span></span></a>
         <button class="btn btn--secondary btn--icon btn--sm lp-burger" id="lp-burger-btn" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="lp-navlinks">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
@@ -65,541 +83,781 @@
     </nav>
   </div>
 
-  <!-- HERO -->
+  <!-- ============================================================
+       HERO
+       ============================================================ -->
   <header class="lp-hero">
-    <div class="lp-hero__glow"></div>
-    <div class="lp-hero__inner">
-      <span class="lp-pill-tag"><span class="tag">Nouveau</span> Réservations directes, 0 % de commission</span>
-      <h1>Toutes vos réservations Airbnb, Booking.com et de vos autres canaux, <span class="accent">au même endroit</span>.</h1>
-      <p class="lp-hero__sub">Oyvia synchronise Airbnb et Booking.com, automatise vos messages voyageurs et vous laisse encaisser des réservations directes sans commission. Fini les doubles réservations.</p>
-      <div class="lp-hero__cta">
-        <a class="btn btn--primary btn--lg" href="app/dashboard.html">Créer mon compte gratuitement</a>
-        <a class="btn btn--secondary btn--lg" href="app/calendrier.html">Voir la démo</a>
-      </div>
-      <ul class="lp-hero__trust">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Compte gratuit</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sans carte bancaire</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sans engagement</li>
-      </ul>
-    </div>
+    <div class="lp-hero__bg" aria-hidden="true"></div>
 
-    <!-- Fenêtre produit : vue d'ensemble animée (calendrier, messagerie, automatisations, ménage) -->
-    <div class="lp-window" aria-hidden="true">
-      <div class="lp-window__bar">
-        <div class="lp-window__dots"><i></i><i></i><i></i></div>
-        <span class="lp-window__title" id="hw-title">Oyvia · Calendrier unifié — Juillet 2026</span>
+    <div class="lp-shell lp-hero__grid">
+      <div class="lp-hero__text">
+        <a class="lp-pill" href="#fonctionnalites" data-reveal>
+          <span class="lp-pill__tag">Nouveau</span>
+          Réservations directes, sans commission
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+        <h1 data-reveal>Toute votre location courte&nbsp;durée, <span class="lp-accent">sur un seul écran</span>.</h1>
+        <p class="lp-hero__sub" data-reveal>Oyvia réunit Airbnb, Booking.com et vos réservations directes dans un calendrier unique, accueille vos voyageurs à votre place et pilote votre équipe de ménage. Zéro double réservation, zéro commission.</p>
+        <div class="lp-hero__cta" data-reveal>
+          <a class="btn btn--primary btn--lg" href="app/dashboard.html">Créer mon compte gratuitement</a>
+          <a class="btn btn--secondary btn--lg" href="app/calendrier.html">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.14-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14z"/></svg>
+            Explorer la démo
+          </a>
+        </div>
+        <ul class="lp-hero__trust" data-reveal>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Compte gratuit</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sans carte bancaire</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sans engagement</li>
+        </ul>
       </div>
-      <div class="lp-window__body">
-        <div class="lp-window__panels" id="hw-panels">
-          <!-- Calendrier unifié -->
-          <div class="lp-window__panel is-active" data-panel="0">
-            <div class="hcal__top">
-              <div class="row gap-3">
-                <strong style="font-size:var(--fs-md);">10 logements</strong>
-                <span class="hcal-sync" id="hcal-sync"><i></i> À jour</span>
+
+      <!-- Composition produit : la vraie grille du calendrier unifié,
+           avec les photos de couverture des logements. -->
+      <div class="lp-stage" aria-hidden="true" data-reveal>
+        <div class="lp-win">
+          <div class="lp-win__bar">
+            <span class="lp-win__dots"><i></i><i></i><i></i></span>
+            <span class="lp-win__title">Calendrier unifié · Juillet 2026</span>
+            <span class="lp-sync" id="lp-hero-sync"><i></i> À jour</span>
+          </div>
+          <div class="lp-win__body">
+            <div class="lcal" style="--lcal-days:10">
+              <div class="lcal__row lcal__row--head">
+                <div class="lcal__name">5 logements</div>
+                <div class="lcal__track">
+                  <i class="lcal__c">20</i><i class="lcal__c">21</i><i class="lcal__c">22</i><i class="lcal__c">23</i><i class="lcal__c">24</i><i class="lcal__c">25</i><i class="lcal__c">26</i><i class="lcal__c">27</i><i class="lcal__c">28</i><i class="lcal__c">29</i>
+                </div>
               </div>
-              <div class="hcal__legend">
-                <span><i style="background:var(--ch-airbnb)"></i> Airbnb</span>
-                <span><i style="background:var(--ch-booking)"></i> Booking.com</span>
-                <span><i style="background:var(--ch-direct)"></i> Direct</span>
-                <span><i style="background:var(--ch-bloque)"></i> Bloqué</span>
+              <div class="lcal__row">
+                <div class="lcal__name">
+                  <span class="lcal__thumb" style="background-color:#B5654A"><img src="assets/logements/L001.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"></span>
+                  <b>Vieux-Lyon</b>
+                </div>
+                <div class="lcal__track">
+                  <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                  <div class="lcal__bar lcal__bar--airbnb" style="grid-column:5/9"><img src="assets/logos/airbnb-mark.svg" alt="">Sophie Meyer</div>
+                </div>
+              </div>
+              <div class="lcal__row">
+                <div class="lcal__name">
+                  <span class="lcal__thumb" style="background-color:#3D5A80"><img src="assets/logements/L002.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"></span>
+                  <b>Montmartre</b>
+                </div>
+                <div class="lcal__track">
+                  <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                  <div class="lcal__bar lcal__bar--booking" style="grid-column:1/4"><img src="assets/logos/booking-mark.svg" alt="">Chen Wei</div>
+                  <div class="lcal__bar lcal__bar--airbnb" style="grid-column:4/8"><img src="assets/logos/airbnb-mark.svg" alt="">Nina K.</div>
+                </div>
+              </div>
+              <div class="lcal__row">
+                <div class="lcal__name">
+                  <span class="lcal__thumb" style="background-color:#4A6A58"><img src="assets/logements/L004.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"></span>
+                  <b>Chalet Annecy</b>
+                </div>
+                <div class="lcal__track">
+                  <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                  <div class="lcal__bar lcal__bar--direct" style="grid-column:3/9">Famille Weber · direct</div>
+                </div>
+              </div>
+              <div class="lcal__row">
+                <div class="lcal__name">
+                  <span class="lcal__thumb" style="background-color:#C99A3C"><img src="assets/logements/L005.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"></span>
+                  <b>Villa Biarritz</b>
+                </div>
+                <div class="lcal__track">
+                  <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                  <div class="lcal__bar lcal__bar--airbnb" style="grid-column:1/7"><img src="assets/logos/airbnb-mark.svg" alt="">James Wilson</div>
+                </div>
+              </div>
+              <div class="lcal__row">
+                <div class="lcal__name">
+                  <span class="lcal__thumb" style="background-color:#8A5A3C"><img src="assets/logements/L006.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"></span>
+                  <b>Vieux-Port</b>
+                </div>
+                <div class="lcal__track">
+                  <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                  <div class="lcal__bar lcal__bar--bloque" style="grid-column:1/4">Travaux</div>
+                  <div class="lcal__bar lcal__bar--direct" style="grid-column:7/11">Sarah Klein · direct</div>
+                </div>
               </div>
             </div>
-            <div class="hcal">
-              <div class="hcal__row hcal__row--head">
-                <div class="hcal__cell hcal__cell--name">Logement</div>
-                <div class="hcal__cell">20</div><div class="hcal__cell">21</div><div class="hcal__cell">22</div><div class="hcal__cell">23</div><div class="hcal__cell">24</div><div class="hcal__cell">25</div><div class="hcal__cell">26</div><div class="hcal__cell">27</div><div class="hcal__cell">28</div><div class="hcal__cell">29</div><div class="hcal__cell">30</div><div class="hcal__cell">31</div>
-              </div>
-              <div class="hcal__row">
-                <div class="hcal__cell hcal__cell--name">T2 Vieux-Lyon</div>
-                <div class="hcal__cell" style="grid-column:span 4"></div>
-                <div class="hcal__cell" style="grid-column:span 4"><div class="hcal__bar hcal__bar--airbnb">Sophie Meyer</div></div>
-                <div class="hcal__cell" style="grid-column:span 4"></div>
-              </div>
-              <div class="hcal__row">
-                <div class="hcal__cell hcal__cell--name">Studio Montmartre</div>
-                <div class="hcal__cell" style="grid-column:span 3"><div class="hcal__bar hcal__bar--booking">Chen Wei</div></div>
-                <div class="hcal__cell" style="grid-column:span 3"><div class="hcal__bar hcal__bar--airbnb">Nina K.</div></div>
-                <div class="hcal__cell" style="grid-column:span 6"></div>
-              </div>
-              <div class="hcal__row">
-                <div class="hcal__cell hcal__cell--name">Chalet Annecy</div>
-                <div class="hcal__cell" style="grid-column:span 5"></div>
-                <div class="hcal__cell" style="grid-column:span 6"><div class="hcal__bar hcal__bar--direct">Famille Weber</div></div>
-                <div class="hcal__cell" style="grid-column:span 1"></div>
-              </div>
-              <div class="hcal__row">
-                <div class="hcal__cell hcal__cell--name">Villa Biarritz</div>
-                <div class="hcal__cell" style="grid-column:span 6"><div class="hcal__bar hcal__bar--airbnb">James Wilson</div></div>
-                <div class="hcal__cell" style="grid-column:span 6"></div>
-              </div>
-              <div class="hcal__row">
-                <div class="hcal__cell hcal__cell--name">Loft Marseille</div>
-                <div class="hcal__cell" style="grid-column:span 4"><div class="hcal__bar hcal__bar--bloque">Bloqué</div></div>
-                <div class="hcal__cell" style="grid-column:span 4"></div>
-                <div class="hcal__cell" style="grid-column:span 4"><div class="hcal__bar hcal__bar--direct">Sarah Klein</div></div>
-              </div>
+            <div class="lcal__legend">
+              <span><i style="background:var(--ch-airbnb)"></i> Airbnb</span>
+              <span><i style="background:var(--ch-booking)"></i> Booking.com</span>
+              <span><i style="background:var(--ch-direct)"></i> Direct</span>
+              <span><i style="background:var(--ch-bloque)"></i> Bloqué</span>
             </div>
-            <p class="hcal__hint">Chaque ligne est un logement, chaque colonne un jour du mois : les réservations Airbnb, Booking.com et directes apparaissent sur un seul calendrier, synchronisé en temps réel pour éviter tout doublon.</p>
           </div>
         </div>
+
+        <div class="lp-float lp-float--resa">
+          <img class="lp-float__logo" src="assets/logos/airbnb-mark.svg" alt="">
+          <div><b>Nouvelle réservation</b><small>Villa Biarritz · 6 nuits · 1 140 €</small></div>
+        </div>
+        <div class="lp-float lp-float--auto">
+          <span class="lp-float__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div><b>Instructions d'arrivée envoyées</b><small>Automatique · il y a 2 s</small></div>
+        </div>
       </div>
+    </div>
+
+    <!-- Les canaux réellement synchronisés, avec leurs vraies marques -->
+    <div class="lp-shell lp-hero__logos" data-reveal>
+      <span>Synchronisé avec</span>
+      <ul>
+        <li><img src="assets/logos/airbnb.svg" alt="Airbnb" data-h="l"></li>
+        <li><img src="assets/logos/booking.svg" alt="Booking.com"></li>
+        <li><img src="assets/logos/expedia.svg" alt="Expedia"></li>
+        <li><img src="assets/logos/vrbo.svg" alt="Vrbo" data-h="l"></li>
+        <li><img src="assets/logos/agoda.svg" alt="Agoda" data-h="l"></li>
+      </ul>
     </div>
   </header>
 
-  <!-- PROBLÈMES -->
-  <section class="lp-section">
+  <!-- ============================================================
+       AVANT OYVIA — ce que coûte le patchwork d'outils
+       ============================================================ -->
+  <section class="lp-pain">
     <div class="lp-shell">
-      <div class="lp-head">
-        <span class="eyebrow">Le quotidien d'un loueur</span>
-        <h2>Ce qui vous fait perdre du temps aujourd'hui</h2>
-        <p>La plupart des loueurs ne manquent pas d'outils — ils en ont trop. Tout est éparpillé, et une erreur d'inattention coûte cher.</p>
+      <div class="lp-t lp-t--center" data-reveal>
+        <span class="lp-t__eyebrow">Avant Oyvia</span>
+        <h2>Ce n'est pas un manque d'outils. C'est qu'ils ne se parlent pas.</h2>
+        <p>Quatre situations que vivent chaque semaine les hôtes multi-logements et les conciergeries.</p>
       </div>
 
-      <div class="pb-slider" id="pbSlider">
-        <div class="pb-slider__viewport" id="pbViewport">
-          <div class="pb-slider__track" id="pbTrack">
-
-            <article class="pb-slide">
-              <div class="pb-slide__visual">
-                <div class="lp-demo pb-frame">
-                  <div class="pb-cal">
-                    <div class="pb-cal__row"><span>Airbnb</span><div class="pb-cal__bar pb-cal__bar--airbnb" style="left:14%;width:52%"></div></div>
-                    <div class="pb-cal__row"><span>Booking.com</span><div class="pb-cal__bar pb-cal__bar--booking" style="left:42%;width:48%"></div></div>
-                    <div class="pb-cal__clash" style="left:42%;width:24%"></div>
-                  </div>
-                  <span class="pb-flag pb-flag--warn" style="left:42%;">⚠ Conflit de dates</span>
-                </div>
+      <div class="lp-pains">
+        <article class="lp-paincard" data-reveal>
+          <div class="lp-paincard__vis">
+            <div class="pv-cal">
+              <div class="pv-cal__row">
+                <img src="assets/logos/airbnb.svg" alt="">
+                <span class="pv-cal__bar pv-cal__bar--airbnb" style="left:30%;width:44%"></span>
               </div>
-              <div class="pb-slide__text">
-                <span class="pb-tag pb-tag--red">Risque</span>
-                <h3>Doubles réservations</h3>
-                <p>Un calendrier Airbnb et un calendrier Booking qui ne se parlent pas : le jour où ça se chevauche, c'est vous qui payez — remboursement, relogement, avis négatif.</p>
+              <div class="pv-cal__row">
+                <img src="assets/logos/booking.svg" alt="">
+                <span class="pv-cal__bar pv-cal__bar--booking" style="left:56%;width:38%"></span>
               </div>
-            </article>
-
-            <article class="pb-slide">
-              <div class="pb-slide__visual">
-                <div class="lp-demo pb-frame">
-                  <div class="pb-scatter">
-                    <div class="pb-chip" style="--x:8%; --y:18%; --r:-7deg; --delay:0s">
-                      <span class="pb-chip__ic" style="background:var(--ch-airbnb)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-.3 0-.6.1-.8.4-1.6 2-4.5 6.1-4.5 8.4a5.3 5.3 0 0 0 5.3 5.3c.7 0 1.3-.1 1.9-.4a5.3 5.3 0 0 0 3.4-4.9c0-2.3-2.9-6.4-4.5-8.4a1 1 0 0 0-.8-.4z"/></svg></span>
-                      <b>3</b>
-                    </div>
-                    <div class="pb-chip" style="--x:58%; --y:8%; --r:5deg; --delay:.6s">
-                      <span class="pb-chip__ic pb-chip__ic--txt" style="background:var(--ch-booking)">b</span>
-                      <b>7</b>
-                    </div>
-                    <div class="pb-chip" style="--x:20%; --y:56%; --r:4deg; --delay:1.2s">
-                      <span class="pb-chip__ic" style="background:var(--ink-500)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
-                      <b>2</b>
-                    </div>
-                    <div class="pb-chip" style="--x:66%; --y:52%; --r:-5deg; --delay:1.8s">
-                      <span class="pb-chip__ic" style="background:#25D366"><svg viewBox="0 0 448 512" fill="currentColor"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg></span>
-                      <b>5</b>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="pb-slide__text">
-                <span class="pb-tag pb-tag--amber">Dispersion</span>
-                <h3>Messages éparpillés</h3>
-                <p>Boîte Airbnb, boîte Booking, e-mails, WhatsApp… Vous répondez tard, et vos voyageurs le ressentent dans leurs avis.</p>
-              </div>
-            </article>
-
-            <article class="pb-slide">
-              <div class="pb-slide__visual">
-                <div class="lp-demo pb-frame">
-                  <div class="pb-stack">
-                    <div class="pb-stack__card" style="--i:2"></div>
-                    <div class="pb-stack__card" style="--i:1"></div>
-                    <div class="pb-stack__card pb-stack__card--top">
-                      <p>Bonjour ! Voici le code d'accès : <b>7734B</b>, le WiFi est <b>Montmartre_5G</b>, mot de passe <b>bonjour2024</b>…</p>
-                    </div>
-                  </div>
-                  <span class="pb-flag pb-flag--copy">Réécrit <b>×38</b> ce mois-ci</span>
-                </div>
-              </div>
-              <div class="pb-slide__text">
-                <span class="pb-tag pb-tag--blue">Répétition</span>
-                <h3>Tout à la main</h3>
-                <p>Code d'accès, WiFi, instructions d'arrivée, demande d'avis : les mêmes messages, réécrits cent fois par mois.</p>
-              </div>
-            </article>
-
-            <article class="pb-slide">
-              <div class="pb-slide__visual">
-                <div class="lp-demo pb-frame">
-                  <div class="pb-timeline">
-                    <div class="pb-timeline__pt">
-                      <span class="pb-timeline__dot pb-timeline__dot--out"></span>
-                      <div><b>11h00</b><small>Départ — Studio Montmartre</small></div>
-                    </div>
-                    <div class="pb-timeline__link"><i></i><span class="pb-timeline__q">?</span><i></i></div>
-                    <div class="pb-timeline__pt">
-                      <span class="pb-timeline__dot pb-timeline__dot--in"></span>
-                      <div><b>15h00</b><small>Arrivée — même logement</small></div>
-                    </div>
-                  </div>
-                  <span class="pb-flag pb-flag--warn" style="left:50%;">⚠ Ménage non assigné</span>
-                </div>
-              </div>
-              <div class="pb-slide__text">
-                <span class="pb-tag pb-tag--red">Coordination</span>
-                <h3>Ménage mal coordonné</h3>
-                <p>Un départ, une arrivée le même jour, et personne pour faire le lien avec l'équipe de ménage sur le terrain.</p>
-              </div>
-            </article>
-
+              <span class="pv-cal__clash" style="left:56%;width:18%;top:0;bottom:0"></span>
+            </div>
           </div>
+          <span class="lp-paintag">Risque</span>
+          <h3>La nuit vendue deux fois</h3>
+          <p>Deux calendriers qui s'ignorent, et un soir de juillet où deux familles sonnent à la même porte. Remboursement, relogement, avis à une étoile.</p>
+        </article>
+
+        <article class="lp-paincard" data-reveal>
+          <div class="lp-paincard__vis">
+            <div class="pv-chips">
+              <span class="pv-chip" style="--x:2%;--y:8%;--r:-6deg;--delay:0s"><img src="assets/logos/airbnb-mark.svg" alt="">Airbnb<b>3</b></span>
+              <span class="pv-chip" style="--x:56%;--y:2%;--r:5deg;--delay:.7s"><img src="assets/logos/booking-mark.svg" alt="">Booking<b>7</b></span>
+              <span class="pv-chip" style="--x:8%;--y:56%;--r:4deg;--delay:1.4s"><img src="assets/logos/gmail-mark.svg" alt="">E-mail<b>2</b></span>
+              <span class="pv-chip" style="--x:58%;--y:58%;--r:-4deg;--delay:2.1s"><img src="assets/logos/whatsapp-mark.svg" alt="">WhatsApp<b>5</b></span>
+            </div>
+          </div>
+          <span class="lp-paintag lp-paintag--amber">Dispersion</span>
+          <h3>Quatre boîtes de réception</h3>
+          <p>Airbnb, Booking, l'e-mail, WhatsApp. Vous répondez tard parce qu'il faut d'abord retrouver où la question a été posée — et le voyageur le note dans son avis.</p>
+        </article>
+
+        <article class="lp-paincard" data-reveal>
+          <div class="lp-paincard__vis">
+            <div class="pv-stack">
+              <span class="pv-stack__c" style="--i:2"></span>
+              <span class="pv-stack__c" style="--i:1"></span>
+              <span class="pv-stack__c pv-stack__c--top"><span>Bonjour&nbsp;! Le code d'accès est <b>7734B</b> et le WiFi <b>Montmartre_5G</b>…</span></span>
+              <span class="pv-stack__n">réécrit ×38 ce mois-ci</span>
+            </div>
+          </div>
+          <span class="lp-paintag lp-paintag--blue">Répétition</span>
+          <h3>Le même message, cent fois</h3>
+          <p>Code d'accès, WiFi, heure d'arrivée, demande d'avis. Trente minutes par jour à retaper ce que vous avez déjà écrit la semaine dernière.</p>
+        </article>
+
+        <article class="lp-paincard" data-reveal>
+          <div class="lp-paincard__vis">
+            <div class="pv-tl">
+              <div class="pv-tl__pt">
+                <span class="pv-tl__dot pv-tl__dot--out"></span>
+                <div><b>11 h 00</b><small>Départ · Studio Montmartre</small></div>
+              </div>
+              <div class="pv-tl__gap"><i></i><span class="pv-tl__q">?</span><i></i></div>
+              <div class="pv-tl__pt">
+                <span class="pv-tl__dot pv-tl__dot--in"></span>
+                <div><b>15 h 00</b><small>Arrivée · même logement</small></div>
+              </div>
+            </div>
+          </div>
+          <span class="lp-paintag">Coordination</span>
+          <h3>Quatre heures pour faire le lien</h3>
+          <p>Un départ, une arrivée le même jour, et personne sur le terrain qui sache que le ménage lui revient. Le voyageur entre dans un logement pas prêt.</p>
+        </article>
+      </div>
+
+      <div class="lp-pain__foot" data-reveal>
+        <p><b>Oyvia remplace ce patchwork par une seule interface.</b></p>
+        <div class="lp-pain__cta">
+          <a class="btn btn--primary btn--lg" href="app/dashboard.html">Créer mon compte gratuitement</a>
+          <a class="btn btn--secondary btn--lg" href="#fonctionnalites">Voir le produit
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+        <small>Sans carte bancaire · Sans engagement</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       VISITE DU PRODUIT — sept modules, un seul écran
+       ============================================================ -->
+  <section class="lp-section" id="fonctionnalites">
+    <div class="lp-shell">
+      <div class="lp-t lp-t--center" data-reveal>
+        <span class="lp-t__eyebrow">Le produit</span>
+        <h2>Plusieurs fonctionnalités, une seule interface</h2>
+        <p>Toutes incluses, quelle que soit votre offre. Parcourez-les&nbsp;: chaque aperçu est la vue réelle de l'application.</p>
+      </div>
+
+      <div class="lp-tour" id="lpTour" data-reveal>
+        <div class="lp-tour__nav" role="tablist" aria-label="Modules Oyvia">
+          <button type="button" class="lp-mod is-active" role="tab" aria-selected="true" aria-controls="pane-0" id="tab-0" data-i="0">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+            <span class="lp-mod__txt">Calendrier unifié</span>
+          </button>
+          <button type="button" class="lp-mod" role="tab" aria-selected="false" aria-controls="pane-1" id="tab-1" data-i="1">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <span class="lp-mod__txt">Messagerie unifiée</span>
+          </button>
+          <button type="button" class="lp-mod" role="tab" aria-selected="false" aria-controls="pane-2" id="tab-2" data-i="2">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+            <span class="lp-mod__txt">Automatisations</span>
+          </button>
+          <button type="button" class="lp-mod" role="tab" aria-selected="false" aria-controls="pane-3" id="tab-3" data-i="3">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+            <span class="lp-mod__txt">Ménage &amp; équipe</span>
+          </button>
+          <button type="button" class="lp-mod" role="tab" aria-selected="false" aria-controls="pane-4" id="tab-4" data-i="4">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span>
+            <span class="lp-mod__txt">Réservation directe</span>
+          </button>
+          <button type="button" class="lp-mod" role="tab" aria-selected="false" aria-controls="pane-5" id="tab-5" data-i="5">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></span>
+            <span class="lp-mod__txt">Revenus &amp; propriétaires</span>
+          </button>
+          <button type="button" class="lp-mod" role="tab" aria-selected="false" aria-controls="pane-6" id="tab-6" data-i="6">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <span class="lp-mod__txt">Fiches de police</span>
+          </button>
+          <button type="button" class="lp-mod" role="tab" aria-selected="false" aria-controls="pane-7" id="tab-7" data-i="7">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>
+            <span class="lp-mod__txt">Tarification dynamique</span>
+          </button>
+          <button type="button" class="lp-mod" role="tab" aria-selected="false" aria-controls="pane-8" id="tab-8" data-i="8">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M10 6h4M9.5 18h5"/></svg></span>
+            <span class="lp-mod__txt">Fiche séjour personnalisée</span>
+          </button>
+          <button type="button" class="lp-mod" role="tab" aria-selected="false" aria-controls="pane-9" id="tab-9" data-i="9">
+            <span class="lp-mod__prog"><i></i></span>
+            <span class="lp-mod__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 17a6 6 0 0 1 12 0z"/><path d="M12 6V4"/><circle cx="12" cy="6" r="1.4"/></svg></span>
+            <span class="lp-mod__txt">Services additionnels</span>
+          </button>
         </div>
 
-        <div class="pb-slider__controls">
-          <button type="button" class="pb-arrow" id="pbPrev" aria-label="Précédent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-          <div class="pb-dots" id="pbDots"></div>
-          <button type="button" class="pb-arrow" id="pbNext" aria-label="Suivant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+        <div class="lp-tour__stage">
+          <!-- 0 · Calendrier unifié -->
+          <div class="lp-pane is-active" id="pane-0" role="tabpanel" aria-labelledby="tab-0" data-i="0">
+            <div class="lp-pane__demo">
+              <div class="dcal">
+                <div class="dcal__top">
+                  <b>10 logements · 24 au 31 juillet</b>
+                  <span class="lp-sync"><i></i> À jour</span>
+                </div>
+                <div class="lcal" style="--lcal-days:8">
+                  <div class="lcal__row lcal__row--head">
+                    <div class="lcal__name">Logement</div>
+                    <div class="lcal__track">
+                      <i class="lcal__c">24</i><i class="lcal__c">25</i><i class="lcal__c">26</i><i class="lcal__c">27</i><i class="lcal__c">28</i><i class="lcal__c">29</i><i class="lcal__c">30</i><i class="lcal__c">31</i>
+                    </div>
+                  </div>
+                  <div class="lcal__row">
+                    <div class="lcal__name">
+                      <span class="lcal__thumb" style="background-color:#B5654A"><img src="assets/logements/L001.jpg" alt="" loading="lazy" onerror="this.remove()"></span><b>Vieux-Lyon</b>
+                    </div>
+                    <div class="lcal__track">
+                      <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                      <div class="lcal__bar lcal__bar--airbnb" style="grid-column:2/6"><img src="assets/logos/airbnb-mark.svg" alt="">Sophie M.</div>
+                    </div>
+                  </div>
+                  <div class="lcal__row">
+                    <div class="lcal__name">
+                      <span class="lcal__thumb" style="background-color:#3D5A80"><img src="assets/logements/L002.jpg" alt="" loading="lazy" onerror="this.remove()"></span><b>Montmartre</b>
+                    </div>
+                    <div class="lcal__track">
+                      <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                      <div class="lcal__bar lcal__bar--booking" style="grid-column:1/5"><img src="assets/logos/booking-mark.svg" alt="">Chen Wei</div>
+                    </div>
+                  </div>
+                  <div class="lcal__row">
+                    <div class="lcal__name">
+                      <span class="lcal__thumb" style="background-color:#4A6A58"><img src="assets/logements/L004.jpg" alt="" loading="lazy" onerror="this.remove()"></span><b>Chalet Annecy</b>
+                    </div>
+                    <div class="lcal__track">
+                      <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                      <div class="lcal__bar lcal__bar--direct" style="grid-column:2/8">Famille Weber · direct</div>
+                    </div>
+                  </div>
+                  <div class="lcal__row">
+                    <div class="lcal__name">
+                      <span class="lcal__thumb" style="background-color:#C99A3C"><img src="assets/logements/L005.jpg" alt="" loading="lazy" onerror="this.remove()"></span><b>Villa Biarritz</b>
+                    </div>
+                    <div class="lcal__track">
+                      <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                      <div class="lcal__bar lcal__bar--booking" style="grid-column:3/7"><img src="assets/logos/booking-mark.svg" alt="">Anna Schmidt</div>
+                    </div>
+                  </div>
+                  <div class="lcal__row">
+                    <div class="lcal__name">
+                      <span class="lcal__thumb" style="background-color:#8A5A3C"><img src="assets/logements/L006.jpg" alt="" loading="lazy" onerror="this.remove()"></span><b>Vieux-Port</b>
+                    </div>
+                    <div class="lcal__track">
+                      <i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i><i class="lcal__c"></i>
+                      <div class="lcal__bar lcal__bar--bloque" style="grid-column:1/4">Travaux</div>
+                      <div class="lcal__bar lcal__bar--airbnb" style="grid-column:5/8"><img src="assets/logos/airbnb-mark.svg" alt="">Léa D.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Une nuit vendue ferme la date partout, en temps réel.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Les tâches du ménage s'affichent sous la réservation.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Blocage de dates pour travaux ou usage personnel.</li>
+            </ul>
+          </div>
+
+          <!-- 1 · Messagerie -->
+          <div class="lp-pane" id="pane-1" role="tabpanel" aria-labelledby="tab-1" data-i="1" hidden>
+            <div class="lp-pane__demo">
+              <div class="di">
+                <div class="di-list">
+                  <div class="di-conv is-active"><span class="avatar avatar--sm">NK</span><div class="di-conv__b"><b>Nina Kowalski</b><small>À quelle heure le check-in ?</small></div><img class="di-conv__src" src="assets/logos/airbnb-mark.svg" alt="Airbnb"></div>
+                  <div class="di-conv"><span class="avatar avatar--sm avatar--v2">CW</span><div class="di-conv__b"><b>Chen Wei</b><small>Merci pour l'accueil !</small></div><img class="di-conv__src" src="assets/logos/booking-mark.svg" alt="Booking.com"></div>
+                  <div class="di-conv"><span class="avatar avatar--sm avatar--v3">JF</span><div class="di-conv__b"><b>Julie Fontaine</b><small>Arrivée tardive possible ?</small></div><img class="di-conv__src" src="assets/logos/whatsapp-mark.svg" alt="WhatsApp"></div>
+                  <div class="di-conv"><span class="avatar avatar--sm">TB</span><div class="di-conv__b"><b>Thomas Bernard</b><small>Facture du séjour</small></div><img class="di-conv__src" src="assets/logos/gmail-mark.svg" alt="E-mail"></div>
+                </div>
+                <div class="di-thread">
+                  <div class="di-bubble di-bubble--in">Bonjour&nbsp;! À quelle heure puis-je récupérer les clés&nbsp;?</div>
+                  <div class="di-typing"><i></i><i></i><i></i></div>
+                  <div class="di-bubble di-bubble--out">Bonjour Nina&nbsp;! L'arrivée est possible dès 15 h, code porte 7734B. À tout à l'heure&nbsp;!</div>
+                </div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Chaque fil porte le logo de son canal d'origine.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Le séjour lié est affiché à côté&nbsp;: accès, WiFi, paiement.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Modèles de réponse, et reformulation par Vivi.</li>
+            </ul>
+          </div>
+
+          <!-- 2 · Automatisations -->
+          <div class="lp-pane" id="pane-2" role="tabpanel" aria-labelledby="tab-2" data-i="2" hidden>
+            <div class="lp-pane__demo">
+              <div class="da">
+                <div class="da-rule">
+                  <div class="da-rule__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+                  <div class="da-rule__m"><b>Instructions d'arrivée</b><small>Déclencheur : J-1 avant le check-in · Français</small></div>
+                  <div class="da-toggle"></div>
+                </div>
+                <div class="da-msg">
+                  Bonjour <b>Camille</b>, votre séjour approche&nbsp;! L'adresse est le 12 rue du Bœuf, à Lyon. Code d'accès&nbsp;: <span class="da-var">{code_acces}</span>, WiFi&nbsp;: <span class="da-var">{wifi}</span>. L'arrivée est possible dès 15 h. Bon voyage&nbsp;!
+                  <span class="da-plane"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></span>
+                </div>
+                <div class="da-sent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Envoyé automatiquement · il y a 2 s</div>
+                <div class="da-rule">
+                  <div class="da-rule__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.4 5.5 6 .5-4.5 3.9 1.4 5.9L12 15.6 6.7 18.8l1.4-5.9L3.6 9l6-.5z"/></svg></div>
+                  <div class="da-rule__m"><b>Demande d'avis</b><small>Déclencheur : J+1 après le départ · Langue du voyageur</small></div>
+                  <div class="da-toggle"></div>
+                </div>
+                <div class="da-rule">
+                  <div class="da-rule__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6z"/><path d="m9 12 2 2 4-4"/></svg></div>
+                  <div class="da-rule__m"><b>Relance fiche de police</b><small>Déclencheur : J-3 si la fiche n'est pas remplie</small></div>
+                  <div class="da-toggle"></div>
+                </div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>À la réservation, J-1, le jour même, après le départ.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Variables dynamiques et envoi dans la langue du voyageur.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Codes et WiFi révélés seulement au bon moment.</li>
+            </ul>
+          </div>
+
+          <!-- 3 · Ménage & équipe -->
+          <div class="lp-pane" id="pane-3" role="tabpanel" aria-labelledby="tab-3" data-i="3" hidden>
+            <div class="lp-pane__demo">
+              <div class="dt">
+                <div class="dt-task">
+                  <span class="dt-ic dt-ic--menage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5l1.7 4.3 4.6.3-3.6 2.9 1.2 4.5L12 12l-3.9 2.5 1.2-4.5-3.6-2.9 4.6-.3z"/></svg></span>
+                  <div class="dt-task__m"><b>Ménage complet</b><small>À chaque check-out · T2 Vieux-Lyon</small></div>
+                  <span class="badge dt-status badge--warning">À faire</span>
+                </div>
+                <div class="dt-task">
+                  <span class="dt-ic dt-ic--accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/></svg></span>
+                  <div class="dt-task__m"><b>Accueil &amp; remise des clés</b><small>À chaque check-in · Villa Biarritz</small></div>
+                  <div class="dt-team"><span class="avatar avatar--sm">SM</span><span class="avatar avatar--sm avatar--v2">KB</span></div>
+                </div>
+                <div class="dt-task">
+                  <span class="dt-ic dt-ic--maintenance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-2.4z"/></svg></span>
+                  <div class="dt-task__m"><b>Contrôle spa &amp; cheminée</b><small>Toutes les semaines · Chalet Annecy</small></div>
+                  <div class="dt-team"><span class="avatar avatar--sm avatar--v3">MA</span></div>
+                </div>
+                <div class="dt-task">
+                  <span class="dt-ic dt-ic--menage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="m6 7 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg></span>
+                  <div class="dt-task__m"><b>Réassort du linge</b><small>Tous les 15 jours · Studio Montmartre</small></div>
+                  <div class="dt-team"><span class="avatar avatar--sm avatar--v2">KB</span></div>
+                </div>
+                <div class="dt-task">
+                  <span class="dt-ic dt-ic--accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9"/><path d="M2 15h20v3a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M12 8v4"/></svg></span>
+                  <div class="dt-task__m"><b>État des lieux photo</b><small>À chaque check-out · Villa Biarritz</small></div>
+                  <div class="dt-team"><span class="avatar avatar--sm">SM</span></div>
+                </div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Les tâches naissent de la réservation, pas d'une saisie.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Vos prestataires voient leur planning et les accès sur mobile.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Photo de fin de tâche et montant dû calculé au barème.</li>
+            </ul>
+          </div>
+
+          <!-- 4 · Réservation directe -->
+          <div class="lp-pane" id="pane-4" role="tabpanel" aria-labelledby="tab-4" data-i="4" hidden>
+            <div class="lp-pane__demo">
+              <div class="dbk">
+                <div class="dbk__top">
+                  <span class="dbk__thumb" style="background-color:#B5654A"><img src="assets/logements/L001.jpg" alt="" loading="lazy" onerror="this.remove()"></span>
+                  <div class="dbk__id"><b>T2 Vieux-Lyon avec balcon</b><small>Lyon 5ᵉ · 4 voyageurs · 2 nuits minimum</small></div>
+                  <span class="dbk__badge">0 % de commission</span>
+                </div>
+                <div class="dbk__form">
+                  <div class="dbk__champ"><small>Arrivée</small><b>ven. 24 juil.</b></div>
+                  <div class="dbk__champ"><small>Départ</small><b>lun. 27 juil.</b></div>
+                  <div class="dbk__champ"><small>Voyageurs</small><b>2</b></div>
+                </div>
+                <div class="dbk__lignes">
+                  <div class="dbk__l"><span>3 nuits × 118 € <em>tarif ajusté automatiquement</em></span><b>354 €</b></div>
+                  <div class="dbk__l"><span>Forfait ménage</span><b>45 €</b></div>
+                  <div class="dbk__l"><span>Panier d'accueil <em>service additionnel</em></span><b>25 €</b></div>
+                  <div class="dbk__l dbk__l--total"><span>Total</span><b>424 €</b></div>
+                </div>
+                <div class="dbk__cta">Réserver · paiement sécurisé</div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Votre page publique et votre encaissement, sans commission.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Le voyageur réserve chez vous&nbsp;; la date se ferme partout ailleurs.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Acompte ou paiement intégral, caution, conditions d'annulation.</li>
+            </ul>
+          </div>
+
+          <!-- 5 · Revenus & propriétaires -->
+          <div class="lp-pane" id="pane-5" role="tabpanel" aria-labelledby="tab-5" data-i="5" hidden>
+            <div class="lp-pane__demo">
+              <div class="ds">
+                <div class="ds-kpis">
+                  <div class="ds-kpi"><small>CA du mois</small><b id="ds-kpi-ca">0 €</b></div>
+                  <div class="ds-kpi"><small>Occupation</small><b id="ds-kpi-occ">0 %</b></div>
+                  <div class="ds-kpi"><small>Prix moyen / nuit</small><b id="ds-kpi-adr">0 €</b></div>
+                </div>
+                <div class="ds-chart">
+                  <div class="ds-bar" style="height:36%; animation-delay:.05s"></div>
+                  <div class="ds-bar" style="height:46%; animation-delay:.1s"></div>
+                  <div class="ds-bar" style="height:62%; animation-delay:.15s"></div>
+                  <div class="ds-bar" style="height:78%; animation-delay:.2s"></div>
+                  <div class="ds-bar" style="height:90%; animation-delay:.25s"></div>
+                  <div class="ds-bar" style="height:100%; animation-delay:.3s"></div>
+                </div>
+                <div class="ds-x"><span>Fév</span><span>Mar</span><span>Avr</span><span>Mai</span><span>Juin</span><span>Juil</span></div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Relevés par propriétaire&nbsp;: commission, dépenses, net à verser.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Espace propriétaire en lecture seule&nbsp;: moins d'appels.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Factures mensuelles de vos prestataires, générées seules.</li>
+            </ul>
+          </div>
+
+          <!-- 6 · Fiches de police -->
+          <div class="lp-pane" id="pane-6" role="tabpanel" aria-labelledby="tab-6" data-i="6" hidden>
+            <div class="lp-pane__demo">
+              <div class="dpo">
+                <div class="dpo__top">
+                  <b>Fiches de police — Appartement Chartrons</b>
+                  <span class="badge badge--positive">3/4</span>
+                </div>
+                <div class="progress"><div class="progress__bar"></div></div>
+                <div class="dpo__list">
+                  <div class="dpo__row">
+                    <span class="dpo__ic dpo__ic--done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <div><b>Camille Roux</b><small>Française · Carte d'identité</small></div>
+                    <span class="badge badge--positive">Complétée</span>
+                  </div>
+                  <div class="dpo__row">
+                    <span class="dpo__ic dpo__ic--done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <div><b>Marc Roux</b><small>Française · Passeport</small></div>
+                    <span class="badge badge--positive">Complétée</span>
+                  </div>
+                  <div class="dpo__row">
+                    <span class="dpo__ic dpo__ic--done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <div><b>Léa Roux</b><small>Française · Carte d'identité</small></div>
+                    <span class="badge badge--positive">Complétée</span>
+                  </div>
+                  <div class="dpo__row">
+                    <span class="dpo__ic dpo__ic--pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                    <div><b>Voyageur 4</b><small>Relance envoyée hier</small></div>
+                    <span class="badge badge--warning">En attente</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Le voyageur remplit sa fiche depuis sa page de séjour.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Document d'identité joint, classé par réservation.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Export PDF immédiat en cas de contrôle.</li>
+            </ul>
+          </div>
+
+          <!-- 7 · Tarification dynamique -->
+          <div class="lp-pane" id="pane-7" role="tabpanel" aria-labelledby="tab-7" data-i="7" hidden>
+            <div class="lp-pane__demo">
+              <div class="dtp">
+                <div class="dtp__top">
+                  <span class="lcal__thumb" style="background-color:#B5654A"><img src="assets/logements/L001.jpg" alt="" loading="lazy" onerror="this.remove()"></span>
+                  <div class="dtp__id"><b>T2 Vieux-Lyon</b><small>Prix de base 95 € · vendredi 24 juillet</small></div>
+                  <span class="dtp__moteur">Moteur Oyvia</span>
+                </div>
+                <ul class="dtp__regles">
+                  <li><span>Haute saison · juillet</span><b class="dtp__up">+18 %</b></li>
+                  <li><span>Week-end · vendredi</span><b class="dtp__up">+12 %</b></li>
+                  <li><span>Parc occupé à 86 %</span><b class="dtp__up">+8 %</b></li>
+                  <li><span>Réservation à J-3</span><b class="dtp__down">−10 %</b></li>
+                </ul>
+                <div class="dtp__res"><span>Prix poussé aux canaux</span><b>122 €</b></div>
+                <div class="dtp__jauge"><i style="left:45%"></i></div>
+                <div class="dtp__bornes"><span>Plancher 75 €</span><span>Plafond 180 €</span></div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Occupation, saison, jour de la semaine, délai de réservation.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Un plancher et un plafond qu'aucune combinaison ne franchit.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Moteur Oyvia, ou synchronisation avec PriceLabs.</li>
+            </ul>
+          </div>
+
+          <!-- 8 · Fiche séjour personnalisée -->
+          <div class="lp-pane" id="pane-8" role="tabpanel" aria-labelledby="tab-8" data-i="8" hidden>
+            <div class="lp-pane__demo">
+              <div class="dfs">
+                <div class="dfs__cover">
+                  <img src="assets/logements/L001.jpg" alt="" loading="lazy" onerror="this.remove()">
+                  <div class="dfs__titre"><b>Votre séjour à Lyon</b><small>T2 Vieux-Lyon · 24 → 27 juillet</small></div>
+                </div>
+                <div class="dfs__lignes">
+                  <div class="dfs__l">
+                    <span class="dfs__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                    <div><b>Arrivée</b><small>Vendredi 24 juillet, dès 15 h</small></div>
+                  </div>
+                  <div class="dfs__l dfs__l--verrou">
+                    <span class="dfs__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+                    <div><b>Code d'accès</b><small>Affiché le 23 juillet, la veille de l'arrivée</small></div>
+                  </div>
+                  <div class="dfs__l">
+                    <span class="dfs__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a10 10 0 0 1 14 0M2 9a15 15 0 0 1 20 0M8.5 16a5 5 0 0 1 7 0"/><path d="M12 20h.01"/></svg></span>
+                    <div><b>WiFi</b><small>Réseau et mot de passe, à l'ouverture de la porte</small></div>
+                  </div>
+                  <div class="dfs__l">
+                    <span class="dfs__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+                    <div><b>Fiche de police</b><small>3 voyageurs sur 4 ont rempli la leur</small></div>
+                    <span class="badge badge--warning">À compléter</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Un lien unique par réservation, sans compte à créer.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Codes et WiFi révélés au délai que vous fixez, pas avant.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Quartier, transports, règles de la maison&nbsp;: saisis une fois.</li>
+            </ul>
+          </div>
+
+          <!-- 9 · Services additionnels -->
+          <div class="lp-pane" id="pane-9" role="tabpanel" aria-labelledby="tab-9" data-i="9" hidden>
+            <div class="lp-pane__demo">
+              <div class="dsv">
+                <div class="dsv__top">
+                  <b>Extras — séjour de Nina Kowalski</b>
+                  <span class="badge badge--accent">2 demandés</span>
+                </div>
+                <ul class="dsv__liste">
+                  <li class="dsv__srv is-choisi">
+                    <span class="dsv__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M7 17V9l5-4 5 4v8"/><path d="M10 17v-4h4v4"/></svg></span>
+                    <div><b>Transfert aéroport</b><small>65 € · 24 h de prévenance</small></div>
+                    <span class="dsv__etat">Demandé</span>
+                  </li>
+                  <li class="dsv__srv is-choisi">
+                    <span class="dsv__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                    <div><b>Arrivée anticipée</b><small>30 € · accès dès 11 h</small></div>
+                    <span class="dsv__etat">Demandé</span>
+                  </li>
+                  <li class="dsv__srv">
+                    <span class="dsv__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12l-1 6H7z"/><path d="M8 8v13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V8"/></svg></span>
+                    <div><b>Panier d'accueil</b><small>35 € · produits locaux</small></div>
+                    <span class="dsv__plus">Ajouter</span>
+                  </li>
+                  <li class="dsv__srv">
+                    <span class="dsv__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a3 3 0 0 1 0 6h-1"/><path d="M3 8h15v6a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg></span>
+                    <div><b>Petit-déjeuner livré</b><small>12 € par personne et par jour</small></div>
+                    <span class="dsv__plus">Ajouter</span>
+                  </li>
+                </ul>
+                <div class="dsv__pied"><span>2 services demandés · <b>95 €</b></span><span class="dsv__cta">Confirmer</span></div>
+              </div>
+            </div>
+            <ul class="lp-pane__pts">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Le voyageur commande depuis sa fiche de séjour.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>La demande arrive dans la cloche, puis dans Services additionnels.</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Vous confirmez ou déclinez&nbsp;; le montant s'ajoute au séjour.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-tour__foot" data-reveal>
+        <div class="lp-cta-row">
+          <a class="btn btn--primary btn--lg" href="app/dashboard.html">Créer mon compte gratuitement</a>
+          <a class="btn btn--secondary btn--lg" href="app/calendrier.html">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.14-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14z"/></svg>
+            Explorer la démo
+          </a>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- FONCTIONNALITÉS -->
-  <section class="lp-section lp-section--tint" id="fonctionnalites">
-    <div class="lp-shell">
-      <div class="lp-head">
-        <span class="eyebrow">La solution</span>
-        <h2>Tout piloter depuis une seule interface</h2>
-        <p>Découvrez les modules qui remplacent votre patchwork d'outils — tous inclus, quelle que soit votre offre.</p>
-      </div>
-
-      <!-- 1. Calendrier unifié -->
-      <div class="lp-feat">
-        <div>
-          <div class="lp-feat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
-          <h3>Un calendrier unifié, zéro double réservation</h3>
-          <p>Toutes vos disponibilités Airbnb, Booking.com et réservations directes se synchronisent automatiquement sur une seule grille, logement par logement.</p>
-          <ul class="lp-feat__list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Synchronisation en temps réel entre tous vos canaux.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Vue multi-logements pour toute l'équipe, en un coup d'œil.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Bloquez des dates pour travaux ou usage personnel en un clic.</li>
-          </ul>
-        </div>
-        <div class="lp-feat__media">
-          <div class="lp-demo lp-demo--calendar">
-            <div class="dcal">
-              <div class="hcal__top">
-                <b style="font-size:var(--fs-sm)">10 logements</b>
-                <span class="hcal-sync"><i></i> À jour</span>
-              </div>
-              <div class="hcal hcal--mini">
-                <div class="hcal__row hcal__row--head">
-                  <div class="hcal__cell hcal__cell--name">Logement</div>
-                  <div class="hcal__cell">24</div><div class="hcal__cell">25</div><div class="hcal__cell">26</div><div class="hcal__cell">27</div><div class="hcal__cell">28</div><div class="hcal__cell">29</div><div class="hcal__cell">30</div>
-                </div>
-                <div class="hcal__row">
-                  <div class="hcal__cell hcal__cell--name">Vieux-Lyon</div>
-                  <div class="hcal__cell" style="grid-column:span 2"></div>
-                  <div class="hcal__cell" style="grid-column:span 3"><div class="hcal__bar hcal__bar--airbnb hcal__bar--live">Sophie M.</div></div>
-                  <div class="hcal__cell" style="grid-column:span 2"></div>
-                </div>
-                <div class="hcal__row">
-                  <div class="hcal__cell hcal__cell--name">Montmartre</div>
-                  <div class="hcal__cell" style="grid-column:span 4"><div class="hcal__bar hcal__bar--booking">Chen Wei</div></div>
-                  <div class="hcal__cell" style="grid-column:span 3"></div>
-                </div>
-                <div class="hcal__row">
-                  <div class="hcal__cell hcal__cell--name">Chalet Annecy</div>
-                  <div class="hcal__cell" style="grid-column:span 1"></div>
-                  <div class="hcal__cell" style="grid-column:span 6"><div class="hcal__bar hcal__bar--direct">Famille W.</div></div>
-                </div>
-                <div class="hcal__row">
-                  <div class="hcal__cell hcal__cell--name">Loft Marseille</div>
-                  <div class="hcal__cell" style="grid-column:span 3"><div class="hcal__bar hcal__bar--bloque">Bloqué</div></div>
-                  <div class="hcal__cell" style="grid-column:span 4"></div>
-                </div>
-              </div>
-            </div>
-          </div>
+  <!-- ============================================================
+       VIVI — l'assistant IA
+       ============================================================ -->
+  <section class="lp-vivi" id="vivi">
+    <div class="lp-vivi__glow" aria-hidden="true"></div>
+    <div class="lp-shell lp-vivi__grid">
+      <div class="lp-vivi__txt">
+        <span class="lp-t__eyebrow" data-reveal>Vivi · assistant IA</span>
+        <h2 data-reveal>Vivi répond à vos voyageurs <span class="lp-accent">pendant que vous dormez</span>.</h2>
+        <p data-reveal>Parking, WiFi, code d'accès, horaires d'arrivée&nbsp;: 80 % des messages sont les mêmes questions. Vivi y répond dans votre ton et dans la langue du voyageur — et vous passe la main dès que ça sort du cadre.</p>
+        <ul class="lp-vivi__pts" data-reveal>
+          <li>
+            <span class="lp-vivi__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
+            <div><b>Elle écrit comme vous</b>Vous choisissez le ton, vous donnez un exemple de message, vous listez ce qu'elle doit éviter. Elle s'y tient.</div>
+          </li>
+          <li>
+            <span class="lp-vivi__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 3-3"/><path d="M2 5h12M7 2h1"/><path d="m22 22-5-10-5 10M14 18h6"/></svg></span>
+            <div><b>Dans la langue du voyageur</b>Français, anglais, allemand, espagnol, italien, arabe. Détectés sur le message reçu, sans réglage.</div>
+          </li>
+          <li>
+            <span class="lp-vivi__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6z"/><path d="M12 9v4M12 16h.01"/></svg></span>
+            <div><b>Avec des garde-fous</b>Remboursement, plainte, demande légale, ton agressif&nbsp;: Vivi n'y touche pas. Le message vous remonte avec le motif.</div>
+          </li>
+        </ul>
+        <div class="lp-cta-row lp-cta-row--left" data-reveal>
+          <a class="btn btn--primary btn--lg" href="app/messagerie.html">Voir Vivi à l'œuvre</a>
+          <a class="btn btn--secondary btn--lg" href="#tarifs">Où est-elle incluse&nbsp;?</a>
         </div>
       </div>
 
-      <!-- 2. Boîte de réception unifiée -->
-      <div class="lp-feat">
-        <div>
-          <div class="lp-feat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-          <h3>Une boîte de réception unifiée</h3>
-          <p>Airbnb, Booking.com et e-mail dans une seule messagerie. Chaque conversation affiche la réservation liée — plus besoin de jongler entre les onglets.</p>
-          <ul class="lp-feat__list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Tous vos canaux au même endroit, avec le badge d'origine.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Contexte du séjour (accès, WiFi, paiement) à côté du fil.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Modèles de réponse pré-enregistrés en un clic.</li>
-          </ul>
-        </div>
-        <div class="lp-feat__media">
-          <div class="lp-demo lp-demo--inbox">
-            <div class="di">
-              <div class="di-list">
-                <div class="di-conv is-active"><span class="avatar avatar--sm">NK</span><div class="di-conv__b"><b>Nina Kowalski</b><small>À quelle heure le check-in ?</small></div><span class="dot" style="background:var(--ch-airbnb)"></span></div>
-                <div class="di-conv"><span class="avatar avatar--sm avatar--v2">CW</span><div class="di-conv__b"><b>Chen Wei</b><small>Merci pour l'accueil !</small></div><span class="dot" style="background:var(--ch-booking)"></span></div>
-                <div class="di-conv"><span class="avatar avatar--sm avatar--v3">JF</span><div class="di-conv__b"><b>Julie Fontaine</b><small>Arrivée tardive possible ?</small></div><span class="dot" style="background:var(--ink-400)"></span></div>
-              </div>
-              <div class="di-thread">
-                <div class="di-bubble di-bubble--in">Bonjour ! À quelle heure puis-je récupérer les clés&nbsp;?</div>
-                <div class="di-typing"><i></i><i></i><i></i></div>
-                <div class="di-bubble di-bubble--out">Bonjour Nina 👋 Arrivée dès 15h, code porte 7734B.</div>
-              </div>
-            </div>
+      <div class="lp-vivi__demo" data-reveal>
+        <img class="lp-vivi__mascotte" src="assets/vivi.svg" alt="Vivi, l'assistant IA d'Oyvia">
+        <div class="vv">
+          <div class="vv__msg vv__msg--in">
+            <span class="vv__from"><img src="assets/logos/airbnb-mark.svg" alt="Airbnb"> Nina · 23 h 41</span>
+            Hola, ¿a qué hora puedo llegar? Llego tarde del aeropuerto.
+          </div>
+          <div class="vv__msg vv__msg--out">
+            <span class="vv__from"><img src="assets/vivi.svg" alt=""> Vivi · répondu en 4 s</span>
+            ¡Hola Nina! La entrada es a partir de las 15 h y la llegada tardía no es problema: el código de la puerta es el 7734B y funciona a cualquier hora. ¡Buen viaje!
+          </div>
+          <div class="vv__meta">
+            <span class="vv__chip vv__chip--ok">Confiance 96 %</span>
+            <span class="vv__chip">Espagnol détecté</span>
+            <span class="vv__chip">Envoyée automatiquement</span>
           </div>
         </div>
-      </div>
-
-      <!-- 3. Automatisation des messages -->
-      <div class="lp-feat">
-        <div>
-          <div class="lp-feat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-          <h3>Des messages qui partent tout seuls</h3>
-          <p>Instructions d'arrivée, code d'accès, WiFi, demande d'avis : programmés une fois, envoyés automatiquement au bon moment et dans la bonne langue.</p>
-          <ul class="lp-feat__list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Déclencheurs : à la réservation, J-1, jour d'arrivée, après le départ.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Variables dynamiques : {prenom}, {code_acces}, {wifi}.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Vous ne touchez plus à rien : le voyageur est accueilli seul.</li>
-          </ul>
-        </div>
-        <div class="lp-feat__media">
-          <div class="lp-demo lp-demo--auto">
-            <div class="da">
-              <div class="da-rule">
-                <div class="da-rule__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-                <div class="da-rule__m"><b>Instructions d'arrivée</b><small>Déclencheur : J-1 avant le check-in · FR</small></div>
-                <div class="da-toggle"></div>
-              </div>
-              <div class="da-msg">
-                Bonjour <b>Camille</b>, votre séjour approche&nbsp;! Adresse&nbsp;: 12 rue du Bœuf, Lyon. Code d'accès&nbsp;: <span class="da-var">{code_acces}</span>. Wifi&nbsp;: <span class="da-var">{wifi}</span>. Bon voyage&nbsp;!
-                <span class="da-plane"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></span>
-              </div>
-              <div class="da-sent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Envoyé automatiquement · il y a 2 s</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Tâches ménagères récurrentes & équipe -->
-      <div class="lp-feat">
-        <div>
-          <div class="lp-feat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-          <h3>Le ménage et l'équipe, en pilote automatique</h3>
-          <p>Créez des tâches récurrentes (ménage, accueil, maintenance) générées à chaque réservation, assignées à vos prestataires, avec suivi du statut et des montants dus.</p>
-          <ul class="lp-feat__list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Tâches récurrentes déclenchées au check-in / check-out.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Vos prestataires voient leur planning et les accès sur mobile.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Suivi du statut en direct : à faire → en cours → terminé.</li>
-          </ul>
-        </div>
-        <div class="lp-feat__media">
-          <div class="lp-demo lp-demo--tasks">
-            <div class="dt">
-              <div class="dt-task">
-                <span class="dt-ic dt-ic--menage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5l1.7 4.3 4.6.3-3.6 2.9 1.2 4.5L12 12l-3.9 2.5 1.2-4.5-3.6-2.9 4.6-.3z"/></svg></span>
-                <div class="dt-task__m"><b>Ménage complet</b><small>À chaque check-out · T2 Vieux-Lyon</small></div>
-                <span class="badge dt-status badge--warning">À faire</span>
-              </div>
-              <div class="dt-task">
-                <span class="dt-ic dt-ic--accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/></svg></span>
-                <div class="dt-task__m"><b>Accueil &amp; remise des clés</b><small>À chaque check-in</small></div>
-                <div class="dt-team"><span class="avatar avatar--sm">SM</span><span class="avatar avatar--sm avatar--v2">KB</span></div>
-              </div>
-              <div class="dt-task">
-                <span class="dt-ic dt-ic--maintenance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-2.4z"/></svg></span>
-                <div class="dt-task__m"><b>Contrôle spa &amp; cheminée</b><small>Toutes les semaines</small></div>
-                <div class="dt-team"><span class="avatar avatar--sm avatar--v3">MA</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Statistiques -->
-      <div class="lp-feat">
-        <div>
-          <div class="lp-feat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></div>
-          <h3>Vos revenus, en un coup d'œil</h3>
-          <p>CA par mois, taux d'occupation, prix moyen par nuit, répartition par canal. Les chiffres dont vous avez besoin pour piloter et rendre des comptes.</p>
-          <ul class="lp-feat__list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Revenus, occupation et ADR sur 6 mois.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Performance par logement et par canal.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Export CSV et relevés par propriétaire.</li>
-          </ul>
-        </div>
-        <div class="lp-feat__media">
-          <div class="lp-demo lp-demo--stats">
-            <div class="ds">
-              <div class="ds-kpis">
-                <div class="ds-kpi"><small>CA du mois</small><b id="ds-kpi-ca">0 €</b></div>
-                <div class="ds-kpi"><small>Occupation</small><b id="ds-kpi-occ">0 %</b></div>
-              </div>
-              <div class="ds-chart">
-                <div class="ds-bar" style="height:36%; animation-delay:.05s"></div>
-                <div class="ds-bar" style="height:46%; animation-delay:.1s"></div>
-                <div class="ds-bar" style="height:62%; animation-delay:.15s"></div>
-                <div class="ds-bar" style="height:78%; animation-delay:.2s"></div>
-                <div class="ds-bar" style="height:90%; animation-delay:.25s"></div>
-                <div class="ds-bar" style="height:100%; animation-delay:.3s"></div>
-              </div>
-              <div class="ds-x"><span>Fév</span><span>Mar</span><span>Avr</span><span>Mai</span><span>Juin</span><span>Juil</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 6. Fiche de police -->
-      <div class="lp-feat">
-        <div>
-          <div class="lp-feat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6z"/><path d="m9 12 2 2 4-4"/></svg></div>
-          <h3>La fiche de police, sans paperasse</h3>
-          <p>Chaque voyageur complète sa fiche individuelle directement depuis sa page de séjour, avant même son arrivée. Vous conservez toutes les fiches, prêtes en cas de contrôle.</p>
-          <ul class="lp-feat__list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Formulaire envoyé automatiquement au voyageur, sans intervention de votre part.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Fiches conservées et classées par réservation, consultables à tout moment.</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> <strong>Conformité Loi 80-14 garantie</strong>, sans dossier papier à archiver.</li>
-          </ul>
-        </div>
-        <div class="lp-feat__media">
-          <div class="lp-demo lp-demo--police">
-            <div class="dpo">
-              <div class="dpo__top">
-                <b>Fiches de police — Appartement Chartrons</b>
-                <span class="badge badge--positive">3/4</span>
-              </div>
-              <div class="progress"><div class="progress__bar"></div></div>
-              <div class="dpo__list">
-                <div class="dpo__row">
-                  <span class="dpo__ic dpo__ic--done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-                  <div><b>Camille Roux</b><small>Française · CNI</small></div>
-                  <span class="badge badge--positive">Complétée</span>
-                </div>
-                <div class="dpo__row">
-                  <span class="dpo__ic dpo__ic--done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-                  <div><b>Marc Roux</b><small>Française · Passeport</small></div>
-                  <span class="badge badge--positive">Complétée</span>
-                </div>
-                <div class="dpo__row">
-                  <span class="dpo__ic dpo__ic--done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-                  <div><b>Léa Roux</b><small>Française · CNI</small></div>
-                  <span class="badge badge--positive">Complétée</span>
-                </div>
-                <div class="dpo__row">
-                  <span class="dpo__ic dpo__ic--pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-                  <div><b>Voyageur 4</b><small>Fiche à compléter</small></div>
-                  <span class="badge badge--warning">En attente</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="vv-garde">
+          <span class="vv-garde__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+          <div><b>Demande de remboursement</b><small>Vivi ne répond pas seule. Le message vous est remonté.</small></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- COMMENT ÇA MARCHE -->
-  <section class="lp-section" id="etapes">
+  <!-- ============================================================
+       ÉCOSYSTÈME
+       ============================================================ -->
+  <section class="lp-section lp-section--tint" id="integrations">
     <div class="lp-shell">
-      <div class="lp-head">
-        <span class="eyebrow">En 3 étapes</span>
-        <h2>Opérationnel le jour même</h2>
-        <p>Pas de migration compliquée. Vous gardez vos annonces existantes.</p>
-      </div>
-      <div class="lp-steps">
-        <div class="lp-step">
-          <div class="lp-step__num">1</div>
-          <h3>Connectez vos annonces</h3>
-          <p>Reliez vos comptes Airbnb et Booking.com en quelques minutes. Oyvia importe vos logements, tarifs et réservations existantes.</p>
-        </div>
-        <div class="lp-step">
-          <div class="lp-step__num">2</div>
-          <h3>Paramétrez vos automatisations</h3>
-          <p>Activez les modèles de messages prêts à l'emploi et adaptez-les. Réglez les accès, le WiFi et les règles de ménage.</p>
-        </div>
-        <div class="lp-step">
-          <div class="lp-step__num">3</div>
-          <h3>Laissez tourner</h3>
-          <p>Les voyageurs sont accueillis automatiquement, le calendrier reste à jour, l'équipe est prévenue. Vous reprenez la main quand vous voulez.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- BÉNÉFICES -->
-  <section class="lp-section lp-section--tint">
-    <div class="lp-shell">
-      <div class="lp-head">
-        <span class="eyebrow">Le résultat</span>
-        <h2>Gérez plus, travaillez moins</h2>
-      </div>
-      <div class="lp-benefits">
-        <div class="lp-benefit">
-          <div class="lp-benefit__stat">8 h</div>
-          <h3>économisées par semaine</h3>
-          <p>Sur la messagerie et la coordination du ménage, d'après nos hôtes multi-logements. Autant de temps pour développer votre parc.</p>
-        </div>
-        <div class="lp-benefit">
-          <div class="lp-benefit__stat">0</div>
-          <h3>double réservation</h3>
-          <p>La synchronisation temps réel entre canaux ferme les dates partout dès qu'une nuit est vendue. Plus jamais d'annulation gênante.</p>
-        </div>
-        <div class="lp-benefit">
-          <div class="lp-benefit__stat">+18 %</div>
-          <h3>de revenus en direct</h3>
-          <p>En redirigeant vos voyageurs fidèles vers la réservation directe, vous récupérez la commission des plateformes.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- INTÉGRATIONS -->
-  <section class="lp-section">
-    <div class="lp-shell">
-      <div class="lp-head">
-        <span class="eyebrow">Intégrations</span>
-        <h2>Connecté à tout votre écosystème</h2>
-        <p>Oyvia se branche sur vos canaux de distribution et vos outils du quotidien pour tout piloter d'un seul endroit.</p>
+      <div class="lp-t lp-t--center" data-reveal>
+        <span class="lp-t__eyebrow">Intégrations</span>
+        <h2>Branché sur ce que vous utilisez déjà</h2>
+        <p>Vos annonces restent les vôtres. Oyvia se connecte par-dessus, sans rien casser de ce qui fonctionne.</p>
       </div>
 
-      <div class="lp-hub">
-        <svg class="lp-hub__lines" viewBox="0 0 600 420">
-          <path class="hub-line" style="--d:.05s" d="M300,210 L300,50" />
-          <path class="hub-line" style="--d:.2s"  d="M300,210 L508,130" />
-          <path class="hub-line" style="--d:.35s" d="M300,210 L508,290" />
-          <path class="hub-line" style="--d:.5s"  d="M300,210 L300,370" />
-          <path class="hub-line" style="--d:.65s" d="M300,210 L92,290" />
-          <path class="hub-line" style="--d:.8s"  d="M300,210 L92,130" />
-          <circle class="hub-dot" r="3.5" style="--d:.05s" cx="300" cy="50" />
-          <circle class="hub-dot" r="3.5" style="--d:.2s"  cx="508" cy="130" />
-          <circle class="hub-dot" r="3.5" style="--d:.35s" cx="508" cy="290" />
-          <circle class="hub-dot" r="3.5" style="--d:.5s"  cx="300" cy="370" />
-          <circle class="hub-dot" r="3.5" style="--d:.65s" cx="92" cy="290" />
-          <circle class="hub-dot" r="3.5" style="--d:.8s"  cx="92" cy="130" />
-        </svg>
+      <div class="lp-eco" data-reveal>
+        <div class="lp-eco__grp">
+          <h3>Canaux de distribution</h3>
+          <ul class="lp-eco__list">
+            <li class="lp-eco__tile"><img src="assets/logos/airbnb.svg" alt="Airbnb" data-h="l"></li>
+            <li class="lp-eco__tile"><img src="assets/logos/booking.svg" alt="Booking.com"></li>
+            <li class="lp-eco__tile"><img src="assets/logos/expedia.svg" alt="Expedia"></li>
+            <li class="lp-eco__tile"><img src="assets/logos/vrbo.svg" alt="Vrbo" data-h="l"></li>
+            <li class="lp-eco__tile"><img src="assets/logos/agoda.svg" alt="Agoda" data-h="l"></li>
+            <li class="lp-eco__tile lp-eco__tile--plus"><b>+60</b><span>autres OTA</span></li>
+          </ul>
+        </div>
 
-        <div class="lp-hub__center"><img src="assets/oyvia-logo.svg" alt="Oyvia" /></div>
+        <div class="lp-eco__grp">
+          <h3>Serrures connectées</h3>
+          <ul class="lp-eco__list">
+            <li class="lp-eco__tile lp-eco__tile--nom"><img src="assets/logos/lock-yale.svg" alt="" data-h="l"><span>Yale</span></li>
+            <li class="lp-eco__tile lp-eco__tile--nom"><img src="assets/logos/lock-nuki.svg" alt=""><span>Nuki</span></li>
+            <li class="lp-eco__tile lp-eco__tile--nom"><img src="assets/logos/lock-august.svg" alt=""><span>August</span></li>
+            <li class="lp-eco__tile lp-eco__tile--nom"><img src="assets/logos/lock-ttlock.svg" alt="" data-h="l"><span>TTLock</span></li>
+            <li class="lp-eco__tile lp-eco__tile--plus"><b>+20</b><span>autres marques</span></li>
+          </ul>
+        </div>
 
-        <div class="lp-hub__node" style="left:50%; top:12%; --d:.05s">
-          <span class="lp-hub__logo" style="background:var(--ch-booking)">B</span><span>Booking.com</span>
+        <div class="lp-eco__grp">
+          <h3>Voyageurs &amp; visibilité</h3>
+          <ul class="lp-eco__list">
+            <li class="lp-eco__tile"><img src="assets/logos/whatsapp.svg" alt="WhatsApp"></li>
+            <li class="lp-eco__tile"><img src="assets/logos/gmail.svg" alt="E-mail" data-h="s"></li>
+            <li class="lp-eco__tile"><img src="assets/logos/google.svg" alt="Google"></li>
+          </ul>
         </div>
-        <div class="lp-hub__node" style="left:84.6%; top:31%; --d:.2s">
-          <span class="lp-hub__logo" style="background:var(--ch-airbnb)">A</span><span>Airbnb</span>
-        </div>
-        <div class="lp-hub__node" style="left:84.6%; top:69%; --d:.35s">
-          <span class="lp-hub__logo" style="background:#C98A1B">E</span><span>Expedia</span>
-        </div>
-        <div class="lp-hub__node" style="left:50%; top:88%; --d:.5s">
-          <span class="lp-hub__logo" style="background:#0071BC">V</span><span>Vrbo</span>
-        </div>
-        <div class="lp-hub__node" style="left:15.4%; top:69%; --d:.65s">
-          <span class="lp-hub__logo" style="background:#A32638">Ag</span><span>Agoda</span>
-        </div>
-        <div class="lp-hub__node" style="left:15.4%; top:31%; --d:.8s">
-          <span class="lp-hub__logo" style="background:#25D366">W</span><span>WhatsApp</span>
+      </div>
+
+      <div class="lp-eco__foot" data-reveal>
+        <p>Un canal absent de cette liste&nbsp;? <b>L'import iCal</b> relie n'importe quel autre calendrier, en lecture et en écriture.</p>
+        <div class="lp-cta-row">
+          <a class="btn btn--primary btn--lg" href="app/dashboard.html">Connecter mes canaux</a>
+          <a class="btn btn--secondary btn--lg" href="#tarifs">Voir les offres</a>
         </div>
       </div>
     </div>
