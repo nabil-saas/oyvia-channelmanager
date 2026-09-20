@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia interne — Blog</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <!-- ============ VUE LISTE ============ -->
+        <section id="bl-vue-liste">
+          <div class="app-pagehead">
+            <div>
+              <h1>Blog</h1>
+              <p>Les articles du site public. Un brouillon n'est lisible nulle part, même par son adresse : la mise en ligne se décide ici.</p>
+            </div>
+            <div class="app-pagehead__actions">
+              <a class="btn btn--secondary" href="../blog.html" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                Voir le blog
+              </a>
+              <button class="btn btn--primary" id="bl-add">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Nouvel article
+              </button>
+            </div>
+          </div>
+
+          <div class="app-grid app-grid--kpi mb-4" id="bl-kpis"><!-- injecté --></div>
+
+          <div class="card card--pad">
+            <div class="adm-filtres">
+              <input class="input" type="search" id="bl-q" placeholder="Titre, chapô, contenu…" aria-label="Rechercher un article" />
+              <select class="select" id="bl-statut" aria-label="Filtrer par statut"></select>
+              <select class="select" id="bl-categorie" aria-label="Filtrer par catégorie"></select>
+              <span class="adm-compteur" id="bl-compteur"></span>
+            </div>
+            <div id="bl-cartes"><!-- injecté --></div>
+          </div>
+        </section>
+
+        <!-- ============ VUE ÉDITEUR ============ -->
+        <section id="bl-vue-editeur" hidden>
+          <div class="bl-barre">
+            <button class="btn btn--ghost btn--sm" id="bl-retour">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+              Tous les articles
+            </button>
+            <span id="bl-barre-statut"></span>
+            <span class="bl-barre__etat" id="bl-etat"></span>
+            <div class="grow"></div>
+            <button class="btn btn--ghost btn--sm" id="bl-apercu">Aperçu</button>
+            <button class="btn btn--secondary btn--sm" id="bl-brouillon">Enregistrer</button>
+            <button class="btn btn--primary btn--sm" id="bl-publier">Publier</button>
+          </div>
+
+          <div class="bl-edit">
+            <!-- Colonne principale : le texte -->
+            <div class="bl-edit__main">
+              <input class="bl-titre" id="bl-f-titre" placeholder="Titre de l'article" aria-label="Titre" />
+              <textarea class="bl-chapo" id="bl-f-chapo" rows="2" aria-label="Chapô"
+                placeholder="Chapô : deux phrases qui donnent envie de lire la suite."></textarea>
+
+              <div class="bl-outils" id="bl-outils" role="toolbar" aria-label="Mise en forme">
+                <button type="button" data-md="titre" title="Sous-titre">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M18 4v16M6 12h12"/></svg>
+                </button>
+                <button type="button" data-md="gras" title="Gras">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 5h6a4 4 0 0 1 0 8H7z"/><path d="M7 13h7a4 4 0 0 1 0 8H7z"/></svg>
+                </button>
+                <button type="button" data-md="liste" title="Liste à puces">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1.4" fill="currentColor"/><circle cx="4" cy="12" r="1.4" fill="currentColor"/><circle cx="4" cy="18" r="1.4" fill="currentColor"/></svg>
+                </button>
+                <button type="button" data-md="citation" title="Citation">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7h4v4a4 4 0 0 1-4 4z"/><path d="M15 7h4v4a4 4 0 0 1-4 4z"/></svg>
+                </button>
+                <button type="button" data-md="lien" title="Lien">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+                </button>
+                <span class="bl-outils__sep"></span>
+                <button type="button" id="bl-img-inline" title="Insérer une image">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m21 16-5-5-6 6-3-3-4 4"/></svg>
+                  Image
+                </button>
+                <div class="grow"></div>
+                <span class="bl-outils__mesure" id="bl-f-mesure"></span>
+              </div>
+
+              <textarea class="bl-contenu" id="bl-f-contenu" aria-label="Contenu de l'article"
+                placeholder="Écrivez ici. Une ligne vide sépare deux paragraphes."></textarea>
+              <p class="field__hint bl-aide">
+                <code>## Sous-titre</code> · <code>- puce</code> · <code>&gt; citation</code> ·
+                <code>**gras**</code> · <code>[texte](adresse)</code> · <code>![légende](M1)</code> pour une image.
+              </p>
+
+              <div class="bl-apercu" id="bl-apercu-zone" hidden><!-- injecté --></div>
+            </div>
+
+            <!-- Colonne latérale : ce qui décide de la publication -->
+            <aside class="bl-side">
+              <div class="card card--pad">
+                <p class="eyebrow mb-3">Image de couverture</p>
+                <div id="bl-couverture"><!-- injecté --></div>
+                <input type="file" id="bl-f-fichier-couv" accept="image/*" hidden />
+                <input type="file" id="bl-f-fichier-inline" accept="image/*" hidden />
+              </div>
+
+              <div class="card card--pad">
+                <p class="eyebrow mb-3">Publication</p>
+                <div class="field"><label class="field__label" for="bl-f-date">Date</label>
+                  <input class="input" type="date" id="bl-f-date" />
+                  <p class="field__hint" id="bl-f-date-aide"></p></div>
+                <div class="field mt-3"><label class="field__label" for="bl-f-categorie">Catégorie</label>
+                  <select class="select" id="bl-f-categorie"></select></div>
+                <div class="field mt-3"><label class="field__label" for="bl-f-auteur">Auteur</label>
+                  <select class="select" id="bl-f-auteur"></select></div>
+                <div class="row-between mt-4">
+                  <div><p class="fw-semibold text-sm">Mettre à la une</p>
+                    <p class="text-xs text-muted">Grande place en haut du blog. Un seul à la fois.</p></div>
+                  <label class="switch"><input type="checkbox" id="bl-f-une" /><span class="switch__track"></span></label>
+                </div>
+              </div>
+
+              <div class="card card--pad">
+                <p class="eyebrow mb-3">Référencement</p>
+                <div class="field">
+                  <label class="field__label" for="bl-f-slug">Adresse</label>
+                  <div class="bl-slug">
+                    <span class="bl-slug__base">…/article.html?a=</span>
+                    <input class="input" id="bl-f-slug" />
+                  </div>
+                  <p class="field__hint">La modifier après publication casse les liens déjà partagés.</p>
+                </div>
+                <div class="field mt-3">
+                  <div class="row-between mb-2">
+                    <label class="field__label" for="bl-f-meta" style="margin:0">Description Google</label>
+                    <span class="text-xs text-muted" id="bl-f-meta-compteur"></span>
+                  </div>
+                  <textarea class="textarea" id="bl-f-meta" rows="3"
+                    placeholder="Reprise dans les résultats de recherche. Coupée au-delà de 160 caractères."></textarea>
+                </div>
+              </div>
+
+              <div class="card card--pad" id="bl-side-actions"><!-- injecté : actions sur l'article --></div>
+            </aside>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modale : légende d'une image que l'on vient de choisir -->
+  <div class="modal" id="bl-modal-image" role="dialog" aria-modal="true" aria-labelledby="bl-modal-image-titre">
+    <div class="modal__head">
+      <h3 class="modal__title" id="bl-modal-image-titre">Légender l'image</h3>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div class="bl-modal-image__apercu" id="bl-image-apercu"></div>
+      <div class="field mt-4">
+        <label class="field__label" for="bl-f-legende">Légende</label>
+        <input class="input" id="bl-f-legende" placeholder="Décrivez ce que montre l'image" />
+        <p class="field__hint">Sert aussi de texte alternatif : c'est ce que lit un moteur de recherche, et ce qu'entend une personne malvoyante.</p>
+      </div>
+      <p class="field__hint mt-3" id="bl-image-poids"></p>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="UI.closeAll()">Annuler</button>
+      <button class="btn btn--primary" id="bl-image-ok">Insérer</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/admin-data.js"></script>
+  <script src="../js/blog-data.js"></script>
+  <script src="../js/mp-data.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script src="../js/admin-blog.js"></script>
+</body>
+</html>

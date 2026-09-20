@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia interne — Logements propriétaires</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+  <link rel="stylesheet" href="../css/marketplace.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Logements propriétaires</h1>
+            <p>Les biens déposés sur la marketplace par des propriétaires qui cherchent une conciergerie.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <button class="btn btn--secondary" id="mb-export">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              Exporter
+            </button>
+          </div>
+        </div>
+
+        <div class="card card--pad">
+          <div class="adm-filtres">
+            <input class="input" type="search" id="mb-q" placeholder="Ville, quartier, type, propriétaire…" aria-label="Rechercher un bien" />
+            <select class="select" id="mb-ville" aria-label="Filtrer par ville"></select>
+            <select class="select" id="mb-statut" aria-label="Filtrer par état">
+              <option value="tous">Tous les biens</option>
+              <option value="disponible">À pourvoir</option>
+              <option value="sansdemande">Sans aucune demande</option>
+              <option value="ecarte">Sans candidat retenu</option>
+              <option value="pris">Mandat conclu</option>
+            </select>
+            <span class="adm-compteur" id="mb-compteur"></span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Bien</th>
+                  <th>Propriétaire</th>
+                  <th>Revenu annoncé</th>
+                  <th>Déposé</th>
+                  <th class="num">Demandes</th>
+                  <th>État</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="mb-tbody"><!-- injecté --></tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Panneau : fiche d'un bien -->
+  <aside class="panel panel--lg" id="mb-panel" role="dialog" aria-modal="true" aria-labelledby="mb-panel-titre">
+    <div class="panel__head">
+      <div class="grow"><h3 class="modal__title" id="mb-panel-titre">Bien</h3></div>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="panel__body" id="mb-panel-corps"><!-- injecté --></div>
+    <div class="panel__foot" id="mb-panel-pied"><!-- injecté --></div>
+  </aside>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/admin-data.js"></script>
+  <script src="../js/blog-data.js"></script>
+  <script src="../js/mp-data.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script src="../js/admin-mp-biens.js"></script>
+</body>
+</html>

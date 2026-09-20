@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyvia interne — Demandes de gestion</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/tokens.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+  <link rel="stylesheet" href="../css/marketplace.css" />
+</head>
+<body class="app">
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar"></aside>
+    <div class="app-body">
+      <header class="app-topbar" id="app-topbar"></header>
+      <main class="app-main">
+
+        <div class="app-pagehead">
+          <div>
+            <h1>Demandes de gestion</h1>
+            <p>Toutes les candidatures reçues, regroupées par bien et classées par compatibilité.</p>
+          </div>
+          <div class="app-pagehead__actions">
+            <button class="btn btn--secondary" id="mg-export">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              Exporter
+            </button>
+          </div>
+        </div>
+
+        <div class="card card--pad mb-4">
+          <div class="adm-filtres" style="margin-bottom:0">
+            <input class="input" type="search" id="mg-q" placeholder="Conciergerie, bien, ville…" aria-label="Rechercher une demande" />
+            <select class="select" id="mg-bien" aria-label="Filtrer par bien"></select>
+            <select class="select" id="mg-statut" aria-label="Filtrer par statut"></select>
+            <select class="select" id="mg-compat" aria-label="Filtrer par compatibilité">
+              <option value="toutes">Toutes compatibilités</option>
+              <option value="fort">Correspond bien</option>
+              <option value="moyen">Correspondance partielle</option>
+              <option value="faible">Peu de correspondance</option>
+            </select>
+            <span class="adm-compteur" id="mg-compteur"></span>
+          </div>
+        </div>
+
+        <div id="mg-groupes"><!-- injecté : un bloc par bien --></div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Panneau : le détail d'une candidature -->
+  <aside class="panel panel--lg" id="mg-panel" role="dialog" aria-modal="true" aria-labelledby="mg-panel-titre">
+    <div class="panel__head">
+      <div class="grow"><h3 class="modal__title" id="mg-panel-titre">Candidature</h3></div>
+      <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="panel__body" id="mg-panel-corps"><!-- injecté --></div>
+    <div class="panel__foot" id="mg-panel-pied"><!-- injecté --></div>
+  </aside>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/admin-data.js"></script>
+  <script src="../js/blog-data.js"></script>
+  <script src="../js/mp-data.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script src="../js/admin-mp-demandes.js"></script>
+</body>
+</html>

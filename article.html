@@ -20,23 +20,30 @@
 
   <!-- Bandeau d'annonce -->
   <div class="lp-topbar">
-    <span>✦ <strong>1 logement offert, à vie</strong> — sans carte bancaire.</span>
-    <a href="index.html#tarifs">Voir les offres →</a>
+    <div class="lp-topbar__in">
+      <span class="lp-topbar__badge">Nouveau</span>
+      <p><span class="lp-topbar__long">Moteur de réservation directe inclus — </span><b>0 % de commission</b><span class="lp-topbar__long"> sur ce que vous vendez en direct.</span></p>
+      <a href="index.html#tarifs">Voir les offres
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
   </div>
 
   <!-- Navbar flottante -->
-  <div class="lp-navwrap">
+  <div class="lp-navwrap" id="lp-navwrap">
     <nav class="lp-nav" aria-label="Navigation principale">
-      <a class="lp-brand" href="index.html"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></a>
+      <a class="lp-brand" href="index.html" aria-label="Oyvia, accueil"><img src="assets/oyvia-logo-tight.svg" alt="Oyvia" class="lp-brand__logo" width="60" height="34"></a>
       <div class="lp-navlinks" id="lp-navlinks">
-        <a href="index.html#fonctionnalites">Fonctionnalités</a>
+        <a href="index.html#fonctionnalites">Produit</a>
+        <a href="index.html#vivi">Vivi · IA</a>
+        <a href="index.html#integrations">Intégrations</a>
         <a href="index.html#tarifs">Tarifs</a>
         <a href="blog.html" class="is-current">Blog</a>
         <a href="login.html" class="lp-navlinks__mobile-only">Connexion</a>
       </div>
       <div class="lp-nav__cta">
         <a class="btn btn--ghost btn--sm" href="login.html">Connexion</a>
-        <a class="btn btn--primary btn--sm" href="app/dashboard.html">Essayer gratuitement</a>
+        <a class="btn btn--primary btn--sm" href="app/dashboard.html"><span>Essayer<span class="lp-nav__long"> gratuitement</span></span></a>
         <button class="btn btn--secondary btn--icon btn--sm lp-burger" id="lp-burger-btn" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="lp-navlinks">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
@@ -62,13 +69,14 @@
   <footer class="lp-footer">
     <div class="lp-footer__grid">
       <div class="lp-footer__brand">
-        <a class="lp-brand" href="index.html"><img src="assets/oyvia-logo.svg" alt="Oyvia" class="brand-logo"></a>
+        <a class="lp-brand" href="index.html" aria-label="Oyvia, accueil"><img src="assets/oyvia-logo-tight.svg" alt="Oyvia" class="lp-brand__logo" width="60" height="34"></a>
         <p>Le logiciel de gestion pour les loueurs de courte durée et les conciergeries. Centralisez, automatisez, sans commission.</p>
       </div>
       <div>
         <h4>Produit</h4>
         <ul>
-          <li><a href="index.html#fonctionnalites">Fonctionnalités</a></li>
+          <li><a href="index.html#fonctionnalites">Produit</a>
+        <a href="index.html#integrations">Intégrations</a></li>
           <li><a href="index.html#tarifs">Tarifs</a></li>
           <li><a href="app/calendrier.html">Démo du produit</a></li>
           <li><a href="index.html#faq">FAQ</a></li>
