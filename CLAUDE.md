@@ -19,6 +19,20 @@ Historique : les KPI ont déjà été retirés des Fiches de police, des
 Services additionnels, des Avis, puis des deux écrans Marketplace du
 back-office. Ne pas les réintroduire.
 
+**Les preuves d'intervention portent deux dates.** `prisLe` vient de
+l'en-tête EXIF du fichier (l'instant du déclenchement, lu par
+`lireDateExif` dans `js/prestataire.js`) ; `deposeLe` est l'instant où
+le fichier arrive dans Oyvia. La première a valeur de preuve, la
+seconde seulement de constat. L'interface dit toujours laquelle est
+affichée — jamais l'une pour l'autre. Une date EXIF invraisemblable
+(futur, ou plus de dix ans) est écartée au profit du dépôt.
+
+Le chemin d'une photo de démonstration est stocké **nu** ; c'est
+`srcPreuve()` qui ajoute `OYVIA_RACINE` à l'affichage. Enregistrer le
+préfixe figerait celui de la première page à sauvegarder, et il serait
+faux partout ailleurs — `prestataire.html` est à la racine, les écrans
+de gestion sont sous `app/`.
+
 ## Landing (index.html, blog.html, article.html)
 
 **Une seule feuille : `css/landing.css`**, lue dans l'ordre où la page

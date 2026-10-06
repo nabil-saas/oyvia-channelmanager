@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oyvia — Charte couleur pour le motion design</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<style>
+/* ============================================================
+   OYVIA — Feuille de charte, destinée à être imprimée ou
+   envoyée telle quelle à un prestataire extérieur.
+   Autonome : aucune dépendance en dehors des tokens du projet.
+   ============================================================ */
+body { background: var(--bg-subtle); padding: var(--sp-12) var(--sp-6); }
+.pl { max-width: 1120px; margin-inline: auto; }
+.pl__head { max-width: 640px; margin-bottom: var(--sp-12); }
+.pl__head h1 { font-size: var(--fs-3xl); letter-spacing: var(--tracking-tighter); }
+.pl__head p { color: var(--c-text-soft); font-size: var(--fs-md); margin-top: var(--sp-4); line-height: var(--lh-snug); }
+.pl__logo { height: 38px; width: auto; margin-bottom: var(--sp-6); }
+
+.pl__sec { margin-top: var(--sp-12); }
+.pl__sec > h2 {
+  font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase;
+  letter-spacing: var(--tracking-wider); color: var(--c-text-muted);
+  padding-bottom: var(--sp-3); border-bottom: 1px solid var(--c-border); margin-bottom: var(--sp-5);
+}
+.pl__note { font-size: var(--fs-sm); color: var(--c-text-soft); margin-bottom: var(--sp-5); max-width: 720px; line-height: var(--lh-snug); }
+.pl__note b { color: var(--c-text); font-weight: var(--fw-semibold); }
+
+.pl__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: var(--sp-4); }
+/* Le socle tient en deux rangées de trois : six cases sur cinq colonnes
+   laisseraient la sixième seule en bas, ce qui la ferait paraître à part. */
+.pl__grid--socle { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 720px) { .pl__grid--socle { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sw { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-xs); }
+.sw__bloc { height: 88px; position: relative; }
+.sw__bloc--clair { box-shadow: inset 0 0 0 1px var(--c-border); }
+.sw__txt { padding: var(--sp-3) var(--sp-4) var(--sp-4); }
+.sw__nom { font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.sw__hex { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text); margin-top: 4px; letter-spacing: .02em; }
+.sw__rgb { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-muted); }
+.sw__role { font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: 6px; line-height: 1.4; }
+
+/* La couleur maîtresse occupe toute une ligne : c'est elle qu'on retient. */
+.pl__star { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: var(--sp-6); align-items: stretch; }
+.pl__star .sw__bloc { height: 100%; min-height: 190px; }
+.pl__stardesc { display: flex; flex-direction: column; justify-content: center; gap: var(--sp-3); }
+.pl__stardesc h3 { font-size: var(--fs-2xl); letter-spacing: var(--tracking-tight); }
+.pl__stardesc p { color: var(--c-text-soft); font-size: var(--fs-base); line-height: var(--lh-snug); max-width: 560px; }
+.pl__vals { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.pl__val {
+  font-family: var(--font-mono); font-size: var(--fs-sm); background: var(--c-surface);
+  border: 1px solid var(--c-border); border-radius: var(--r-md); padding: 6px var(--sp-3);
+}
+
+.pl__recettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--sp-4); }
+.rec { border: 1px solid var(--c-border); border-radius: var(--r-lg); overflow: hidden; background: var(--c-surface); }
+.rec__apercu { height: 130px; display: grid; place-items: center; }
+.rec__txt { padding: var(--sp-4); }
+.rec__txt b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.rec__txt code { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-soft); margin-top: 6px; line-height: 1.6; word-break: break-word; }
+
+.pl__typo { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-6); }
+.pl__typo .ligne { display: flex; align-items: baseline; gap: var(--sp-5); padding: var(--sp-3) 0; border-bottom: 1px solid var(--c-border); flex-wrap: wrap; }
+.pl__typo .ligne:last-child { border-bottom: 0; }
+.pl__typo .ligne small { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-muted); width: 190px; flex-shrink: 0; }
+
+.pl__rayons { display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: flex-end; }
+.ray { text-align: center; }
+.ray i { display: block; width: 76px; height: 76px; background: var(--blue-600); }
+.ray span { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-muted); margin-top: var(--sp-2); }
+
+.pl__pied { margin-top: var(--sp-16); padding-top: var(--sp-6); border-top: 1px solid var(--c-border); font-size: var(--fs-sm); color: var(--c-text-muted); }
+
+@media print {
+  body { background: #fff; padding: 0; }
+  .sw, .rec, .pl__typo { break-inside: avoid; }
+}
+@media (max-width: 720px) {
+  .pl__star { grid-template-columns: 1fr; }
+  .pl__star .sw__bloc { min-height: 140px; }
+}
+</style>
+</head>
+<body>
+<div class="pl">
+
+  <header class="pl__head">
+    <img src="assets/oyvia-logo-tight.svg" alt="Oyvia" class="pl__logo">
+    <h1>Charte couleur</h1>
+    <p>Les valeurs exactes utilisées dans le produit et sur le site. Toutes
+      viennent de <code>css/tokens.css</code> — aucune couleur n'est écrite
+      ailleurs dans le code, donc cette page fait foi.</p>
+  </header>
+
+  <!-- ---------- La couleur maîtresse ---------- -->
+  <section class="pl__sec">
+    <h2>La couleur de marque</h2>
+    <div class="pl__star">
+      <div class="sw">
+        <div class="sw__bloc" style="background:#5170FF"></div>
+      </div>
+      <div class="pl__stardesc">
+        <h3>Bleu Oyvia</h3>
+        <p>Une seule couleur porte la marque. Elle sert aux boutons d'action, aux
+          liens, au focus clavier, aux chiffres mis en avant et aux lueurs de fond.
+          Tout le reste est neutre. Si une animation doit retenir une seule teinte,
+          c'est celle-là.</p>
+        <div class="pl__vals">
+          <span class="pl__val">HEX #5170FF</span>
+          <span class="pl__val">RGB 81 · 112 · 255</span>
+          <span class="pl__val">HSL 229° 100 % 66 %</span>
+          <span class="pl__val">CMJN 68 · 56 · 0 · 0</span>
+        </div>
+        <p style="font-size:var(--fs-xs);color:var(--c-text-muted);margin-top:var(--sp-2)">La valeur CMJN est une conversion directe, sans profil : elle dépanne pour un aperçu, elle ne remplace pas un calage imprimeur.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- Les incontournables ---------- -->
+  <section class="pl__sec">
+    <h2>Le socle · six valeurs suffisent pour 90 % des plans</h2>
+    <div class="pl__grid pl__grid--socle">
+      <div class="sw">
+        <div class="sw__bloc" style="background:#5170FF"></div>
+        <div class="sw__txt">
+          <div class="sw__nom">Bleu Oyvia</div>
+          <div class="sw__hex">#5170FF</div>
+          <div class="sw__rgb">81 · 112 · 255</div>
+          <div class="sw__role">Actions, liens, accent</div>
+        </div>
+      </div>
+      <div class="sw">
+        <div class="sw__bloc" style="background:#3A54E6"></div>
+        <div class="sw__txt">
+          <div class="sw__nom">Bleu appuyé</div>
+          <div class="sw__hex">#3A54E6</div>
+          <div class="sw__rgb">58 · 84 · 230</div>
+          <div class="sw__role">Survol, texte sur fond bleu pâle</div>
+        </div>
+      </div>
+      <div class="sw">
+        <div class="sw__bloc" style="background:#0B1020"></div>
+        <div class="sw__txt">
+          <div class="sw__nom">Encre profonde</div>
+          <div class="sw__hex">#0B1020</div>
+          <div class="sw__rgb">11 · 16 · 32</div>
+          <div class="sw__role">Fonds sombres, bandeau, pied de page</div>
+        </div>
+      </div>
+      <div class="sw">
+        <div class="sw__bloc" style="background:#0A0A14"></div>
+        <div class="sw__txt">
+          <div class="sw__nom">Noir de titre</div>
+          <div class="sw__hex">#0A0A14</div>
+          <div class="sw__rgb">10 · 10 · 20</div>
+          <div class="sw__role">Titres et texte fort sur fond clair</div>
+        </div>
+      </div>
+      <div class="sw">
+        <div class="sw__bloc sw__bloc--clair" style="background:#F6F8FC"></div>
+        <div class="sw__txt">
+          <div class="sw__nom">Gris bleuté</div>
+          <div class="sw__hex">#F6F8FC</div>
+          <div class="sw__rgb">246 · 248 · 252</div>
+          <div class="sw__role">Sections alternées, surfaces calmes</div>
+        </div>
+      </div>
+      <div class="sw">
+        <div class="sw__bloc sw__bloc--clair" style="background:#FFFFFF"></div>
+        <div class="sw__txt">
+          <div class="sw__nom">Blanc</div>
+          <div class="sw__hex">#FFFFFF</div>
+          <div class="sw__rgb">255 · 255 · 255</div>
+          <div class="sw__role">Fond général, cartes</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- Gamme bleue ---------- -->
+  <section class="pl__sec">
+    <h2>Gamme bleue · pour les dégradés et les fonds</h2>
+    <div class="pl__grid">
+      <div class="sw"><div class="sw__bloc" style="background:#3A54E6"></div><div class="sw__txt"><div class="sw__nom">Blue 700</div><div class="sw__hex">#3A54E6</div><div class="sw__rgb">58 · 84 · 230</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#5170FF"></div><div class="sw__txt"><div class="sw__nom">Blue 600</div><div class="sw__hex">#5170FF</div><div class="sw__rgb">81 · 112 · 255</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#6B85FF"></div><div class="sw__txt"><div class="sw__nom">Blue 500</div><div class="sw__hex">#6B85FF</div><div class="sw__rgb">107 · 133 · 255</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#8FA2FF"></div><div class="sw__txt"><div class="sw__nom">Blue 400</div><div class="sw__hex">#8FA2FF</div><div class="sw__rgb">143 · 162 · 255</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#C4CEFF"></div><div class="sw__txt"><div class="sw__nom">Blue 200</div><div class="sw__hex">#C4CEFF</div><div class="sw__rgb">196 · 206 · 255</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#E7EBFF"></div><div class="sw__txt"><div class="sw__nom">Blue 100</div><div class="sw__hex">#E7EBFF</div><div class="sw__rgb">231 · 235 · 255</div></div></div>
+      <div class="sw"><div class="sw__bloc sw__bloc--clair" style="background:#F2F4FF"></div><div class="sw__txt"><div class="sw__nom">Blue 50</div><div class="sw__hex">#F2F4FF</div><div class="sw__rgb">242 · 244 · 255</div></div></div>
+    </div>
+  </section>
+
+  <!-- ---------- Neutres ---------- -->
+  <section class="pl__sec">
+    <h2>Neutres · gris légèrement froids</h2>
+    <div class="pl__grid">
+      <div class="sw"><div class="sw__bloc" style="background:#0A0A14"></div><div class="sw__txt"><div class="sw__nom">Ink 950</div><div class="sw__hex">#0A0A14</div><div class="sw__role">Titres</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#1F2937"></div><div class="sw__txt"><div class="sw__nom">Ink 800</div><div class="sw__hex">#1F2937</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#4A5565"></div><div class="sw__txt"><div class="sw__nom">Ink 600</div><div class="sw__hex">#4A5565</div><div class="sw__role">Texte courant</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#6A7282"></div><div class="sw__txt"><div class="sw__nom">Ink 500</div><div class="sw__hex">#6A7282</div><div class="sw__role">Texte secondaire</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#9AA3B2"></div><div class="sw__txt"><div class="sw__nom">Ink 400</div><div class="sw__hex">#9AA3B2</div><div class="sw__role">Texte discret</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#D1D5DC"></div><div class="sw__txt"><div class="sw__nom">Ink 300</div><div class="sw__hex">#D1D5DC</div></div></div>
+      <div class="sw"><div class="sw__bloc sw__bloc--clair" style="background:#E5E7EB"></div><div class="sw__txt"><div class="sw__nom">Ink 200</div><div class="sw__hex">#E5E7EB</div><div class="sw__role">Filets et bordures</div></div></div>
+      <div class="sw"><div class="sw__bloc sw__bloc--clair" style="background:#F5F7FA"></div><div class="sw__txt"><div class="sw__nom">Ink 50</div><div class="sw__hex">#F5F7FA</div></div></div>
+    </div>
+  </section>
+
+  <!-- ---------- Statuts ---------- -->
+  <section class="pl__sec">
+    <h2>Statuts · vert, ambre, rouge</h2>
+    <p class="pl__note">Chaque statut existe en trois intensités&nbsp;: la teinte pleine
+      (pastilles, points, barres), la teinte pâle (fond d'étiquette) et la teinte
+      sombre (texte sur cette étiquette). <b>Ne jamais écrire le texte dans la teinte
+      pleine sur le fond pâle</b>&nbsp;: le contraste ne passe pas.</p>
+    <div class="pl__grid">
+      <div class="sw"><div class="sw__bloc" style="background:#00A550"></div><div class="sw__txt"><div class="sw__nom">Vert · plein</div><div class="sw__hex">#00A550</div><div class="sw__role">Validé, à jour, direct</div></div></div>
+      <div class="sw"><div class="sw__bloc sw__bloc--clair" style="background:#DCFCE7"></div><div class="sw__txt"><div class="sw__nom">Vert · pâle</div><div class="sw__hex">#DCFCE7</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#067A3E"></div><div class="sw__txt"><div class="sw__nom">Vert · texte</div><div class="sw__hex">#067A3E</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#F5A300"></div><div class="sw__txt"><div class="sw__nom">Ambre · plein</div><div class="sw__hex">#F5A300</div><div class="sw__role">En attente, à faire</div></div></div>
+      <div class="sw"><div class="sw__bloc sw__bloc--clair" style="background:#FEF3C7"></div><div class="sw__txt"><div class="sw__nom">Ambre · pâle</div><div class="sw__hex">#FEF3C7</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#9A6B00"></div><div class="sw__txt"><div class="sw__nom">Ambre · texte</div><div class="sw__hex">#9A6B00</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#E11D2E"></div><div class="sw__txt"><div class="sw__nom">Rouge · plein</div><div class="sw__hex">#E11D2E</div><div class="sw__role">Conflit, erreur, annulé</div></div></div>
+      <div class="sw"><div class="sw__bloc sw__bloc--clair" style="background:#FEE2E2"></div><div class="sw__txt"><div class="sw__nom">Rouge · pâle</div><div class="sw__hex">#FEE2E2</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#B01221"></div><div class="sw__txt"><div class="sw__nom">Rouge · texte</div><div class="sw__hex">#B01221</div></div></div>
+    </div>
+  </section>
+
+  <!-- ---------- Canaux ---------- -->
+  <section class="pl__sec">
+    <h2>Canaux de réservation</h2>
+    <p class="pl__note">Ces teintes identifient les plateformes dans le calendrier et
+      la messagerie. <b>Ce ne sont pas des couleurs Oyvia</b>&nbsp;: elles appartiennent
+      aux marques concernées et ne servent qu'à les désigner. À n'employer que si un
+      plan montre réellement un calendrier ou une boîte de réception multicanale.</p>
+    <div class="pl__grid">
+      <div class="sw"><div class="sw__bloc" style="background:#FF5A5F"></div><div class="sw__txt"><div class="sw__nom">Airbnb</div><div class="sw__hex">#FF5A5F</div><div class="sw__rgb">255 · 90 · 95</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#0A3D91"></div><div class="sw__txt"><div class="sw__nom">Booking.com</div><div class="sw__hex">#0A3D91</div><div class="sw__rgb">10 · 61 · 145</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#00A550"></div><div class="sw__txt"><div class="sw__nom">Réservation directe</div><div class="sw__hex">#00A550</div><div class="sw__rgb">0 · 165 · 80</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#94A3B8"></div><div class="sw__txt"><div class="sw__nom">Dates bloquées</div><div class="sw__hex">#94A3B8</div><div class="sw__rgb">148 · 163 · 184</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#FDB913"></div><div class="sw__txt"><div class="sw__nom">Expedia</div><div class="sw__hex">#FDB913</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#245ABC"></div><div class="sw__txt"><div class="sw__nom">Vrbo</div><div class="sw__hex">#245ABC</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#FF585D"></div><div class="sw__txt"><div class="sw__nom">Agoda</div><div class="sw__hex">#FF585D</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#25D366"></div><div class="sw__txt"><div class="sw__nom">WhatsApp</div><div class="sw__hex">#25D366</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#4285F4"></div><div class="sw__txt"><div class="sw__nom">Google</div><div class="sw__hex">#4285F4</div></div></div>
+      <div class="sw"><div class="sw__bloc" style="background:#64748B"></div><div class="sw__txt"><div class="sw__nom">E-mail</div><div class="sw__hex">#64748B</div></div></div>
+    </div>
+  </section>
+
+  <!-- ---------- Recettes ---------- -->
+  <section class="pl__sec">
+    <h2>Dégradés, lueurs et ombres</h2>
+    <p class="pl__note">Les six effets qui reviennent dans toute l'interface. Les
+      valeurs sont données telles qu'elles sont écrites dans le code.</p>
+    <div class="pl__recettes">
+      <div class="rec">
+        <div class="rec__apercu" style="background:#fff;background-image:radial-gradient(ellipse at center, rgba(81,112,255,.22), rgba(81,112,255,.06) 42%, transparent 68%)"></div>
+        <div class="rec__txt">
+          <b>Lueur de fond claire</b>
+          <code>radial-gradient(ellipse at center,<br>rgba(81,112,255,.22), rgba(81,112,255,.06) 42%,<br>transparent 68%)</code>
+        </div>
+      </div>
+      <div class="rec">
+        <div class="rec__apercu" style="background:#0B1020;background-image:radial-gradient(ellipse 60% 50% at 50% 0%, rgba(81,112,255,.28), transparent 70%)"></div>
+        <div class="rec__txt">
+          <b>Lueur sur fond sombre</b>
+          <code>fond #0B1020 +<br>radial-gradient(ellipse 60% 50% at 50% 0%,<br>rgba(81,112,255,.28), transparent 70%)</code>
+        </div>
+      </div>
+      <div class="rec">
+        <div class="rec__apercu" style="background:linear-gradient(180deg,#F2F4FF,#FFFFFF 70%)"></div>
+        <div class="rec__txt">
+          <b>Bande Vivi</b>
+          <code>linear-gradient(180deg, #F2F4FF, #FFFFFF 70%)</code>
+        </div>
+      </div>
+      <div class="rec">
+        <div class="rec__apercu" style="background:#F6F8FC">
+          <span style="display:inline-block;background:#5170FF;color:#fff;border-radius:999px;padding:14px 26px;font-weight:600;box-shadow:0 8px 22px rgba(81,112,255,.28)">Bouton</span>
+        </div>
+        <div class="rec__txt">
+          <b>Ombre bleue du bouton</b>
+          <code>0 8px 22px rgba(81,112,255,.28)<br>au survol : 0 14px 34px rgba(81,112,255,.36)</code>
+        </div>
+      </div>
+      <div class="rec">
+        <div class="rec__apercu" style="background:#F6F8FC">
+          <span style="display:inline-block;width:150px;height:64px;background:#fff;border:1px solid #E5E7EB;border-radius:14px;box-shadow:0 6px 20px rgba(13,25,55,.08)"></span>
+        </div>
+        <div class="rec__txt">
+          <b>Ombre de carte</b>
+          <code>0 6px 20px rgba(13,25,55,.08)<br>relief marqué : 0 18px 44px rgba(13,25,55,.12)</code>
+        </div>
+      </div>
+      <div class="rec">
+        <div class="rec__apercu" style="background:linear-gradient(90deg,#C4CEFF,#6B85FF)"></div>
+        <div class="rec__txt">
+          <b>Jauge / barre de progression</b>
+          <code>linear-gradient(90deg, #C4CEFF, #6B85FF)</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- Typographie ---------- -->
+  <section class="pl__sec">
+    <h2>Typographie</h2>
+    <p class="pl__note"><b>Geist</b> (Vercel, licence SIL Open Font, gratuite) en graisses
+      300 à 700, et <b>Geist Mono</b> pour les valeurs chiffrées. Les grands titres sont
+      en 700 avec un interlettrage serré de <code>−0,035 em</code>&nbsp;; c'est ce resserrage
+      qui donne à la marque sa densité.</p>
+    <div class="pl__typo">
+      <div class="ligne"><small>60 px · 700 · −0,035 em</small><span style="font-size:60px;font-weight:700;letter-spacing:-0.035em;line-height:1.04">Titre de scène</span></div>
+      <div class="ligne"><small>36 px · 700 · −0,035 em</small><span style="font-size:36px;font-weight:700;letter-spacing:-0.035em">Titre de section</span></div>
+      <div class="ligne"><small>22 px · 600 · −0,02 em</small><span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">Sous-titre</span></div>
+      <div class="ligne"><small>16 px · 400 · 1,6</small><span style="font-size:16px;color:var(--c-text-soft)">Texte courant, interligne 1,6</span></div>
+      <div class="ligne"><small>12 px · 600 · +0,06 em</small><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--c-accent)">Sur-titre en capitales</span></div>
+      <div class="ligne"><small>Geist Mono · 600</small><span style="font-family:var(--font-mono);font-size:22px;font-weight:600">34 600 € · 86 % · 122 €</span></div>
+    </div>
+  </section>
+
+  <!-- ---------- Formes ---------- -->
+  <section class="pl__sec">
+    <h2>Arrondis</h2>
+    <p class="pl__note">Rien n'a d'angle vif. Les boutons et les étiquettes sont des
+      pilules&nbsp;; les cartes ont un rayon franc de 14 à 28 px selon leur taille.</p>
+    <div class="pl__rayons">
+      <div class="ray"><i style="border-radius:6px"></i><span>6 px</span></div>
+      <div class="ray"><i style="border-radius:10px"></i><span>10 px</span></div>
+      <div class="ray"><i style="border-radius:14px"></i><span>14 px</span></div>
+      <div class="ray"><i style="border-radius:20px"></i><span>20 px</span></div>
+      <div class="ray"><i style="border-radius:28px"></i><span>28 px</span></div>
+      <div class="ray"><i style="border-radius:999px;width:140px"></i><span>pilule</span></div>
+    </div>
+  </section>
+
+  <footer class="pl__pied">
+    Source unique&nbsp;: <code>css/tokens.css</code>. Mascotte&nbsp;:
+    <code>assets/vivi.svg</code> (bleu #5170FF sur blanc). Logo&nbsp;:
+    <code>assets/oyvia-logo-tight.svg</code>, monochrome #5170FF.
+  </footer>
+
+</div>
+</body>
+</html>

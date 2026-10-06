@@ -119,20 +119,27 @@ Layout.init('menage');
      rien à constater, et une vignette sur une tâche à faire laisserait
      croire qu'elle est déjà passée. */
   function preuvesHTML(t) {
-    const photos = t.photos || [];
+    const photos = preuvesTriees(t);
     if (t.statut !== 'termine' || !photos.length) return '';
     // Quatre au plus dans la ligne : au-delà, la tâche devient une
     // galerie et le planning cesse de se lire. Le reste se compte.
     const visibles = photos.slice(0, 4);
     const reste = photos.length - visibles.length;
+    // La date de la première photo résume la série. C'est elle qu'on cherche
+    // quand on vérifie qu'une intervention a bien eu lieu AVANT l'arrivée du
+    // voyageur suivant — donc elle se lit sans ouvrir quoi que ce soit.
+    const h = horodatagePreuve(photos[0]);
+    const quand = h
+      ? `<b class="mn-preuves__date${h.source === 'depot' ? ' is-depot' : ''}" title="${PREUVE_SOURCES[h.source].aide}">${formatHorodatage(h.quand)}</b>`
+      : '<b class="mn-preuves__date is-sans" title="Photo déposée avant la mise en place de l\'horodatage.">sans date</b>';
     return `<div class="mn-preuves">
-      ${visibles.map((src, i) => `
+      ${visibles.map((photo, i) => `
         <button type="button" class="mn-preuve" data-preuve="${t.id}::${i}"
           title="Photo ${i + 1} de l'intervention — agrandir" aria-label="Agrandir la photo ${i + 1}">
-          <img src="${src}" alt="" loading="lazy" />
+          <img src="${srcPreuve(photo)}" alt="" loading="lazy" />
         </button>`).join('')}
       ${reste > 0 ? `<button type="button" class="mn-preuve mn-preuve--plus" data-preuve="${t.id}::${visibles.length}">+${reste}</button>` : ''}
-      <span class="mn-preuves__l">${photos.length} photo${photos.length > 1 ? 's' : ''} du prestataire</span>
+      <span class="mn-preuves__l">${photos.length} photo${photos.length > 1 ? 's' : ''} · ${quand}</span>
     </div>`;
   }
 
@@ -142,8 +149,9 @@ Layout.init('menage');
   let visionneuse = { photos: [], index: 0 };
   function ouvrirPreuve(taskId, index) {
     const t = TACHES.find(x => x.id === taskId);
-    if (!t || !(t.photos || []).length) return;
-    visionneuse = { photos: t.photos, index: Math.min(index, t.photos.length - 1), tache: t };
+    const photos = preuvesTriees(t);
+    if (!t || !photos.length) return;
+    visionneuse = { photos, index: Math.min(index, photos.length - 1), tache: t };
     let el = document.getElementById('mn-visionneuse');
     if (!el) {
       el = document.createElement('div');
@@ -167,11 +175,33 @@ Layout.init('menage');
     const { photos, index, tache } = visionneuse;
     const l = getLogement(tache.logementId);
     const p = getPrestataire(tache.prestataireId);
+    const photo = photos[index] || {};
+    const h = horodatagePreuve(photo);
+    // L'horodatage est l'information la plus utile de cette fenêtre : c'est
+    // pour elle qu'on l'ouvre le jour d'un litige. Il est donc écrit en toutes
+    // lettres SOUS la photo, avec la provenance de la date — pas en infobulle.
+    const bandeau = h
+      ? `<div class="mn-horo${h.source === 'depot' ? ' mn-horo--depot' : ''}">
+           <span class="mn-horo__ic">${icon(h.source === 'appareil'
+             ? '<rect x="2" y="6" width="20" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>'
+             : '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')}</span>
+           <div>
+             <b>${formatHorodatage(h.quand, { annee: true })}</b>
+             <small>${PREUVE_SOURCES[h.source].label} · ${PREUVE_SOURCES[h.source].aide}</small>
+           </div>
+         </div>`
+      : `<div class="mn-horo mn-horo--sans">
+           <span class="mn-horo__ic">${icon('<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>')}</span>
+           <div>
+             <b>Photo sans date</b>
+             <small>Déposée avant la mise en place de l'horodatage. Sa valeur de preuve est limitée.</small>
+           </div>
+         </div>`;
     document.getElementById('mn-visionneuse').innerHTML = `
       <div class="modal__head">
         <div>
           <h3 class="modal__title">${TACHE_LABEL[tache.type] || tache.type} · ${l ? l.nom : ''}</h3>
-          <p class="text-soft text-sm">${p ? p.nom : 'Prestataire'} · ${formatDate(tache.date)} · photo ${index + 1} sur ${photos.length}</p>
+          <p class="text-soft text-sm">${p ? p.nom : 'Prestataire'} · intervention du ${formatDate(tache.date)} · photo ${index + 1} sur ${photos.length}</p>
         </div>
         <button class="icon-btn" onclick="UI.closeAll()" aria-label="Fermer">
           ${icon('<path d="M18 6 6 18M6 6l12 12"/>')}
@@ -179,9 +209,10 @@ Layout.init('menage');
       </div>
       <div class="modal__body mn-visionneuse__corps">
         ${photos.length > 1 ? `<button class="mn-visionneuse__nav" data-vis="-1" aria-label="Photo précédente">${icon('<path d="m15 18-6-6 6-6"/>')}</button>` : ''}
-        <img src="${photos[index]}" alt="Photo ${index + 1} de l'intervention" />
+        <img src="${srcPreuve(photo)}" alt="Photo ${index + 1} de l'intervention" />
         ${photos.length > 1 ? `<button class="mn-visionneuse__nav mn-visionneuse__nav--d" data-vis="1" aria-label="Photo suivante">${icon('<path d="m9 18 6-6-6-6"/>')}</button>` : ''}
-      </div>`;
+      </div>
+      ${bandeau}`;
   }
 
   /* ---------- Interactions ---------- */

@@ -2834,6 +2834,12 @@ const PRESTATAIRES = [
    statut : a_faire | en_cours | termine
    ============================================================ */
 const TACHES = [
+  /* Une intervention déjà terminée aujourd'hui : c'est elle qui porte les
+     photos horodatées, et donc le seul endroit où la preuve se constate
+     sans avoir à en déposer une soi-même. Ses photos sont semées par
+     _semerPreuvesDemo(), plus bas — elles ont besoin d'OYVIA_RACINE, qui
+     n'est pas encore défini ici. */
+  { id:'T00', type:'menage',      logementId:'L001', date:'2026-07-23', heure:'09:00', prestataireId:'P1', statut:'termine', reservationId:null,  note:'Ménage après départ anticipé' },
   { id:'T01', type:'menage',      logementId:'L002', date:'2026-07-23', heure:'11:00', prestataireId:'P2', statut:'en_cours', reservationId:'R06', note:'Rotation same-day : départ 11h → arrivée 15h' },
   { id:'T02', type:'menage',      logementId:'L003', date:'2026-07-23', heure:'11:30', prestataireId:'P3', statut:'a_faire', reservationId:'R10' },
   { id:'T03', type:'checkin',     logementId:'L010', date:'2026-07-23', heure:'18:30', prestataireId:'P1', statut:'a_faire', reservationId:'R32', note:'Accueil en personne demandé' },
@@ -5482,6 +5488,79 @@ function getNotifications() {
   });
 }
 const TACHE_LABEL = { menage:'Ménage', checkin:'Check-in', maintenance:'Maintenance', linge:'Linge' };
+
+/* ------------------------------------------------------------
+   PREUVES D'INTERVENTION — photos horodatées
+
+   Le prestataire photographie le logement en fin de tâche. Ces photos
+   ne servent pas à faire joli dans le planning : elles servent le jour
+   où un voyageur conteste l'état du logement, ou qu'une casse apparaît
+   et qu'il faut établir quand elle est survenue.
+
+   D'où deux dates, et non une :
+
+     prisLe    — l'instant de la PRISE DE VUE, lu dans l'en-tête EXIF
+                 que l'appareil a écrit dans le fichier. C'est la date
+                 qui a une valeur probante.
+     deposeLe  — l'instant du DÉPÔT dans Oyvia. Toujours renseignée,
+                 parce qu'elle, nous la constatons nous-mêmes.
+
+   La distinction n'est pas un détail. Un prestataire qui photographie
+   à 11 h et dépose le soir en rentrant produirait, avec un horodatage
+   au dépôt seul, une preuve datée de 19 h — soit huit heures après que
+   le voyageur suivant soit entré. Autant dire une preuve retournable
+   contre nous. Quand l'EXIF est là, c'est lui qui fait foi ; quand il
+   manque (photo recadrée, capture d'écran, appareil qui n'écrit rien),
+   on affiche le dépôt EN LE DISANT. Jamais l'un pour l'autre.
+   ------------------------------------------------------------ */
+const PREUVE_SOURCES = {
+  appareil: { label: 'Prise par l\'appareil', aide: "Date lue dans le fichier, écrite par l'appareil au moment du déclenchement." },
+  depot:    { label: 'Datée au dépôt',        aide: "L'appareil n'a pas daté le fichier. C'est l'heure d'arrivée dans Oyvia qui est retenue." },
+};
+
+/* Les deux écrans qui affichent une preuve passent par ici : la règle de
+   priorité entre les deux dates ne doit exister qu'à un seul endroit. */
+function horodatagePreuve(photo) {
+  if (!photo || typeof photo !== 'object') return null;
+  const quand = photo.prisLe || photo.deposeLe;
+  if (!quand) return null;
+  return { quand, source: photo.prisLe ? 'appareil' : 'depot' };
+}
+
+/* « 23 juil. à 11 h 14 ». Le format long ajoute l'année : une preuve se
+   relit parfois des mois plus tard, et « 23 juil. » seul devient ambigu. */
+function formatHorodatage(iso, { annee = false, heureSeule = false } = {}) {
+  if (!iso) return '';
+  const [date, heure = ''] = String(iso).split('T');
+  const [h, m] = heure.split(':');
+  const hhmm = h ? `${h} h ${m || '00'}` : '';
+  if (heureSeule) return hhmm;
+  return `${formatDate(date, { annee })}${hhmm ? ` à ${hhmm}` : ''}`;
+}
+
+/* L'adresse de l'image, résolue depuis la page qui l'affiche.
+
+   Une photo déposée par un prestataire est une data URL : elle se suffit.
+   Une photo de démonstration est un chemin vers assets/, et le préfixe à
+   lui ajouter dépend de l'emplacement de la page — rien sous la racine,
+   « ../ » depuis app/ ou admin/. Ce préfixe ne doit donc JAMAIS être
+   enregistré dans l'état : il serait figé par la première page qui
+   sauvegarde, et faux pour toutes les autres. On le calcule à l'affichage. */
+function srcPreuve(photo) {
+  const src = (photo && photo.src) || '';
+  return /^(data:|blob:|https?:|\/)/.test(src) ? src : OYVIA_RACINE + src;
+}
+
+/* Les photos d'une tâche, de la plus ancienne à la plus récente. L'ordre
+   d'ajout ne dit rien ; l'ordre chronologique raconte l'intervention. */
+function preuvesTriees(tache) {
+  const photos = (tache && Array.isArray(tache.photos)) ? tache.photos.slice() : [];
+  return photos.sort((a, b) => {
+    const ha = horodatagePreuve(a), hb = horodatagePreuve(b);
+    if (!ha || !hb) return 0;
+    return ha.quand.localeCompare(hb.quand);
+  });
+}
 /* ------------------------------------------------------------
    PLANIFICATION DES AUTOMATISATIONS
 
@@ -5682,6 +5761,55 @@ function _migrerConformite() {
     .forEach(k => { delete CONFORMITE[k]; });
 }
 
+/* Les preuves d'intervention n'étaient qu'une liste d'images. Une photo sans
+   date ne prouve rien : le jour où un voyageur conteste l'état du logement,
+   la seule question qui compte est « quand a-t-elle été prise ? ». Chaque
+   entrée devient donc un objet daté. Un instantané enregistré avant ce
+   changement contient encore des chaînes nues : on les reprend sans les
+   perdre, mais sans leur inventer de date non plus — un horodatage faux
+   serait pire que pas d'horodatage du tout. */
+function _migrerPreuvesPhotos() {
+  TACHES.forEach(t => {
+    if (!Array.isArray(t.photos)) return;
+    t.photos = t.photos.map(p => (typeof p === 'string' ? { src: p, prisLe: null, deposeLe: null } : p));
+  });
+}
+
+/* Jeu de démonstration pour T00. Sans lui, la fonctionnalité serait
+   invisible : le planning masque les tâches passées, et toutes les autres
+   interventions terminées sont antérieures à aujourd'hui.
+
+   Les trois états d'horodatage sont représentés, parce que c'est la
+   distinction qui compte à l'écran :
+     · deux photos datées par l'appareil (EXIF) — la preuve forte,
+     · une photo datée au dépôt seulement — l'appareil n'a rien écrit,
+     · une photo sans date — déposée avant la fonctionnalité.
+
+   Les images sont celles des logements, faute d'avoir des photos de
+   ménage sous la main : c'est un décor, pas une donnée.
+
+   Le chemin est stocké NU, sans préfixe : c'est srcPreuve() qui le résout
+   à l'affichage, selon la page. Sinon la première page à sauvegarder
+   figerait son propre préfixe dans l'état pour toutes les autres.
+
+   Le test porte sur `Array.isArray` et non sur la longueur : une fois que
+   l'utilisateur a supprimé les photos, `photos` vaut [] et le jeu ne doit
+   pas se réinstaller au rechargement suivant. */
+function _semerPreuvesDemo() {
+  const t = TACHES.find(x => x.id === 'T00');
+  if (!t || Array.isArray(t.photos)) return;
+  const img = f => `assets/logements/${f}`;
+  // Quatre intérieurs : sur une preuve de ménage, une façade ou une vue de
+  // mer ferait tache. Les seules photos disponibles sont celles des
+  // logements — on prend au moins celles qui montrent une pièce.
+  t.photos = [
+    { src: img('L001.jpg'), prisLe: '2026-07-23T09:12:40', deposeLe: '2026-07-23T09:46:02' },
+    { src: img('L003.jpg'), prisLe: '2026-07-23T09:26:15', deposeLe: '2026-07-23T09:46:02' },
+    { src: img('L010.jpg'), prisLe: null,                  deposeLe: '2026-07-23T09:46:02' },
+    { src: img('L009.jpg'), prisLe: null,                  deposeLe: null },
+  ];
+}
+
 function _migrerAcces() {
   // Les modes retirés du référentiel se ramènent à celui qui leur ressemble.
   const REMPLACES = { digicode: 'boite_cles', accueil: 'personne', concierge: 'personne' };
@@ -5800,6 +5928,10 @@ _migrerTarification();
 _migrerTachesSansMontant();
 // Conformité enregistrée avant sa réduction à la carte professionnelle.
 _migrerConformite();
+// Photos d'intervention enregistrées avant leur horodatage.
+_migrerPreuvesPhotos();
+// Jeu de démonstration des preuves, si l'utilisateur n'y a pas touché.
+_semerPreuvesDemo();
 // Fiches de police enregistrées avec les quatre anciens statuts.
 _migrerFichesPolice();
 // Page séjour enregistrée avant les textes par bloc et leur ordre.
