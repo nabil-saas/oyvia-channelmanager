@@ -67,3 +67,17 @@
 .pr-photos__add { width: 64px; height: 64px; border: 1.5px dashed var(--c-border-strong); border-radius: var(--r-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--c-text-soft); font-size: 10px; font-weight: var(--fw-medium); cursor: pointer; flex-shrink: 0; transition: border-color var(--t-fast), color var(--t-fast); }
 .pr-photos__add:hover { border-color: var(--blue-600); color: var(--blue-600); }
 .pr-photos__add svg { width: 18px; height: 18px; }
+/* L'heure est incrustée sur la vignette : le prestataire voit immédiatement
+   que sa photo porte une date, et laquelle. Fond dégradé sombre, parce qu'on
+   ne sait pas ce qu'il y a derrière. */
+.pr-photos__item { width: 72px; height: 72px; }
+.pr-photos__date { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 4px;
+  background: linear-gradient(transparent, rgba(11,16,32,.8)); color: #fff;
+  font-size: 10px; font-weight: var(--fw-semibold); text-align: center;
+  font-variant-numeric: tabular-nums; }
+/* Le tilde distingue l'heure de DÉPÔT de l'heure de prise de vue : la
+   première est approximative du point de vue de la preuve. */
+.pr-photos__date--depot::before { content: "~"; opacity: .75; margin-right: 1px; }
+.pr-photos__aide { display: flex; gap: var(--sp-2); margin-top: var(--sp-3);
+  font-size: var(--fs-xs); color: var(--c-text-soft); line-height: var(--lh-snug); }
+.pr-photos__aide svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; color: var(--c-text-muted); }

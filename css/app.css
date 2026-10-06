@@ -459,17 +459,39 @@
 .mn-preuve img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mn-preuve--plus { display: grid; place-items: center; font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--c-text-muted); }
 .mn-preuves__l { font-size: var(--fs-xs); color: var(--c-text-muted); }
+/* La date se lit dans la ligne, sans ouvrir la visionneuse : c'est elle
+   qu'on vient vérifier. Une date issue de l'appareil est affirmée en
+   texte plein ; une date de dépôt reste en gris, parce qu'elle dit
+   seulement quand le fichier est arrivé. */
+.mn-preuves__date { color: var(--c-text); font-weight: var(--fw-semibold); }
+.mn-preuves__date.is-depot { color: var(--c-text-muted); font-weight: var(--fw-medium); border-bottom: 1px dotted var(--c-border-strong); }
+.mn-preuves__date.is-sans { color: var(--c-warning-ink); font-weight: var(--fw-medium); }
 
 /* Visionneuse : la vignette de 40 px ne permet pas de vérifier qu'un lit
    est fait. Ici, l'image occupe la place qu'elle mérite. */
 .mn-visionneuse__corps { position: relative; display: grid; place-items: center; padding: var(--sp-4); }
-.mn-visionneuse__corps img { max-width: 100%; max-height: 62vh; border-radius: var(--r-lg); display: block; }
+.mn-visionneuse__corps img { max-width: 100%; max-height: 56vh; border-radius: var(--r-lg); display: block; }
 .mn-visionneuse__nav { position: absolute; left: var(--sp-4); top: 50%; transform: translateY(-50%);
   width: 40px; height: 40px; border-radius: var(--r-full); display: grid; place-items: center;
   background: var(--c-surface); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm);
   color: var(--c-text); cursor: pointer; }
 .mn-visionneuse__nav--d { left: auto; right: var(--sp-4); }
 .mn-visionneuse__nav svg { width: 20px; height: 20px; }
+
+/* Bandeau d'horodatage, sous la photo agrandie. Trois états, trois tons :
+   vert quand l'appareil a daté le fichier, neutre quand on ne dispose que
+   de l'heure de dépôt, ambre quand la photo n'a aucune date. */
+.mn-horo { display: flex; align-items: center; gap: var(--sp-3);
+  margin: 0 var(--sp-4) var(--sp-4); padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-lg); background: var(--c-positive-soft); }
+.mn-horo__ic { display: grid; place-items: center; flex-shrink: 0; color: var(--c-positive-ink); }
+.mn-horo__ic svg { width: 20px; height: 20px; }
+.mn-horo b { display: block; font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--c-positive-ink); }
+.mn-horo small { display: block; font-size: var(--fs-xs); color: var(--c-text-soft); margin-top: 2px; }
+.mn-horo--depot { background: var(--c-surface-alt); border: 1px solid var(--c-border); }
+.mn-horo--depot .mn-horo__ic, .mn-horo--depot b { color: var(--c-text); }
+.mn-horo--sans { background: var(--c-warning-soft); }
+.mn-horo--sans .mn-horo__ic, .mn-horo--sans b { color: var(--c-warning-ink); }
 .mn-task__meta b { font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
 .mn-task__meta small { font-size: var(--fs-xs); color: var(--c-text-muted); display: block; }
 .mn-task__span { display: inline-block; margin-top: var(--sp-1); font-size: var(--fs-xs); font-weight: var(--fw-medium); }

@@ -24,15 +24,127 @@
       .sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
   }
 
+  /* ---------- Lecture de la date de prise de vue (EXIF) ----------
+
+     Aucune dépendance : on ouvre le JPEG et on va chercher le champ
+     DateTimeOriginal que l'appareil y a écrit. Cette date-là vaut
+     preuve ; celle du dépôt ne vaut que constat d'arrivée.
+
+     On ne lit que les 128 premiers kilo-octets : l'en-tête EXIF est
+     toujours au tout début du fichier, et charger 4 Mo de photo en
+     mémoire pour en lire vingt caractères serait absurde. */
+  function lireDateExif(fichier) {
+    return new Promise(resolve => {
+      const lecteur = new FileReader();
+      lecteur.onerror = () => resolve(null);
+      lecteur.onload = () => {
+        try { resolve(extraireDateExif(new DataView(lecteur.result))); }
+        catch (e) { resolve(null); }
+      };
+      lecteur.readAsArrayBuffer(fichier.slice(0, 131072));
+    });
+  }
+
+  function extraireDateExif(vue) {
+    if (vue.byteLength < 4 || vue.getUint16(0) !== 0xFFD8) return null;   // pas un JPEG
+    let i = 2;
+    while (i + 4 <= vue.byteLength) {
+      if (vue.getUint8(i) !== 0xFF) return null;                          // flux mal formé
+      const marqueur = vue.getUint8(i + 1);
+      if (marqueur === 0xDA || marqueur === 0xD9) return null;            // on entre dans l'image
+      const taille = vue.getUint16(i + 2);
+      if (marqueur === 0xE1 && i + 10 <= vue.byteLength
+          && vue.getUint32(i + 4) === 0x45786966) {                       // APP1, signature « Exif »
+        return lireRepertoiresExif(vue, i + 10);
+      }
+      i += 2 + taille;
+    }
+    return null;
+  }
+
+  function lireRepertoiresExif(vue, tiff) {
+    const ordre = vue.getUint16(tiff);
+    const petit = ordre === 0x4949;                                       // « II » : petit-boutiste
+    if (!petit && ordre !== 0x4D4D) return null;
+    const u16 = o => vue.getUint16(o, petit);
+    const u32 = o => vue.getUint32(o, petit);
+    if (u16(tiff + 2) !== 0x002A) return null;
+
+    const champ = (repertoire, tag) => {
+      if (repertoire + 2 > vue.byteLength) return null;
+      const n = u16(repertoire);
+      for (let k = 0; k < n; k++) {
+        const e = repertoire + 2 + k * 12;
+        if (e + 12 > vue.byteLength) return null;
+        if (u16(e) === tag) return e;
+      }
+      return null;
+    };
+
+    const ifd0 = tiff + u32(tiff + 4);
+    const repertoires = [];
+    // 0x8769 pointe vers le sous-répertoire EXIF, là où vit DateTimeOriginal.
+    const pointeur = champ(ifd0, 0x8769);
+    if (pointeur) repertoires.push(tiff + u32(pointeur + 8));
+    repertoires.push(ifd0);                                               // 0x0132 en secours
+
+    // Par ordre de valeur probante : déclenchement, numérisation, modification.
+    for (const rep of repertoires) {
+      for (const tag of [0x9003, 0x9004, 0x0132]) {
+        const e = champ(rep, tag);
+        if (!e) continue;
+        const longueur = u32(e + 4);
+        if (longueur < 19 || longueur > 32) continue;
+        const o = tiff + u32(e + 8);
+        let s = '';
+        for (let k = 0; k < longueur - 1 && o + k < vue.byteLength; k++) s += String.fromCharCode(vue.getUint8(o + k));
+        const m = s.trim().match(/^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+        if (m) {
+          const iso = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}`;
+          if (dateExifPlausible(iso)) return iso;
+        }
+      }
+    }
+    return null;
+  }
+
+  /* Un appareil mal réglé écrit parfois 1980 ou une date dans le futur.
+     Mieux vaut retomber sur l'heure de dépôt, qui est juste, que d'afficher
+     une date de prise de vue fausse sous une étiquette « preuve ». */
+  function dateExifPlausible(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return false;
+    const maintenant = new Date();
+    const demain = new Date(maintenant.getTime() + 86400000);
+    const ilYaDixAns = new Date(maintenant.getFullYear() - 10, 0, 1);
+    return d <= demain && d >= ilYaDixAns;
+  }
+
+  /* L'horodatage du dépôt, au format du modèle : « 2026-07-23T18:04 ». */
+  function maintenantISO() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  }
+
   function photoSection(t) {
-    const photos = t.photos || [];
-    const thumbs = photos.map((src, i) => `
+    const photos = preuvesTriees(t);
+    const thumbs = photos.map(photo => {
+      const h = horodatagePreuve(photo);
+      const src = srcPreuve(photo);
+      // L'affichage est trié par date, le stockage reste dans l'ordre d'ajout :
+      // la suppression doit viser le rang RÉEL, sinon on efface la voisine.
+      const rang = (t.photos || []).indexOf(photo);
+      return `
       <div class="pr-photos__item">
         <img src="${src}" alt="Photo de l'intervention" />
-        <button type="button" class="pr-photos__del" data-photo-del="${t.id}::${i}" aria-label="Supprimer la photo">
+        ${h ? `<span class="pr-photos__date ${h.source === 'depot' ? 'pr-photos__date--depot' : ''}"
+                 title="${PREUVE_SOURCES[h.source].aide}">${formatHorodatage(h.quand, { heureSeule: true })}</span>` : ''}
+        <button type="button" class="pr-photos__del" data-photo-del="${t.id}::${rang}" aria-label="Supprimer la photo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return `<div class="pr-photos">
       <p class="pr-photos__label">Photos de l'intervention${photos.length ? ` (${photos.length})` : ''}</p>
       <div class="pr-photos__grid">
@@ -43,6 +155,11 @@
           <input type="file" accept="image/*" multiple data-photo-input="${t.id}" hidden />
         </label>
       </div>
+      <p class="pr-photos__aide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Chaque photo est datée automatiquement. En cas de litige sur l'état du
+        logement, c'est cette date qui fait foi — photographiez sur place, pas plus tard.
+      </p>
     </div>`;
   }
 
@@ -138,19 +255,38 @@
     const t = TACHES.find(x => x.id === input.dataset.photoInput);
     if (!t) return;
     t.photos = t.photos || [];
-    const files = [...input.files];
-    // On convertit en data URL (base64) plutôt qu'en blob URL : ça survit
-    // à la sauvegarde dans localStorage et donc aux rechargements de page.
-    Promise.all(files.map(file => new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(file);
-    }))).then(dataUrls => {
-      t.photos.push(...dataUrls);
-      render();
-      saveOyviaState();
-      if (typeof UI !== 'undefined') UI.toast(files.length > 1 ? 'Photos ajoutées' : 'Photo ajoutée');
-    });
+    const fichiers = [...input.files];
+    const deposeLe = maintenantISO();
+    // Deux lectures par fichier : l'image elle-même en data URL (base64), qui
+    // survit à localStorage et donc aux rechargements, et l'en-tête EXIF pour
+    // la date de prise de vue. La seconde peut échouer sans gêner la première.
+    Promise.all(fichiers.map(fichier => Promise.all([
+      new Promise(resolve => {
+        const lecteur = new FileReader();
+        lecteur.onload = () => resolve(lecteur.result);
+        lecteur.onerror = () => resolve(null);
+        lecteur.readAsDataURL(fichier);
+      }),
+      lireDateExif(fichier),
+    ]).then(([src, prisLe]) => (src ? { src, prisLe, deposeLe } : null))))
+      .then(ajouts => {
+        const valides = ajouts.filter(Boolean);
+        if (!valides.length) return;
+        t.photos.push(...valides);
+        render();
+        saveOyviaState();
+        if (typeof UI === 'undefined') return;
+        // On dit laquelle des deux dates a été retenue : le prestataire doit
+        // savoir que sa photo porte l'heure du dépôt quand l'appareil n'a
+        // rien écrit — c'est le moment où il peut encore refaire la photo.
+        const sansExif = valides.filter(p => !p.prisLe).length;
+        const quoi = valides.length > 1 ? `${valides.length} photos datées` : 'Photo datée';
+        UI.toast(sansExif === valides.length
+          ? `${quoi} à l'heure du dépôt`
+          : sansExif ? `${quoi} · ${sansExif} à l'heure du dépôt` : quoi);
+      });
+    // Sans ça, re-sélectionner le même fichier ne déclencherait aucun change.
+    input.value = '';
   });
 
   // Connexion directe via ?p=P1
